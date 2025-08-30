@@ -5,10 +5,11 @@ public class ShainBean {
 	//社員属性(プロパティ)
 	private int id;
 	private String name;
-	private String sei;
-	private int nen;
-	private String address;
-	
+	private String namekana;
+	private int entryyear;
+	private String gender;
+	private String jobclass;
+
 	
 	public int getId() {
 		return id;
@@ -22,24 +23,30 @@ public class ShainBean {
 	public void setName(String name) {
 		this.name = name;
 	}
-	public String getSei() {
-		return sei;
+	public String getNamekana() {
+		return namekana;
 	}
-	public void setSei(String sei) {
-		this.sei = sei;
+	public void setNamekana(String namekana) {
+		this.namekana = namekana;
 	}
-	public int getNen() {
-		return nen;
+	public int getEntryyear() {
+		return entryyear;
 	}
-	public void setNen(int nen) {
-		this.nen = nen;
+	public void setEntryyear(int entryyear) {
+		this.entryyear = entryyear;
 	}
-	public String getAddress() {
-		return address;
+	public String getGender() {
+		return gender;
 	}
-	public void setAddress(String address) {
-		this.address = address;
-	}	
+	public void setGender(String gender) {
+		this.gender = gender;
+	}
+	public String getJobclass(){
+		return jobclass;
+	}
+	public void setJobclass(String jobclass) {
+		this.jobclass = jobclass;
+	}
 	
 	
 }

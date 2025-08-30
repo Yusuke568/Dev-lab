@@ -1,6 +1,9 @@
 package controller;
 
 import java.io.IOException;
+import java.time.Year;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -27,8 +30,27 @@ public class ShainInsert extends HttpServlet {
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		
+		//入社年リストを作成
+		int currentYear = Year.now().getValue();
+		List<Integer> yearList = new ArrayList<>();
+		for(int year = currentYear;year > currentYear - 150; year--) {
+			yearList.add(year);
+		}
+		//役職リストを作成 //TODO；データベースから参照させる
+		List<String> jobList = new ArrayList<>();
+		jobList.add("一般");
+		jobList.add("TEST");
+		
+		
+		int nextID = 2;
+		
+		request.setAttribute("yearList", yearList);
+		request.setAttribute("jobclassList", jobList);
+		request.setAttribute("nextID", nextID);
+		
 		// insert.jspへ転送
-		request.getRequestDispatcher("/WEB-INF/view/insert.jsp").forward(request, response);	}
+		request.getRequestDispatcher("/WEB-INF/view/shianinsert.jsp").forward(request, response);	}
 
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)

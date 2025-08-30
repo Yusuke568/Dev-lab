@@ -46,7 +46,7 @@ public class ShainUpdateComplete extends HttpServlet {
 			shainLogic.updateShain(shainBean);
 			
 			// ShainIndexにリダイレクト
-			response.sendRedirect("ShainIndex");
+			response.sendRedirect("ShainList");
 			
 		} catch (SQLException | NamingException e) {
 			// TODO 自動生成された catch ブロック

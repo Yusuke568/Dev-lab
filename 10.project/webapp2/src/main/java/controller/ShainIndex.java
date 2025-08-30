@@ -41,7 +41,7 @@ public class ShainIndex extends HttpServlet {
 			//社員リストを取得
 			ArrayList<ShainBean> shainList = shainLogic.getAllShain();
 			// 社員リストをセットする
-			//request.setAttribute("shainList", shainList);
+			request.setAttribute("shainList", shainList);
 			// index.jspへ転送
 			request.getRequestDispatcher("/WEB-INF/view/login.jsp").forward(request, response);
 			

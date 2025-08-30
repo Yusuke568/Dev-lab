@@ -1,6 +1,8 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
 	pageEncoding="UTF-8"%>
 <%@page import="beans.*"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -25,44 +27,45 @@
 </style>
 </head>
 
-<%-- shainBeanから社員情報を取得する --%>
-<%
-ShainBean shainBean = (ShainBean)request.getAttribute("shainBean");
-%>
-
 <body>
 	<h1>社員削除画面</h1>
 	<form action="ShainDeleteComplete" method="post">
 		<table class="form-table">
 			<tr>
 				<td><label for="id">ID:</label></td>
-				<td><%=shainBean.getId() %></td>
+				<td>${shainBean.id}</td>
 			</tr>
 			<tr>
 				<td><label for="name">名前:</label></td>
-				<td><%=shainBean.getName() %></td>
+				<td>${shainBean.name}</td>
 			</tr>
 			<tr>
-				<td><label for="sei">姓:</label></td>
-				<td><%=shainBean.getSei() %></td>
+				<td><label for="namekana">カナ氏名:</label></td>
+				<td>${shainBean.namekana}</td>
 			</tr>
 			<tr>
-				<td><label for="nen">年:</label></td>
-				<td><%=shainBean.getNen() %>
+				<td><label for="entryyear">入社年:</label></td>
+				<td>${shainBean.entryyear}</td>
 			</tr>
 			<tr>
-				<td><label for="address">住所:</label></td>
-				<td><%=shainBean.getAddress() %>
+				<td><label for="gender">性別:</label></td>
+				<td>${shainBean.gender}</td>
+			</tr>
+			<tr>
+				<td><label for="jobclass">役職:</label></td>
+				<td>${shainBean.jobclass}</td>
 			</tr>
 		</table>
 		<button type="submit" class="form-button">削除</button>
+		<button type="button" class="form-button"
+			onclick="location.href='ShainList'">キャンセル</button>
 
-
-		<input type="hidden" name="id" value="<%=shainBean.getId()%>">
-		<input type="hidden" name="name" value="<%=shainBean.getName()%>">
-		<input type="hidden" name="sei" value="<%=shainBean.getSei()%>">
-		<input type="hidden" name="nen" value="<%=shainBean.getNen()%>">
-		<input type="hidden" name="address" value="<%=shainBean.getAddress()%>">
+		<input type="hidden" name="id" value="${shainBean.id}"> 
+		<input type="hidden" name="name" value="${shainBean.name}">
+		<input type="hidden" name="namekana" value="${shainBean.namekana}">
+		<input type="hidden" name="entryyear" value="${shainBean.entryyear}">
+		<input type="hidden" name="gender" value="${shainBean.gender}">
+		<input type="hidden" name="jobclass" value="${shainBean.jobclass}">
 	</form>
 </body>
 </html>

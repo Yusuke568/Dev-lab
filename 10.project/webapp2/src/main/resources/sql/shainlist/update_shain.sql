@@ -1,0 +1,1 @@
+update STAFF_TABLE set name=?, NAMEKANA=?, ENTRY_YEAR=?,GENDER=?, CLASS_ID=(select CLASS_ID from class_master where NAME =?) where id=?;

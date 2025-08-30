@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE Context>
 <Context reloadable="true">
-	<Resource name="jdbc/sample"
+	<Resource name="jdbc/kintai"
 		auth="Container"
 		type="javax.sql.DataSource"
 		driverClassName="com.mysql.cj.jdbc.Driver"
-		url="jdbc:mysql://localhost:3306/company?serverTimezone=Asia/Tokyo&amp;characterEncoding=UTF-8"
-		username="suser"
-		password="spass"
+		url="jdbc:mysql://localhost:3306/kintai?serverTimezone=Asia/Tokyo&amp;characterEncoding=UTF-8"
+		username="kintai"
+		password="kintai"
 		maxTotal="100"
 		maxIdle="30"
 		maxWaitMillis="10000"

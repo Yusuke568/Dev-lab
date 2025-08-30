@@ -1,0 +1,8 @@
+select 
+ID
+,NAME
+,NAMEKANA
+,ENTRY_YEAR
+,GENDER
+,(select NAME from class_master where CLASS_ID = ID) AS JOBCLASS
+from STAFF_TABLE;

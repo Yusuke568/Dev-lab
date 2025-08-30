@@ -12,7 +12,7 @@ public class ConnectionBase {
 	
 	public static Connection getConnection() throws SQLException, NamingException {
 		//String localName = "java:comp/env/jdbc/searchman";
-		String localName = "java:comp/env/jdbc/sample";
+		String localName = "java:comp/env/jdbc/kintai";
 		// コンテキストの生成
 		Context context = new InitialContext();
 		// コンテキストを検索

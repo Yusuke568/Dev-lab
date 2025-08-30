@@ -45,7 +45,7 @@ public class ShainDelete extends HttpServlet {
 			request.setAttribute("shainBean", shainBean);
 			
 			// delete.jspへ転送
-			request.getRequestDispatcher("/WEB-INF/view/delete.jsp").forward(request, response);
+			request.getRequestDispatcher("/WEB-INF/view/shaindelete.jsp").forward(request, response);
 			
 		} catch (SQLException | NamingException e) {
 			// TODO 自動生成された catch ブロック

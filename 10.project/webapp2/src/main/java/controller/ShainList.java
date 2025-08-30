@@ -43,7 +43,7 @@ public class ShainList extends HttpServlet {
 			// 社員リストをセットする
 			request.setAttribute("shainList", shainList);
 			// index.jspへ転送
-			request.getRequestDispatcher("/WEB-INF/view/index.jsp").forward(request, response);
+			request.getRequestDispatcher("/WEB-INF/view/shainlist.jsp").forward(request, response);
 			
 		} catch (SQLException | NamingException e) {
 			// TODO 自動生成された catch ブロック

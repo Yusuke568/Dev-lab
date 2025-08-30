@@ -2,6 +2,8 @@ package controller;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.naming.NamingException;
 import javax.servlet.ServletException;
@@ -44,8 +46,14 @@ public class ShainUpdate extends HttpServlet {
 			// 更新社員をセットする
 			request.setAttribute("shainBean", shainBean);
 			
+			//役職リストを作成 //TODO；データベースから参照させる
+			List<String> jobList = new ArrayList<>();
+			jobList.add("一般");
+			jobList.add("TEST");
+			
+			request.setAttribute("jobclassList", jobList);
 			// update.jspへ転送
-			request.getRequestDispatcher("/WEB-INF/view/update.jsp").forward(request, response);
+			request.getRequestDispatcher("/WEB-INF/view/shainupdate.jsp").forward(request, response);
 			
 		} catch (SQLException | NamingException e) {
 			// TODO 自動生成された catch ブロック

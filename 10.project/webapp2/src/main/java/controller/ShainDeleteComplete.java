@@ -41,7 +41,7 @@ public class ShainDeleteComplete extends HttpServlet {
 			shainLogic.deleteShain(Integer.parseInt(request.getParameter("id")));
 			
 			// ShainIndexにリダイレクト
-			response.sendRedirect("ShainIndex");
+			response.sendRedirect("ShainList");
 			
 		} catch (SQLException | NamingException e) {
 			// TODO 自動生成された catch ブロック

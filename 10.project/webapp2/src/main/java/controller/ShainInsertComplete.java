@@ -37,7 +37,6 @@ public class ShainInsertComplete extends HttpServlet {
 		
 		//社員Beanを作成
 		ShainLogic shainLogic = new ShainLogic();
-
 		
 		try {
 			//社員Beanを作成

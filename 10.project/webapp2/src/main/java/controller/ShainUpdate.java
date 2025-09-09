@@ -12,7 +12,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import beans.ClassmasterBean;
 import beans.ShainBean;
+import model.ClassmasterLogic;
 import model.ShainLogic;
 
 /**
@@ -46,12 +48,15 @@ public class ShainUpdate extends HttpServlet {
 			// 更新社員をセットする
 			request.setAttribute("shainBean", shainBean);
 			
-			//役職リストを作成 //TODO；データベースから参照させる
-			List<String> jobList = new ArrayList<>();
-			jobList.add("一般");
-			jobList.add("TEST");
+			//役職リストを作成 
+			List<ClassmasterBean> jobList = new ArrayList<>();
+			ClassmasterLogic logic = new ClassmasterLogic();
 			
+			//リストを取得
+			jobList =logic.getAllClassmaster();
+			// リストをセットする
 			request.setAttribute("jobclassList", jobList);
+			
 			// update.jspへ転送
 			request.getRequestDispatcher("/WEB-INF/view/shainupdate.jsp").forward(request, response);
 			

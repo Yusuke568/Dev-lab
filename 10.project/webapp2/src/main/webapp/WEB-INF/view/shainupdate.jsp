@@ -62,8 +62,8 @@
 				<td><select id="jobclass" name="jobclass" class="form-input"
 					required>
 						<c:forEach var="job" items="${jobclassList}">
-							<option value="${job}"
-								${shainBean.jobclass == job ? 'selected' : ''}>${job}</option>
+							<option value="${job.name}"
+								${shainBean.jobclass == job.name ? 'selected' : ''}>${job.name}</option>
 						</c:forEach>
 				</select></td>
 			</tr>

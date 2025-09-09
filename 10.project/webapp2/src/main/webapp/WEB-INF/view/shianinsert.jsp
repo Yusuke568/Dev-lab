@@ -63,8 +63,8 @@
 				<td><label for="jobclass">役職:</label></td>
 				<td><select id="jobclass" name="jobclass" class="form-input" required>
 						<option value="">選択してください</option>
-						<c:forEach var="jobclass" items="${jobclassList}">
-							<option value="${jobclass}">${jobclass}</option>
+						<c:forEach var="jobclass" items="${jobList}">
+							<option value="${jobclass.name}">${jobclass.name}</option>
 						</c:forEach>
 				</select></td>
 			</tr>

@@ -1,15 +1,20 @@
 package controller;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.time.Year;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.naming.NamingException;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import beans.ClassmasterBean;
+import model.ClassmasterLogic;
 
 /**
  * Servlet implementation class ShainInsert
@@ -37,20 +42,40 @@ public class ShainInsert extends HttpServlet {
 		for(int year = currentYear;year > currentYear - 150; year--) {
 			yearList.add(year);
 		}
-		//役職リストを作成 //TODO；データベースから参照させる
-		List<String> jobList = new ArrayList<>();
-		jobList.add("一般");
-		jobList.add("TEST");
-		
+		//役職リストを作成 
+		List<ClassmasterBean> jobList = new ArrayList<>();
+		ClassmasterLogic logic = new ClassmasterLogic();
 		
 		int nextID = 2;
 		
-		request.setAttribute("yearList", yearList);
-		request.setAttribute("jobclassList", jobList);
-		request.setAttribute("nextID", nextID);
+		try {
+			//リストを取得
+			jobList =logic.getAllClassmaster();
+			// リストをセットする
+			request.setAttribute("jobList", jobList);
+			
+			request.setAttribute("yearList", yearList);
+			request.setAttribute("jobList", jobList);
+			request.setAttribute("nextID", nextID);
+			
+			// insert.jspへ転送
+			request.getRequestDispatcher("/WEB-INF/view/shianinsert.jsp").forward(request, response);	
+			
+		} catch (SQLException | NamingException e) {
+			// TODO 自動生成された catch ブロック
+			e.printStackTrace();
+			//エラーページへ転送
+			request.getRequestDispatcher("/WEB-INF/view/error.jsp").forward(request, response);
+		}
+
 		
-		// insert.jspへ転送
-		request.getRequestDispatcher("/WEB-INF/view/shianinsert.jsp").forward(request, response);	}
+		
+		
+
+		
+
+		
+}
 
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)

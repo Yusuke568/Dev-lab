@@ -54,6 +54,30 @@
   </head>
   <body>
     <h1>機能を選択してください</h1>
+        <div class="form-area">
+      <form id="form1" action="ShainKintai" method="get">
+        <label>社員ID：</label>
+        <select name="id">
+          <option value="668">668</option>
+          <option value="669">669</option>
+          <option value="670">670</option>
+        </select>
+
+        <label>年：</label>
+        <select name="year">
+          <option value="2025">2025</option>
+          <option value="2024">2024</option>
+        </select>
+
+        <label>月：</label>
+        <select name="month">
+          <option value="9">9</option>
+          <option value="10">10</option>
+          <option value="11">11</option>
+        </select>
+      </form>
+    </div>
+    
     <div class="menu">
     
 <div class="card" onclick="if(confirm('送信してもよろしいですか？')) document.getElementById('form1').submit();">

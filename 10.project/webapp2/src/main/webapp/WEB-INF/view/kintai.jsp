@@ -72,7 +72,6 @@ th:nth-child(3), td:nth-child(3) {
 } /* 退勤 */
 th:nth-child(4), td:nth-child(4) {
 	width: 30px;
-<<<<<<< HEAD
 }
  /* 退勤 */
 th:nth-child(5), td:nth-child(4) {
@@ -85,15 +84,6 @@ th:nth-child(6), td:nth-child(5){
  /*　備考欄 */
 th:nth-child(7), td:nth-child(6) {
 	width: 50px;
-=======
-} /* 勤務区分 */
-th:nth-child(5), td:nth-child(5){
-	width: 30px;
-}
- /*　備考欄 */
-th:nth-child(6), td:nth-child(6) {
-	width: 70px;
->>>>>>> ef369d98792231d78d6225993f704111cea9ae00
 }
 
 .saturday {
@@ -127,13 +117,11 @@ select {
 			<button id="clock-out-btn" onclick="recordAttendance('退勤')">退勤</button>
 			<p id="overtime-summary">時間外労働: 0時間0分</p>
 		</div>
-<<<<<<< HEAD
 		
 		<div class="save-area">
   <button id="save-btn" onclick="saveAttendance()">保存</button>
 </div>
-=======
->>>>>>> ef369d98792231d78d6225993f704111cea9ae00
+
 	
 		<table id="calendar-log">
 			<thead>
@@ -142,10 +130,7 @@ select {
 					<th>曜日</th>
 					<th>出勤</th>
 					<th>退勤</th>
-<<<<<<< HEAD
 					<th>時間外</th>
-=======
->>>>>>> ef369d98792231d78d6225993f704111cea9ae00
 					<th>勤務区分</th>
 					<th>備考欄</th>
 				</tr>
@@ -155,24 +140,15 @@ select {
 					<tr data-date="${calendarbean.kintaidate}">
 						<td>${calendarbean.kintaidate}</td>
 						<td>${calendarbean.week}</td>
-<<<<<<< HEAD
 						<td data-form="${calendarbean.kintaifrom }">${fn:substring(calendarbean.kintaifrom,0,5) }</td>
 						<td data-to="${calendarbean.kintaito }">${fn:substring(calendarbean.kintaito,0,5) }</td>
 						<td data-jikangai="${calendarbean.jikangai}">${calendarbean.jikangai}</td>
-=======
-						<td data-form="${calendarbean.kintaifrom }">${calendarbean.kintaifrom }</td>
-						<td data-to="${calendarbean.kintaito }">${calendarbean.kintaito }</td>
->>>>>>> ef369d98792231d78d6225993f704111cea9ae00
 						<td><select name="status">
 								<c:forEach var="opt" items="${statusOptions}">
 									<option value="${opt}" ${opt == currentStatus ? 'selected' : ''}>${opt}</option>
 								</c:forEach>
 						</select></td>
-<<<<<<< HEAD
 					<td> ${calendarbean.memo}</td>
-=======
-					<td ${calendarbean.memo}></td>
->>>>>>> ef369d98792231d78d6225993f704111cea9ae00
 					</tr>
 				</c:forEach>
 		</tbody>
@@ -184,7 +160,6 @@ select {
 			</select>
 	<script>
 
-<<<<<<< HEAD
 	function saveAttendance() {
 		  const records = collectAttendanceRecords();
 
@@ -206,8 +181,7 @@ select {
 		  });
 	}
 	
-=======
->>>>>>> ef369d98792231d78d6225993f704111cea9ae00
+
 	
       const workStart = '09:00';
       const workEnd = '18:00';
@@ -216,7 +190,6 @@ select {
 
       function collectAttendanceRecords() {
     	  const records = [];
-<<<<<<< HEAD
     	  const rows = document.querySelectorAll("#calendar-log tbody tr");
 
     	  rows.forEach(row => {
@@ -237,17 +210,6 @@ select {
     	      tekiyoukbn,
     	      memo
     	    });
-=======
-
-    	  rows.forEach((row) => {
-    	    const date = row.dataset.date;
-    	    const week = row.cells[1].innerText.trim();
-    	    const start = row.cells[2].innerText.trim();
-    	    const end = row.cells[3].innerText.trim();
-    	    const memo = row.cells[4].innerText.trim();
-
-    	    records.push({ date, week, start, end, memo });
->>>>>>> ef369d98792231d78d6225993f704111cea9ae00
     	  });
 
     	  return records;
@@ -317,7 +279,6 @@ select {
     	  }
     	}
 
-<<<<<<< HEAD
       function updateOvertimePerRow() {
     	  rows.forEach(row => {
     	    const start = row.cells[2].innerText.trim();
@@ -335,8 +296,6 @@ select {
     	  });
     	}
 
-=======
->>>>>>> ef369d98792231d78d6225993f704111cea9ae00
       //one click
       function updateButtonState() {
     	  const today = new Date().toISOString().slice(0, 10); 
@@ -362,11 +321,8 @@ select {
     	  console.log("attendanceRecords:", attendanceRecords);
     	  console.log("today:", today);
     	  console.log("rec:", rec);
-<<<<<<< HEAD
 
     	  updateOvertimePerRow();
-=======
->>>>>>> ef369d98792231d78d6225993f704111cea9ae00
     	}
 
       //指定した任意のレコードを更新する。
@@ -423,7 +379,6 @@ select {
           if (row.dataset.date === dateStr) {
             if (type === '出勤') {
               row.cells[2].innerText = timeStr; //勤務時間
-<<<<<<< HEAD
               row.cells[2].dataset.form = timeStr; // ← これも追加！
               updateRecord(dateStr, 'kintaifrom', timeStr); // ← 修正！
             } else if (type === '退勤') {
@@ -437,14 +392,6 @@ select {
                 updateRecord(dateStr, 'memo', timeStr); // ← 修正！
               } else {
               row.cells[5].innerText = type; //勤務区分
-=======
-              updateRecord(dateStr, 'start', timeStr);
-            } else if (type === '退勤') {
-              row.cells[3].innerText = timeStr; //退勤時間
-              updateRecord(dateStr, 'end', timeStr);
-            } else {
-              row.cells[4].innerText = type; //勤務区分
->>>>>>> ef369d98792231d78d6225993f704111cea9ae00
               updateRecord(dateStr, 'status', null, type);
             }
             break;
@@ -466,20 +413,13 @@ select {
 
                 
             
-<<<<<<< HEAD
             if (cell.cellIndex === 5) {
-=======
-            if (cell.cellIndex === 4) {
->>>>>>> ef369d98792231d78d6225993f704111cea9ae00
               // 勤務区分セル → プルダウン表示
               const rec = attendanceRecords.find((r) => r.date === date);
               const currentVal = rec?.status || '';
               renderStatusCell(cell, currentVal, date);
-<<<<<<< HEAD
             } else if(cell.cellIndex === 0  || cell.cellIndex === 1 || cell.cellIndex === 4) {
-=======
-            } else if(cell.cellIndex === 0  || cell.cellIndex === 1) {
->>>>>>> ef369d98792231d78d6225993f704111cea9ae00
+
                 
             }
             else{

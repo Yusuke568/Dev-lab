@@ -6,12 +6,10 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.Map;
 
-<<<<<<< HEAD
 import com.example.common.SqlTimeDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-=======
->>>>>>> ef369d98792231d78d6225993f704111cea9ae00
+
 public class CalendarBean {
 
 	private LocalDate kintaidate;
@@ -19,14 +17,10 @@ public class CalendarBean {
 	private boolean isholiday;
 	//勤怠属性(プロパティ)
 	private int id;
-<<<<<<< HEAD
 	private int jikangai;
 	@JsonDeserialize(using = SqlTimeDeserializer.class)
 	private Time kintaifrom;
 	@JsonDeserialize(using = SqlTimeDeserializer.class)
-=======
-	private Time kintaifrom;
->>>>>>> ef369d98792231d78d6225993f704111cea9ae00
 	private Time kintaito;
 	private String tekiyoukbn;
 	private String memo;
@@ -40,15 +34,13 @@ public class CalendarBean {
 			"土", DayOfWeek.SATURDAY,
 			"日", DayOfWeek.SUNDAY);
 
-<<<<<<< HEAD
 	public int getJikangai() {
 		return jikangai;
 	}
 	public void setJikangai(int jikangai) {
 		this.jikangai = jikangai;
 	}
-=======
->>>>>>> ef369d98792231d78d6225993f704111cea9ae00
+
 	public LocalDate getKintaidate() {
 		return kintaidate;
 	}

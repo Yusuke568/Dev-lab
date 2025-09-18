@@ -6,7 +6,15 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+<<<<<<< HEAD
+import java.sql.Timestamp;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+=======
+import java.time.LocalDate;
+>>>>>>> ef369d98792231d78d6225993f704111cea9ae00
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -94,6 +102,27 @@ public class KintaiLogic {
 
 	//勤怠情報を登録
 	public void insertKintai(CalendarBean kintaiBean) throws SQLException, NamingException, IOException {
+<<<<<<< HEAD
+
+		Timestamp jobFromTime = null;
+		if (kintaiBean.getKintaifrom() != null) {
+		    LocalDate fixedDate = LocalDate.of(2000, 1, 1);
+		    LocalTime fromLocalTime = kintaiBean.getKintaifrom().toLocalTime();
+		    LocalDateTime fromDateTime = LocalDateTime.of(fixedDate, fromLocalTime);
+		    jobFromTime = Timestamp.valueOf(fromDateTime);
+		}
+
+		// 勤怠TO時間
+		Timestamp jobToTime = null;
+		if (kintaiBean.getKintaito() != null) {
+		    LocalDate fixedDate = LocalDate.of(2000, 1, 1);
+		    LocalTime toLocalTime = kintaiBean.getKintaito().toLocalTime();
+		    LocalDateTime toDateTime = LocalDateTime.of(fixedDate, toLocalTime);
+		    jobToTime = Timestamp.valueOf(toDateTime);
+		}
+		
+=======
+>>>>>>> ef369d98792231d78d6225993f704111cea9ae00
 		//社員を登録するSQL
 		String sql =  MyUtil.loadSqlFromClasspath("sql/kintai/inset_staff_work.sql");
 		
@@ -102,9 +131,59 @@ public class KintaiLogic {
 			//パラメータをSQLにセット
 			pstmt.setInt(1, kintaiBean.getId());
 			pstmt.setDate(2, Date.valueOf(kintaiBean.getKintaidate()));
+<<<<<<< HEAD
+			pstmt.setString(3, String.valueOf(kintaiBean.getWeek()));
+			pstmt.setTimestamp(4,jobFromTime);
+			pstmt.setTimestamp(5, jobToTime);
+			pstmt.setInt(6, kintaiBean.getJikangai());
+			pstmt.setString(7, kintaiBean.getTekiyoukbn());
+			//SQL文を表示
+			System.out.println(pstmt.toString());
+			//SQL実行
+			pstmt.executeUpdate();
+		}
+	}
+	
+	
+	//勤怠情報を更新
+	public void updatetKintai(CalendarBean kintaiBean) throws SQLException, NamingException, IOException {
+
+		Timestamp jobFromTime = null;
+		if (kintaiBean.getKintaifrom() != null) {
+		    LocalDate fixedDate = LocalDate.of(2000, 1, 1);
+		    LocalTime fromLocalTime = kintaiBean.getKintaifrom().toLocalTime();
+		    LocalDateTime fromDateTime = LocalDateTime.of(fixedDate, fromLocalTime);
+		    jobFromTime = Timestamp.valueOf(fromDateTime);
+		}
+
+		// 勤怠TO時間
+		Timestamp jobToTime = null;
+		if (kintaiBean.getKintaito() != null) {
+		    LocalDate fixedDate = LocalDate.of(2000, 1, 1);
+		    LocalTime toLocalTime = kintaiBean.getKintaito().toLocalTime();
+		    LocalDateTime toDateTime = LocalDateTime.of(fixedDate, toLocalTime);
+		    jobToTime = Timestamp.valueOf(toDateTime);
+		}
+		
+		//社員を登録するSQL
+		String sql =  MyUtil.loadSqlFromClasspath("sql/kintai/update_staff_work.sql");
+		
+		try (Connection con = ConnectionBase.getConnection();
+				PreparedStatement pstmt = con.prepareStatement(sql);) {
+			//パラメータをSQLにセット
+			pstmt.setTimestamp(1,jobFromTime);
+			pstmt.setTimestamp(2, jobToTime);
+			pstmt.setInt(3, kintaiBean.getJikangai());
+			pstmt.setString(4, kintaiBean.getTekiyoukbn());
+			pstmt.setString(5, kintaiBean.getMemo());
+			
+			pstmt.setInt(6, kintaiBean.getId());
+			pstmt.setDate(7, Date.valueOf(kintaiBean.getKintaidate()));
+=======
 			pstmt.setTime(3, kintaiBean.getKintaifrom());
 			pstmt.setTime(4, kintaiBean.getKintaito());
 			pstmt.setString(5, kintaiBean.getTekiyoukbn());
+>>>>>>> ef369d98792231d78d6225993f704111cea9ae00
 			//SQL文を表示
 			System.out.println(pstmt.toString());
 			//SQL実行
@@ -142,9 +221,17 @@ public class KintaiLogic {
 				//値を設定
 				calenderbean.setId(rs.getInt("STAFF_ID"));
 				calenderbean.setKintaidate(rs.getDate("WORK_DATE"));
+<<<<<<< HEAD
+				calenderbean.setWeek(DayOfWeek.valueOf(rs.getString("WORK_WEEK")));
 				calenderbean.setKintaifrom(rs.getTime("JOB_FROM_TIME"));
 				calenderbean.setKintaito(rs.getTime("JOB_TO_TIME"));
 				calenderbean.setTekiyoukbn(rs.getString("ABSTRACT_ID"));
+				calenderbean.setJikangai(rs.getInt("OVERTIME"));
+=======
+				calenderbean.setKintaifrom(rs.getTime("JOB_FROM_TIME"));
+				calenderbean.setKintaito(rs.getTime("JOB_TO_TIME"));
+				calenderbean.setTekiyoukbn(rs.getString("ABSTRACT_ID"));
+>>>>>>> ef369d98792231d78d6225993f704111cea9ae00
 				System.out.println(calenderbean.getKintaifrom());
 				System.out.println(calenderbean.getKintaito());
 				kintaiList.add(calenderbean);

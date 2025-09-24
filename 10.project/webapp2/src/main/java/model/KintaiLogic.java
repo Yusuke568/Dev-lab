@@ -209,12 +209,17 @@ public class KintaiLogic {
 				calenderbean.setId(rs.getInt("STAFF_ID"));
 				calenderbean.setKintaidate(rs.getDate("WORK_DATE"));
 				calenderbean.setWeek(DayOfWeek.valueOf(rs.getString("WORK_WEEK")));
+				//calenderbean.setCorrectionid(rs.getInt("CORRECTION_ID"));
 				calenderbean.setKintaifrom(rs.getTime("JOB_FROM_TIME"));
 				calenderbean.setKintaito(rs.getTime("JOB_TO_TIME"));
-				calenderbean.setTekiyoukbn(rs.getString("ABSTRACT_ID"));
+				//calenderbean.setCorrectionustime(rs.getInt("CORRECTION_US_TIME"));
+				//calenderbean.setCorrectionmidtime(rs.getInt("CORRECTION_MID_TIME"));
+				//calenderbean.setIndirecttime(rs.getInt("INDIRECT_TIME"));
+				//calenderbean.setTotalworktime(rs.getInt("TOTAL_WORK_TIME"));
+				//calenderbean.setTotaldirectworktime(rs.getInt("TOTAL_DIRECT_WORK_TIME"));
 				calenderbean.setJikangai(rs.getInt("OVERTIME"));
-				System.out.println(calenderbean.getKintaifrom());
-				System.out.println(calenderbean.getKintaito());
+				calenderbean.setTekiyoukbn(rs.getString("ABSTRACT_ID"));
+				calenderbean.setMemo(rs.getString("REMARKS"));
 				kintaiList.add(calenderbean);
 			}
 		}

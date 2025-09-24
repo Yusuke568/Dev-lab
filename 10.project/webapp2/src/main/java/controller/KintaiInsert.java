@@ -45,6 +45,8 @@ public class KintaiInsert extends HttpServlet {
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
+		request.setCharacterEncoding("UTF-8");
+		
 		StringBuilder jsonBuffer = new StringBuilder();
 		String line;
 		while ((line = request.getReader().readLine()) != null) {

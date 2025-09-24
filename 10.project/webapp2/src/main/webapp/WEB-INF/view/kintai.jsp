@@ -145,7 +145,7 @@ select {
 						<td data-jikangai="${calendarbean.jikangai}">${calendarbean.jikangai}</td>
 						<td><select name="status">
 								<c:forEach var="opt" items="${statusOptions}">
-									<option value="${opt}" ${opt == currentStatus ? 'selected' : ''}>${opt}</option>
+									<option value="${opt.name}" ${opt.name == currentStatus ? 'selected' : ''}>${opt.name}</option>
 								</c:forEach>
 						</select></td>
 					<td> ${calendarbean.memo}</td>
@@ -155,10 +155,12 @@ select {
 		</table>
 			<select id="status-template" style="display: none;">
 				<c:forEach var="opt" items="${statusOptions}">
-					<option value="${opt}">${opt}</option>
+					<option value="${opt.name}">${opt.name}</option>
 				</c:forEach>
 			</select>
 	<script>
+
+	const statusOptions = JSON.parse('${statusOptionsJson}');
 
 	function saveAttendance() {
 		  const records = collectAttendanceRecords();
@@ -195,18 +197,27 @@ select {
     	  rows.forEach(row => {
     	    const kintaidate = row.dataset.date;
     	    const week = row.querySelector("td:nth-child(2)").textContent.trim();
-    	    const kintaifrom = row.querySelector("td:nth-child(3)").dataset.form;
-    	    const kintaito = row.querySelector("td:nth-child(4)").dataset.to;
-    	    const jikangai = row.querySelector("td:nth-child(5)").dataset.jikangai;
+    	    // ★ dataset から innerText に変更！
+    	    const kintaifrom = row.querySelector("td:nth-child(3)").innerText.trim();
+    	    const kintaito = row.querySelector("td:nth-child(4)").innerText.trim();
+
+    	    const jikangaiStr = row.querySelector("td:nth-child(5)").innerText.trim(); // "01:30"
     	    const tekiyoukbn = row.querySelector("select[name='status']").value;
     	    const memo = row.querySelector("td:nth-child(7)").textContent.trim();
+
+    	    // ★ 文字列 "01:30" → 分数（例：90）
+    	    let jikangai = 0;
+    	    if (jikangaiStr) {
+    	      const [h, m] = jikangaiStr.split(':').map(Number);
+    	      jikangai = h * 60 + m;
+    	    }
 
     	    records.push({
     	      kintaidate,
     	      week,
     	      kintaifrom,
     	      kintaito,
-    	      jikangai,
+    	      jikangai, // ← 数値で送信
     	      tekiyoukbn,
     	      memo
     	    });
@@ -214,7 +225,7 @@ select {
 
     	  return records;
     	}
-    	      
+  
 
       //TODO:外部から参照する
       const holidays = ["2025-09-15", "2025-09-23"];
@@ -264,10 +275,12 @@ select {
     	  const attendanceRecords = collectAttendanceRecords();
 
     	  attendanceRecords.forEach((r) => {
-    	    if (r.start && r.end) {
-    	      total += calculateOvertime(r.start, r.end);
+    	    if (r.kintaifrom && r.kintaito) {
+    	      total += calculateOvertime(r.kintaifrom, r.kintaito);
     	    }
     	  });
+
+    	  console.log("total:", total);
 
     	  const summaryEl = document.getElementById('overtime-summary');
     	  if (summaryEl) {
@@ -300,13 +313,13 @@ select {
       function updateButtonState() {
     	  const today = new Date().toISOString().slice(0, 10); 
     	  const attendanceRecords = collectAttendanceRecords();
-    	  const rec = attendanceRecords.find((r) => r.date === today);
+    	  const rec = attendanceRecords.find((r) => r.kintaidate === today);
 
     	  const clockInBtn = document.getElementById('clock-in-btn');
     	  const clockOutBtn = document.getElementById('clock-out-btn');
 
-    	  const isClockedIn = !!rec?.start;
-    	  const isClockedOut = !!rec?.end;
+    	  const isClockedIn = !!rec?.kintaifrom;
+    	  const isClockedOut = !!rec?.kintaito;
 
     	  // 出勤ボタンの状態
     	  clockInBtn.disabled = isClockedIn;
@@ -367,43 +380,117 @@ select {
     	}
 
       function recordAttendance(type) {
-        const now = new Date();
-        const dateStr = new Date().toISOString().slice(0, 10); // "2025-09-04"
+    	  const now = new Date();
+    	  const dateStr = now.toISOString().slice(0, 10);
 
-        const timeStr = now.toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-        });
+    	  const timeStr = now.toLocaleTimeString([], {
+    	    hour: '2-digit',
+    	    minute: '2-digit',
+    	  });
 
-        for (const row of rows) {
-          if (row.dataset.date === dateStr) {
-            if (type === '出勤') {
-              row.cells[2].innerText = timeStr; //勤務時間
-              row.cells[2].dataset.form = timeStr; // ← これも追加！
-              updateRecord(dateStr, 'kintaifrom', timeStr); // ← 修正！
-            } else if (type === '退勤') {
-              row.cells[3].innerText = timeStr; //退勤時間
-              row.cells[3].dataset.to = timeStr; // ← これも追加！
-              updateRecord(dateStr, 'kintaito', timeStr); // ← 修正！
-            } 
-            else if (type === '備考欄') {
-                row.cells[6].innerText = timeStr; //退勤時間
-                row.cells[6].dataset.to = timeStr; // ← これも追加！
-                updateRecord(dateStr, 'memo', timeStr); // ← 修正！
-              } else {
-              row.cells[5].innerText = type; //勤務区分
-              updateRecord(dateStr, 'status', null, type);
-            }
-            break;
-          }
-        }
-        updateOvertimeSummary();
-        updateButtonState();
-      }
+    	  for (const row of rows) {
+    	    if (row.dataset.date === dateStr) {
+    	      switch (type) {
+    	        case '出勤':
+    	          row.cells[2].innerText = timeStr;
+    	          row.cells[2].dataset.form = timeStr;
+    	          updateRecord(dateStr, 'kintaifrom', timeStr);
+    	          break;
 
+    	        case '退勤':
+    	          row.cells[3].innerText = timeStr;
+    	          row.cells[3].dataset.to = timeStr;
+    	          updateRecord(dateStr, 'kintaito', timeStr);
+    	          break;
+
+    	        case '備考欄':
+    	          row.cells[6].innerText = type;
+    	          row.cells[6].dataset.memo = type;
+    	          updateRecord(dateStr, 'memo', type);
+    	          break;
+
+    	        default:
+    	          // 勤務区分を設定
+    	          row.cells[5].innerText = type;
+    	          updateRecord(dateStr, 'status', null, type);
+    	          break;
+    	      }
+    	      break; // 対象の日付の行が見つかったのでループを抜ける
+    	    }
+    	  }
+
+    	  updateOvertimeSummary();
+    	  updateButtonState();
+    	}
+
+      document.addEventListener('DOMContentLoaded', () => {
+    	  const rows = document.querySelectorAll("#calendar-log tbody tr");
+    	  const holidays = ["2025-09-15", "2025-09-23"];
+    	  const holidayOption = statusOptions.find(opt => opt.name === "休日");
+    	  const holidayValue = holidayOption ? holidayOption.name : null;
+
+    	  if (!holidayValue) {
+    	    console.warn("休日の区分が見つかりませんでした！");
+    	    return;
+    	  }
+
+    	  rows.forEach(row => {
+    	    const date = row.dataset.date;
+    	    const weekText = row.cells[1].innerText.trim();
+    	    const select = row.querySelector("select[name='status']");
+
+    	    const isSaturday = weekText === "SATURDAY";
+    	    const isSunday = weekText === "SUNDAY";
+    	    const isHoliday = holidays.includes(date);
+
+    	    if ((isSaturday || isSunday || isHoliday) && select) {
+    	      // ① 見た目を変更
+    	      select.value = holidayValue;
+
+    	      // ② データにも反映
+    	      const rec = attendanceRecords.find(r => r.kintaidate === date);
+    	      if (rec) {
+    	        rec.status = holidayValue;
+    	      }
+    	    }
+    	  });
+    	});
+
+  	
       document.addEventListener('DOMContentLoaded', () => {
         const table = document.getElementById('calendar-log');
         const attendanceRecords = collectAttendanceRecords();
+
+        const rows = document.querySelectorAll("#calendar-log tbody tr");
+  	  const holidays = ["2025-09-15", "2025-09-23"];
+  	  const holidayOption = statusOptions.find(opt => opt.name === "休日");
+  	  const holidayValue = holidayOption ? holidayOption.name : null;
+
+  	  if (!holidayValue) {
+  	    console.warn("休日の区分が見つかりませんでした！");
+  	    return;
+  	  }
+
+  	  rows.forEach(row => {
+  	    const date = row.dataset.date;
+  	    const weekText = row.cells[1].innerText.trim();
+  	    const select = row.querySelector("select[name='status']");
+
+  	    const isSaturday = weekText === "SATURDAY";
+  	    const isSunday = weekText === "SUNDAY";
+  	    const isHoliday = holidays.includes(date);
+
+  	    if ((isSaturday || isSunday || isHoliday) && select) {
+  	      // ① 見た目を変更
+  	      select.value = holidayValue;
+
+  	      // ② データにも反映
+  	      const rec = attendanceRecords.find(r => r.kintaidate === date);
+  	      if (rec) {
+  	        rec.status = holidayValue;
+  	      }
+  	    }
+  	  });     	        
 
         table.addEventListener('click', (e) => {
           const cell = e.target;
@@ -415,7 +502,7 @@ select {
             
             if (cell.cellIndex === 5) {
               // 勤務区分セル → プルダウン表示
-              const rec = attendanceRecords.find((r) => r.date === date);
+              const rec = attendanceRecords.find((r) => r.kintaidate === date);
               const currentVal = rec?.status || '';
               renderStatusCell(cell, currentVal, date);
             } else if(cell.cellIndex === 0  || cell.cellIndex === 1 || cell.cellIndex === 4) {
@@ -433,14 +520,23 @@ select {
               input.focus();
 
               input.addEventListener('blur', () => {
-                const newVal = input.value || original;
-                cell.innerText = newVal;
-                const rec = attendanceRecords.find((r) => r.date === date);
-                if (rec) {
-                  if (cell.cellIndex === 2) rec.start = newVal;
-                  if (cell.cellIndex === 3) rec.end = newVal;
-                  console.log("attendanceRecords:", attendanceRecords);
-                }
+            	  const newVal = input.value || original;
+            	  cell.innerText = newVal;
+            	  const rec = attendanceRecords.find((r) => r.date === date);
+            	  if (rec) {
+            	    if (cell.cellIndex === 2) {
+            	      rec.kintaifrom = newVal;
+            	      row.cells[2].dataset.form = newVal;  // ← これを追加
+            	    }
+            	    if (cell.cellIndex === 3) {
+            	      rec.kintaito = newVal;
+            	      row.cells[3].dataset.to = newVal;    // ← これを追加
+            	    }
+            	    if (cell.cellIndex === 6) {
+            	      rec.memo = newVal;
+            	      row.cells[6].dataset.memo = newVal;  // ← 任意（使用していれば）
+            	    }
+            	  }
                 updateOvertimeSummary();
                 updateButtonState();
               });
@@ -454,6 +550,7 @@ select {
 
         const today = new Date();
         updateButtonState();
+        updateOvertimeSummary();
       });
     </script>
 </body>

@@ -5,9 +5,11 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Method;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.List;
 
 public class MyUtil {
 	
@@ -32,5 +34,40 @@ public class MyUtil {
 	        return sb.toString();
 	    }
 	}
+	
+	public static StringBuilder getJsonString(List<?> beanList, String... keys) {
+	    StringBuilder json = new StringBuilder("[");
+	    for (int i = 0; i < beanList.size(); i++) {
+	        Object bean = beanList.get(i);
+	        json.append("{");
+	        for (int j = 0; j < keys.length; j++) {
+	            String key = keys[j];
+	            try {
+	                Method method = bean.getClass().getMethod("get" + capitalize(key));
+	                Object value = method.invoke(bean);
+	                json.append("\"").append(key).append("\":\"").append(value).append("\"");
+	            } catch (Exception e) {
+	                json.append("\"").append(key).append("\":\"\"");
+	            }
+	            if (j < keys.length - 1) {
+	                json.append(",");
+	            }
+	        }
+	        json.append("}");
+	        if (i < beanList.size() - 1) {
+	            json.append(",");
+	        }
+	    }
+	    json.append("]");
+	    return json;
+	}
+
+	private static String capitalize(String str) {
+	    if (str == null || str.isEmpty()) return str;
+	    return str.substring(0, 1).toUpperCase() + str.substring(1);
+	}
+
+
+
 
 }

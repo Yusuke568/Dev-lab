@@ -12,7 +12,11 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.example.common.MyUtil;
+
+import beans.AbstractBean;
 import beans.CalendarBean;
+import model.AbstractLogic;
 import model.ConnectionBase;
 import model.KintaiLogic;
 
@@ -36,7 +40,9 @@ public class ShainKintai extends HttpServlet{
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		KintaiLogic kintailogic = new KintaiLogic();
+		AbstractLogic abstractlogic = new AbstractLogic();
 		List<CalendarBean> calendarBeanList = null;
+		List<AbstractBean> abstractBeanList = null;
 		
 		
 	    // パラメータ取得
@@ -44,15 +50,22 @@ public class ShainKintai extends HttpServlet{
 	    int year = Integer.parseInt(request.getParameter("year"));
 	    int month = Integer.parseInt(request.getParameter("month"));
 	    
+	    
+	    try {
+			abstractBeanList = abstractlogic.getabstract();
+		} catch (SQLException | NamingException | IOException e1) {
+			// TODO 自動生成された catch ブロック
+			e1.printStackTrace();
+		}
+	    
 		try (Connection con = ConnectionBase.getConnection()) {
-			//対象社員の勤怠情報がない場合
+			//対象社員の対象月勤怠情報がない場合
 			if(kintailogic.isStaffidwork(id) == -1) {
 				
 				calendarBeanList = kintailogic.generateCalendar(id,year, month);
 				
 				con.setAutoCommit(false);
 			    for (CalendarBean bean : calendarBeanList) {
-			        // ここで各 bean に対して処理を書く
 						kintailogic.insertKintai(bean);
 			    }
 			    con.commit();
@@ -67,17 +80,15 @@ public class ShainKintai extends HttpServlet{
 			e.printStackTrace();
 		}
 
+		//JSP用
 		request.setAttribute("calendarBeanList", calendarBeanList);
+		request.setAttribute("statusOptions", abstractBeanList);
 		
-		request.setAttribute("statusOptions",new String[] {
-			    "通常勤務",
-			    "有給",
-			    "欠勤",
-			    "振替",
-			    "時短",
-			    "その他"
-			} );
-		// kintai.jspへ転送
+		//javascript用
+		StringBuilder json = MyUtil.getJsonString(abstractBeanList, "name");
+		request.setAttribute("statusOptionsJson", json.toString());
+		
+		// 転送
 		request.getRequestDispatcher("/WEB-INF/view/kintai.jsp").forward(request, response);	}
 	
 	/**

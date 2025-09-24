@@ -9,7 +9,7 @@ SET
     TOTAL_WORK_TIME = null,
     TOTAL_DIRECT_WORK_TIME = null,
     OVERTIME = ?,
-    ABSTRACT_ID = (SELECT ID FROM class_master WHERE NAME = ?),
+    ABSTRACT_ID = (SELECT ID FROM abstract_master WHERE NAME = ?),
     REMARKS = ?
 WHERE STAFF_ID = ?
 AND WORK_DATE = ?;

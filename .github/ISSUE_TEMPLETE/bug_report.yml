@@ -1,0 +1,60 @@
+name: 🐛 バグ報告
+description: バグや不具合の報告はこちら
+title: "[BUG] タイトルを入力してください"
+labels: [bug]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ありがとうございます！以下のテンプレートに従って、できるだけ詳しく記入してください。
+
+  - type: input
+    id: summary
+    attributes:
+      label: 概要
+      description: バグの簡単な説明
+      placeholder: 例）ボタンをクリックしても反応しない
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 再現手順
+      description: どのような操作でバグが再現するか、ステップごとに記載してください
+      placeholder: |
+        1. トップページを開く
+        2. 「保存」ボタンをクリック
+        3. エラーメッセージが表示される
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期待される動作
+      placeholder: 正常に保存されて、完了メッセージが出ること
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 環境情報
+      description: OS、ブラウザ、バージョンなど
+      placeholder: |
+        - OS: macOS 13
+        - ブラウザ: Chrome 117
+        - バージョン: v1.2.3
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 補足情報
+      description: スクリーンショットやログなど、任意で追加してください
+    validations:
+      required: false

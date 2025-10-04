@@ -1,6 +1,10 @@
 package model;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -11,49 +15,70 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 import javax.naming.NamingException;
 
 import com.example.common.MyUtil;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import beans.CalendarBean;
 
 
 public class KintaiLogic {
 	
+	/*
+	 * APIより年の祝日リストを取得
+	 * 
+	 */
+	public Map<String, String> fetchHolidaysFromApi(int year) {
+	    Map<String, String> holidays = new HashMap<>();
+	    String apiUrl = "https://holidays-jp.github.io/api/v1/date.json";
+
+	    try {
+	        HttpClient client = HttpClient.newHttpClient();
+	        HttpRequest request = HttpRequest.newBuilder()
+	                .uri(URI.create(apiUrl))
+	                .GET()
+	                .build();
+
+	        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+	        //「APIの通信が成功したかどうか？」をチェックしてるコード 200
+	        if (response.statusCode() == 200) {
+	            ObjectMapper mapper = new ObjectMapper();
+	            Map<String, String> allHolidays = mapper.readValue(response.body(), new TypeReference<>() {});
+
+	            // 指定された年だけフィルタリング（APIはすべての年を返す）
+	            for (Map.Entry<String, String> entry : allHolidays.entrySet()) {
+	                if (entry.getKey().startsWith(String.valueOf(year))) {
+	                    // yyyy-MM-dd → yyyy/MM/dd に変換
+	                    String formattedDate = entry.getKey().replace("-", "/");
+	                    holidays.put(formattedDate, entry.getValue());
+	                }
+	            }
+	        } else {
+	            System.err.println("祝日APIの取得に失敗しました。ステータス: " + response.statusCode());
+	        }
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return holidays;
+	}
+	
 	
 	//指定された年月からカレンダーを作成する。
-	 public List<CalendarBean> generateCalendar(int id,int year, int month) {
-	        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd");
+	 @SuppressWarnings("unlikely-arg-type")
+	public List<CalendarBean> generateCalendar(int id,int year, int month) {
 	        LocalDate date = LocalDate.of(year, month, 1);
 
-	        // TODO:仮の祝日データ（本物はAPIやライブラリで取得可能）
-	        Set<String> holidays = new HashSet<>();
-	        holidays.add("2025/01/01"); // 元日
-	        holidays.add("2025/01/13"); // 成人の日
-	        holidays.add("2025/02/11"); // 建国記念の日
-	        holidays.add("2025/02/23"); // 天皇誕生日
-	        holidays.add("2025/02/24"); // 振替休日
-	        holidays.add("2025/03/20"); // 春分の日
-	        holidays.add("2025/04/29"); // 昭和の日
-	        holidays.add("2025/05/03"); // 憲法記念日
-	        holidays.add("2025/05/04"); // みどりの日
-	        holidays.add("2025/05/05"); // こどもの日
-	        holidays.add("2025/05/06"); // 振替休日
-	        holidays.add("2025/07/21"); // 海の日
-	        holidays.add("2025/08/11"); // 山の日
-	        holidays.add("2025/09/15"); // 敬老の日
-	        holidays.add("2025/09/23"); // 秋分の日
-	        holidays.add("2025/10/13"); // スポーツの日
-	        holidays.add("2025/11/03"); // 文化の日
-	        holidays.add("2025/11/23"); // 勤労感謝の日
-	        holidays.add("2025/11/24"); // 振替休日
-	        holidays.add("2025/12/23"); // 天皇誕生日
+	        // 外部APIから祝日データを取得
+	        Map<String, String> holidays = fetchHolidaysFromApi(year);
 	        
 	        List<CalendarBean> calenderbeanList = new  ArrayList<>();
 
@@ -63,7 +88,7 @@ public class KintaiLogic {
 	        	calenderbaen.setId(id);
 	            calenderbaen.setKintaidate(Date.valueOf(date));
 	            calenderbaen.setWeek(date.getDayOfWeek());
-	            calenderbaen.setIsholiday(holidays.contains(calenderbaen.getKintaidate()));
+	            calenderbaen.setIsholiday(holidays.containsKey(calenderbaen.getKintaidate()));
 	            calenderbeanList.add(calenderbaen);
 	            date = date.plusDays(1);
 	        }

@@ -1,6 +1,6 @@
 name: 機能開発進捗
 description: 機能ごとの製造タスクと進捗を管理するテンプレート
-title: "[Feature Progress]: "
+title: "[Feature Progress]"
 labels: [progress, task]
 assignees: []
 

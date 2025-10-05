@@ -1,60 +1,56 @@
-name: test
-description: バグや不具合の報告はこちら
-title: "[BUG] タイトルを入力してください"
-labels: [bug]
+name: 機能開発進捗
+description: 機能ごとの製造タスクと進捗を管理するテンプレート
+title: "[Feature Progress]: "
+labels: [progress, task]
 assignees: []
 
 body:
-  - type: markdown
-    attributes:
-      value: |
-        ありがとうございます！以下のテンプレートに従って、できるだけ詳しく記入してください。
-
   - type: input
-    id: summary
+    id: feature_name
     attributes:
-      label: 概要
-      description: バグの簡単な説明
-      placeholder: 例）ボタンをクリックしても反応しない
+      label: 機能名
+      description: 開発対象の機能名を書いてください
+      placeholder: 例: ユーザー認証（ログイン機能）
     validations:
       required: true
 
   - type: textarea
-    id: steps
+    id: feature_desc
     attributes:
-      label: 再現手順
-      description: どのような操作でバグが再現するか、ステップごとに記載してください
+      label: 機能の概要
+      description: この機能の概要や目的を簡単に書いてください
+      placeholder: 例: ユーザーがメールアドレスとパスワードでログインできる
+    validations:
+      required: true
+
+  - type: dropdown
+    id: status
+    attributes:
+      label: 現在の進捗ステータス
+      options:
+        - 未着手
+        - 作業中
+        - レビュー待ち
+        - 完了
+    validations:
+      required: true
+
+  - type: textarea
+    id: subtasks
+    attributes:
+      label: サブタスク
+      description: 細かい作業をタスクリスト形式で書いてください
       placeholder: |
-        1. トップページを開く
-        2. 「保存」ボタンをクリック
-        3. エラーメッセージが表示される
-    validations:
-      required: true
-
-  - type: textarea
-    id: expected
-    attributes:
-      label: 期待される動作
-      placeholder: 正常に保存されて、完了メッセージが出ること
-    validations:
-      required: true
-
-  - type: textarea
-    id: environment
-    attributes:
-      label: 環境情報
-      description: OS、ブラウザ、バージョンなど
-      placeholder: |
-        - OS: macOS 13
-        - ブラウザ: Chrome 117
-        - バージョン: v1.2.3
+        - [ ] DB スキーマ設計
+        - [ ] API 実装
+        - [ ] テストコード作成
     validations:
       required: false
 
   - type: textarea
-    id: additional
+    id: notes
     attributes:
-      label: 補足情報
-      description: スクリーンショットやログなど、任意で追加してください
+      label: メモ・補足情報
+      description: 留意点や参考資料、関連する Issue/PR を書いてください
     validations:
       required: false

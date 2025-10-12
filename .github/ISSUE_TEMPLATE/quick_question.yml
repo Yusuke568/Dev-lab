@@ -1,5 +1,5 @@
 name: 💬 気軽な質問
-description: 気軽に質問できるテンプレートです(1-2分で投稿可能)
+description: 気軽に質問できるテンプレートです。
 title: "[質問] "
 labels: ["question", "needs-triage"]
 assignees: []
@@ -10,13 +10,6 @@ body:
       value: |
         ## 軽い質問用テンプレート
         「こんなこと聞いてもいいのかな?」と思うことこそ、ぜひ投稿してください!
-
-        **このテンプレートが適している質問例:**
-        - 既存機能の使い方
-        - コードの意図・設計思想
-        - データベーススキーマの確認
-        - 開発環境・ツールの使い方
-        - 用語・略語の意味
 
   - type: dropdown
     id: category
@@ -67,7 +60,7 @@ body:
     id: searched
     attributes:
       label: 確認事項
-      description: 以下を確認してからチェックしてください(強制ではありません)
+      description: 以下を確認してからチェックしてください。確認したけど分からなかった場合はチェックして質問内容に追加してください。
       options:
         - label: ドキュメント(00.document/)を確認した
           required: false

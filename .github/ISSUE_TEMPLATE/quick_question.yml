@@ -1,0 +1,75 @@
+name: 💬 気軽な質問
+description: 気軽に質問できるテンプレートです(1-2分で投稿可能)
+title: "[質問] "
+labels: ["question", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 軽い質問用テンプレート
+        「こんなこと聞いてもいいのかな?」と思うことこそ、ぜひ投稿してください!
+
+        **このテンプレートが適している質問例:**
+        - 既存機能の使い方
+        - コードの意図・設計思想
+        - データベーススキーマの確認
+        - 開発環境・ツールの使い方
+        - 用語・略語の意味
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: カテゴリ
+      description: 質問の内容に最も近いものを選択してください
+      options:
+        - "💻 実装・コード(Java/JSP/Servlet)"
+        - "🗄️ データベース(MySQL/スキーマ)"
+        - "🎨 画面・UI/UX"
+        - "📋 機能仕様"
+        - "⚙️ 開発環境・ツール"
+        - "📖 ドキュメント・仕様書"
+        - "🔐 セキュリティ・権限"
+        - "🚀 デプロイ・運用"
+        - "❓ その他"
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: 質問内容
+      description: |
+        知りたいこと・困っていることを自由に書いてください。
+        箇条書き・一言でもOKです!
+      placeholder: |
+        例: 
+        - kintai.jspの137行目の処理は何をしているのか?
+        - STAFF_TABLEのDEL_FLAGカラムの仕様は?
+        - 時間外申請(F006)の承認フローはどうなっている?
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 背景・状況(任意)
+      description: |
+        質問の背景や、なぜ知りたいのかを書くと、より的確な回答が得られます。
+        **記載は任意です。**
+      placeholder: |
+        例:
+        - 現在F003(自動時間調整)の実装中で、既存の休憩時間計算ロジックを理解したい
+        - 新規画面を作成中で、既存のセッション管理方法を知りたい
+
+  - type: checkboxes
+    id: searched
+    attributes:
+      label: 確認事項
+      description: 以下を確認してからチェックしてください(強制ではありません)
+      options:
+        - label: ドキュメント(00.document/)を確認した
+          required: false
+        - label: 既存のISSUEを検索した
+          required: false

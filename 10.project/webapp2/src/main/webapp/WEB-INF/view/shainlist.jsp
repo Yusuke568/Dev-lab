@@ -149,7 +149,12 @@
       <h2>社員一覧</h2>
 
       <div class="top-buttons">
-        <button class="btn register">社員を登録する</button>
+		<form action="ShainInsert" method="get" style="margin-left: 10px;">
+			<button type="submit" class="btn register">社員を登録する</button>
+		</form>
+		<form action="ShainMenu" method="get" style="margin-left: 10px;">
+			<button type="submit" class="btn menu">メニューに戻る</button>
+		</form>
       </div>
 
       <table>
@@ -169,29 +174,26 @@
 
 		<c:forEach var="shainBean" items="${shainList}">
 		  <tr>
-		    <td>${shainBean.id}</td>
-		    <td>${shainBean.name}</td>
-		    <td>${shainBean.namekana}</td>
-		    <td>${shainBean.entryyear}</td> 
-		    <td>${shainBean.gender}</td> 
-		    <td>${shainBean.jobclass}</td> 
-		    <td><a href="ShainUpdate?id=${shainBean.id}">変更</a></td>
-		    <td><a href="ShainDelete?id=${shainBean.id}">削除</a></td>
+		    <td><c:out value="${shainBean.id}"/></td>
+		    <td><c:out value="${shainBean.name}"/></td>
+		    <td><c:out value="${shainBean.namekana}"/></td>
+		    <td><c:out value="${shainBean.entryyear}"/></td> 
+		    <td><c:out value="${shainBean.gender}"/></td> 
+		    <td><c:out value="${shainBean.jobclass}"/></td> 
+		    <td>
+		    	<a href="<c:url value='ShainUpdate'>
+						<c:param name='id' value='${shainBean.id}'/>
+					</c:url>">変更</a>
+		    </td>
+		    <td>
+		    	<a href="<c:url value='ShainDelete'>
+						<c:param name='id' value='${shainBean.id}'/>
+					</c:url>">削除</a>
+		    </td>
 		  </tr>
 		</c:forEach>
         </tbody>
       </table>
-
-	<p></p>
-	<!-- 「社員を登録する」ボタン -->
-	<form action="ShainInsert">
-		<input type="submit" value="社員を登録する">
-	</form>
-	
-		<!-- 「メニューに戻る」ボタン -->
-	<form action="ShainMenu">
-		<input type="submit" value="メニューに戻る">
-	</form>
     </div>
   </body>
 </html>

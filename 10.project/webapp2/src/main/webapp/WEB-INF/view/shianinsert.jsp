@@ -30,7 +30,7 @@
 		<table class="form-table">
 			<tr>
 				<td><label for="id">社員ID:</label></td>
-				<td><input type="text" name="id" value="${nextId}"></td>
+				<td><input type="text" name="id" value="<c:out value='${nextId}'/>"></td>
 			</tr>
 			<tr>
 				<td><label for="name">名前:</label></td>
@@ -47,7 +47,7 @@
 				<td><select id="entryyear" name="entryyear" class="form-input" required>
 						<option value="">選択してください</option>
 						<c:forEach var="entryyear" items="${yearList}">
-							<option value="${entryyear}">${entryyear}</option>
+							<option value="<c:out value="${entryyear}"/>"><c:out value="${entryyear}"/></option>
 						</c:forEach>
 				</select></td>
 			</tr>
@@ -64,7 +64,7 @@
 				<td><select id="jobclass" name="jobclass" class="form-input" required>
 						<option value="">選択してください</option>
 						<c:forEach var="jobclass" items="${jobList}">
-							<option value="${jobclass.name}">${jobclass.name}</option>
+							<option value="<c:out value="${jobclass.name}"/>"><c:out value="${jobclass.name}"/></option>
 						</c:forEach>
 				</select></td>
 			</tr>

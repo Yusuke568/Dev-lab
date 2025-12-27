@@ -137,30 +137,30 @@ select {
 			</thead>
 			<tbody>
 				<c:forEach var="calendarbean" items="${calendarBeanList}">
-					<tr data-date="${calendarbean.kintaidate}">
-						<td>${calendarbean.kintaidate}</td>
-						<td>${calendarbean.week}</td>
-						<td data-form="${calendarbean.kintaifrom }">${fn:substring(calendarbean.kintaifrom,0,5) }</td>
-						<td data-to="${calendarbean.kintaito }">${fn:substring(calendarbean.kintaito,0,5) }</td>
-						<td data-jikangai="${calendarbean.jikangai}">${calendarbean.jikangai}</td>
+					<tr data-date="<c:out value="${calendarbean.kintaidate}"/>">
+						<td><c:out value="${calendarbean.kintaidate}"/></td>
+						<td><c:out value="${calendarbean.week}"/></td>
+						<td data-form="<c:out value="${calendarbean.kintaifrom }"/>">${fn:substring(calendarbean.kintaifrom,0,5) }</td>
+						<td data-to="<c:out value="${calendarbean.kintaito }"/>">${fn:substring(calendarbean.kintaito,0,5) }</td>
+						<td data-jikangai="<c:out value="${calendarbean.jikangai}"/>"><c:out value="${calendarbean.jikangai}"/></td>
 						<td><select name="status">
 								<c:forEach var="opt" items="${statusOptions}">
-									<option value="${opt.name}" ${opt.name == currentStatus ? 'selected' : ''}>${opt.name}</option>
+									<option value="<c:out value="${opt.name}"/>" ${opt.name == currentStatus ? 'selected' : ''}><c:out value="${opt.name}"/></option>
 								</c:forEach>
 						</select></td>
-					<td> ${calendarbean.memo}</td>
+					<td><c:out value="${calendarbean.memo}"/></td>
 					</tr>
 				</c:forEach>
 		</tbody>
 		</table>
 			<select id="status-template" style="display: none;">
 				<c:forEach var="opt" items="${statusOptions}">
-					<option value="${opt.name}">${opt.name}</option>
+					<option value="<c:out value="${opt.name}"/>"><c:out value="${opt.name}"/></option>
 				</c:forEach>
 			</select>
 	<script>
 
-	const statusOptions = JSON.parse('${statusOptionsJson}');
+	const statusOptions = JSON.parse('<c:out value="${statusOptionsJson}"/>');
 
 	function saveAttendance() {
 		  const records = collectAttendanceRecords();

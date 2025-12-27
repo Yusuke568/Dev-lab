@@ -33,39 +33,39 @@
 		<table class="form-table">
 			<tr>
 				<td><label for="id">ID:</label></td>
-				<td>${shainBean.id}</td>
+				<td><c:out value="${shainBean.id}"/></td>
 			</tr>
 			<tr>
 				<td><label for="name">名前:</label></td>
-				<td>${shainBean.name}</td>
+				<td><c:out value="${shainBean.name}"/></td>
 			</tr>
 			<tr>
 				<td><label for="namekana">カナ氏名:</label></td>
-				<td>${shainBean.namekana}</td>
+				<td><c:out value="${shainBean.namekana}"/></td>
 			</tr>
 			<tr>
 				<td><label for="entryyear">入社年:</label></td>
-				<td>${shainBean.entryyear}</td>
+				<td><c:out value="${shainBean.entryyear}"/></td>
 			</tr>
 			<tr>
 				<td><label for="gender">性別:</label></td>
-				<td>${shainBean.gender}</td>
+				<td><c:out value="${shainBean.gender}"/></td>
 			</tr>
 			<tr>
 				<td><label for="jobclass">役職:</label></td>
-				<td>${shainBean.jobclass}</td>
+				<td><c:out value="${shainBean.jobclass}"/></td>
 			</tr>
 		</table>
 		<button type="submit" class="form-button">削除</button>
 		<button type="button" class="form-button"
 			onclick="location.href='ShainList'">キャンセル</button>
 
-		<input type="hidden" name="id" value="${shainBean.id}"> 
-		<input type="hidden" name="name" value="${shainBean.name}">
-		<input type="hidden" name="namekana" value="${shainBean.namekana}">
-		<input type="hidden" name="entryyear" value="${shainBean.entryyear}">
-		<input type="hidden" name="gender" value="${shainBean.gender}">
-		<input type="hidden" name="jobclass" value="${shainBean.jobclass}">
+		<input type="hidden" name="id" value="<c:out value="${shainBean.id}"/>"> 
+		<input type="hidden" name="name" value="<c:out value="${shainBean.name}"/>">
+		<input type="hidden" name="namekana" value="<c:out value="${shainBean.namekana}"/>">
+		<input type="hidden" name="entryyear" value="<c:out value="${shainBean.entryyear}"/>">
+		<input type="hidden" name="gender" value="<c:out value="${shainBean.gender}"/>">
+		<input type="hidden" name="jobclass" value="<c:out value="${shainBean.jobclass}"/>">
 	</form>
 </body>
 </html>

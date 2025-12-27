@@ -33,11 +33,11 @@ CREATE TABLE `class_master` (
 -- --------------------------------------------------------
 CREATE TABLE `staff_table` (
   `ID` int NOT NULL COMMENT '社員ID',
-  `NAME` varchar(40) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '社員名',
+  `NAME` varchar(40) COLLATE utf8mb4_general_ci NOT NULL COMMENT '社員名',
   `NAMEKANA` varchar(40) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '社員名カナ',
-  `ENTRY_YEAR` int DEFAULT NULL COMMENT '入社年',
+  `ENTRY_YEAR` int NOT NULL COMMENT '入社年',
   `GENDER` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '性別',
-  `CLASS_ID` varchar(40) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '役職区分',
+  `CLASS_ID` varchar(40) COLLATE utf8mb4_general_ci NOT NULL COMMENT '役職区分',
   `PAID_LEAVE_DAYS` int DEFAULT 20 COMMENT '有給休暇残日数',
   PRIMARY KEY (`ID`),
   KEY `CLASS_ID` (`CLASS_ID`),
@@ -48,8 +48,8 @@ CREATE TABLE `staff_table` (
 -- --------------------------------------------------------
 CREATE TABLE `login_table` (
   `USERNAME` int NOT NULL COMMENT '社員ID',
-  `PASSWORD` varchar(500) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT 'パスワード',
-  `ENABLED` tinyint(1) DEFAULT NULL COMMENT '有効フラグ',
+  `PASSWORD` varchar(500) COLLATE utf8mb4_general_ci NOT NULL COMMENT 'パスワード',
+  `ENABLED` tinyint(1) NOT NULL COMMENT '有効フラグ',
   `EXPIRATION_DATE` date DEFAULT NULL COMMENT '有効期限',
   PRIMARY KEY (`USERNAME`),
   CONSTRAINT `login_table_ibfk_1` FOREIGN KEY (`USERNAME`) REFERENCES `staff_table` (`ID`) ON UPDATE CASCADE

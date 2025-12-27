@@ -11,7 +11,7 @@ DROP TABLE IF EXISTS leave_grant_rules;
 -- 適用マスタ (abstract_master) 作成
 -- --------------------------------------------------------
 CREATE TABLE abstract_master (
-  ID varchar(40) COLLATE utf8mb4_general_ci NOT NULL COMMENT '適用区分',
+  ID int NOT NULL COMMENT '適用区分',
   NAME varchar(40) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '適用名称',
   -- 集計用フラグカラム（新規追加）
   IS_WORK int(1) DEFAULT 0 COMMENT '労働日フラグ(1：労働, 0：休み)',
@@ -73,7 +73,8 @@ CREATE TABLE `work_month_table` (
   `ABSTRACT_ID` int DEFAULT NULL COMMENT '摘要区分',
   `REMARKS` varchar(200) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '備考',
   PRIMARY KEY (`STAFF_ID`, `WORK_DATE`),
-  CONSTRAINT `work_month_table_ibfk_1` FOREIGN KEY (`STAFF_ID`) REFERENCES `staff_table` (`ID`) ON UPDATE CASCADE
+  CONSTRAINT `work_month_table_ibfk_1` FOREIGN KEY (`STAFF_ID`) REFERENCES `staff_table` (`ID`) ON UPDATE CASCADE,
+  CONSTRAINT `work_month_table_ibfk_2` FOREIGN KEY (`ABSTRACT_ID`) REFERENCES `abstract_master` (`ID`) ON UPDATE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '勤怠月テーブル';
 -- --------------------------------------------------------
 -- 有給付与ルールテーブル (leave_grant_rules) 作成

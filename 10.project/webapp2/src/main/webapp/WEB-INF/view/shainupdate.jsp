@@ -32,29 +32,29 @@
 		<table class="form-table">
 			<tr>
 				<td><label for="id">ID:</label></td>
-				<td>${shainBean.id}</td>
+				<td><c:out value="${shainBean.id}"/></td>
 			</tr>
 			<tr>
 				<td><label for="name">名前:</label></td>
 				<td><input type="text" id="name" name="name"
-					value="${shainBean.name}" class="form-input" required></td>
+					value="<c:out value="${shainBean.name}"/>" class="form-input" required></td>
 			</tr>
 			<tr>
 				<td><label for="namekana">カナ氏名:</label></td>
 				<td><input type="text" id="namekana" name="namekana"
-					value="${shainBean.namekana}" class="form-input" required></td>
+					value="<c:out value="${shainBean.namekana}"/>" class="form-input" required></td>
 			</tr>
 			<tr>
 				<td><label for="entryyear">入社年:</label></td>
 				<td><input type="number" id="entryyear" name="entryyear"
-					value="${shainBean.entryyear}" class="form-input" required></td>
+					value="<c:out value="${shainBean.entryyear}"/>" class="form-input" required></td>
 			</tr>
 			<tr>
 				<td><label for="gender">性別:</label></td>
 				<td><select id="gender" name="gender" class="form-input"
 					required>
-						<option value="男" ${shainBean.gender == '男' ? 'selected' : ''}>男</option>
-						<option value="女" ${shainBean.gender == '女' ? 'selected' : ''}>女</option>
+						<option value="男" <c:if test="${shainBean.gender == '男'}">selected</c:if>>男</option>
+						<option value="女" <c:if test="${shainBean.gender == '女'}">selected</c:if>>女</option>
 				</select></td>
 			</tr>
 			<tr>
@@ -62,8 +62,8 @@
 				<td><select id="jobclass" name="jobclass" class="form-input"
 					required>
 						<c:forEach var="job" items="${jobclassList}">
-							<option value="${job.name}"
-								${shainBean.jobclass == job.name ? 'selected' : ''}>${job.name}</option>
+							<option value="<c:out value="${job.name}"/>"
+								<c:if test="${shainBean.jobclass == job.name}">selected</c:if>><c:out value="${job.name}"/></option>
 						</c:forEach>
 				</select></td>
 			</tr>
@@ -73,12 +73,7 @@
 			onclick="location.href='ShainList'">キャンセル</button>
 
 
-		<input type="hidden" name="id" value="${shainBean.id}"> <input
-			type="hidden" name="name" value="${shainBean.name}"> <input
-			type="hidden" name="namekana" value="${shainBean.namekana}">
-		<input type="hidden" name="entryyear" value="${shainBean.entryyear}">
-		<input type="hidden" name="gender" value="${shainBean.gender}">
-		<input type="hidden" name="jobclass" value="${shainBean.jobclass}">
+		<input type="hidden" name="id" value="<c:out value="${shainBean.id}"/>">
 	</form>
 </body>
 </html>

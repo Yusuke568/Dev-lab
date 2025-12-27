@@ -6,7 +6,7 @@
 *.jar
 *.war
 *.ear
-/10.project/webapp2/build/
+build/
 target/
 
 # Log files

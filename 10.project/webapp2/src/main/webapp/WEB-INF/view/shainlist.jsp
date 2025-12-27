@@ -149,6 +149,9 @@
       <h2>社員一覧</h2>
 
       <div class="top-buttons">
+		<form action="PaidLeaveAdmin" method="get" style="margin-left: 10px;">
+			<button type="submit" class="btn register">有給管理</button>
+		</form>
 		<form action="ShainInsert" method="get" style="margin-left: 10px;">
 			<button type="submit" class="btn register">社員を登録する</button>
 		</form>

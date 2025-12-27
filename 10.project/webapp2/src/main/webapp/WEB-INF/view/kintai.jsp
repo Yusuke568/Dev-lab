@@ -111,6 +111,8 @@ select {
 </head>
 <body>
 		<h1>勤怠管理システム</h1>
+		<h2>氏名：<c:out value="${shainbean.name}"/></h2>
+		<p>有給休暇残日数：<c:out value="${shainbean.paidLeaveDays}"/>日</p>
 		<p>リストサイズ: ${fn:length(calendarBeanList)}</p>
 		<div class="buttons">
 			<button id="clock-in-btn" onclick="recordAttendance('出勤')">出勤</button>
@@ -160,13 +162,12 @@ select {
 			</select>
 	<script>
 
+	const staffId = <c:out value="${staff_id}"/>;
 	const statusOptions = JSON.parse('<c:out value="${statusOptionsJson}"/>');
 
 	function saveAttendance() {
 		  const records = collectAttendanceRecords();
-
 		  
-
 		  fetch("/webapp2/Kintaiinsert", {
 		    method: "POST",
 		    headers: {
@@ -177,6 +178,7 @@ select {
 		  .then(res => {
 		    if (res.ok) {
 		      alert("保存しました！");
+		      location.reload(); // Optional: Reload to see updated leave days
 		    } else {
 		      alert("保存に失敗しました…");
 		    }
@@ -197,8 +199,33 @@ select {
     	  rows.forEach(row => {
     	    const kintaidate = row.dataset.date;
     	    const week = row.querySelector("td:nth-child(2)").textContent.trim();
-    	    // ★ dataset から innerText に変更！
     	    const kintaifrom = row.querySelector("td:nth-child(3)").innerText.trim();
+    	    const kintaito = row.querySelector("td:nth-child(4)").innerText.trim();
+
+    	    const jikangaiStr = row.querySelector("td:nth-child(5)").innerText.trim();
+    	    const tekiyoukbn = row.querySelector("select[name='status']").value;
+    	    const memo = row.querySelector("td:nth-child(7)").textContent.trim();
+
+    	    let jikangai = 0;
+    	    if (jikangaiStr) {
+    	      const [h, m] = jikangaiStr.split(':').map(Number);
+    	      jikangai = h * 60 + m;
+    	    }
+
+    	    records.push({
+			  id: staffId, // Add staffId to the record
+    	      kintaidate,
+    	      week,
+    	      kintaifrom,
+    	      kintaito,
+    	      jikangai,
+    	      tekiyoukbn,
+    	      memo
+    	    });
+    	  });
+
+    	  return records;
+    	}").innerText.trim();
     	    const kintaito = row.querySelector("td:nth-child(4)").innerText.trim();
 
     	    const jikangaiStr = row.querySelector("td:nth-child(5)").innerText.trim(); // "01:30"

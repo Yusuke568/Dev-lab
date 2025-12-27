@@ -1,1 +1,1 @@
-update STAFF_TABLE set name=?, NAMEKANA=?, ENTRY_YEAR=?,GENDER=?, CLASS_ID=(select ID from class_master where NAME =?) where id=?;
+update STAFF_TABLE set name=?, NAMEKANA=?, ENTRY_YEAR=?,GENDER=?, PAID_LEAVE_DAYS=?, CLASS_ID=(select ID from class_master where NAME =?) where id=?;

@@ -26,6 +26,7 @@ CREATE TABLE `staff_table` (
   `ENTRY_YEAR` int DEFAULT NULL COMMENT '入社年',
   `GENDER` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '性別',
   `CLASS_ID` varchar(40) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '役職区分',
+  `PAID_LEAVE_DAYS` int DEFAULT 20 COMMENT '有給休暇残日数',
   PRIMARY KEY (`ID`),
   KEY `CLASS_ID` (`CLASS_ID`),
   CONSTRAINT `staff_table_ibfk_1` FOREIGN KEY (`CLASS_ID`) REFERENCES `class_master` (`ID`) ON UPDATE CASCADE
@@ -49,3 +50,11 @@ CREATE TABLE `work_month_table` (
   PRIMARY KEY (`STAFF_ID`,`WORK_DATE`),
   CONSTRAINT `work_month_table_ibfk_1` FOREIGN KEY (`STAFF_ID`) REFERENCES `staff_table` (`ID`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='勤怠月テーブル'
+
+CREATE TABLE `leave_grant_rules` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT 'ルールID',
+  `years_of_service` int NOT NULL COMMENT '勤続年数',
+  `grant_days` int NOT NULL COMMENT '付与日数',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `years_of_service` (`years_of_service`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='有給付与ルールテーブル';

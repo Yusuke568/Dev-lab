@@ -1,0 +1,13 @@
+SELECT
+    STAFF_ID,
+    WORK_DATE,
+    WORK_WEEK,
+    JOB_FROM_TIME,
+    JOB_TO_TIME,
+    OVERTIME,
+    (SELECT NAME FROM abstract_master WHERE ID = ABSTRACT_ID) AS ABSTRACT_ID,
+    REMARKS
+FROM
+    work_month_table
+WHERE
+    STAFF_ID = ? AND WORK_DATE = ?;

@@ -251,4 +251,31 @@ public class KintaiLogic {
 		return kintaiList;
 	}
 
+	// 1日分の勤怠情報を取得
+	public CalendarBean getKintaiDay(int staffId, LocalDate date) throws SQLException, NamingException, IOException {
+		String sql = MyUtil.loadSqlFromClasspath("sql/kintai/get_staff_day.sql");
+
+		try (Connection con = ConnectionBase.getConnection();
+			 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			
+			pstmt.setInt(1, staffId);
+			pstmt.setDate(2, Date.valueOf(date));
+
+			ResultSet rs = pstmt.executeQuery();
+
+			if (rs.next()) {
+				CalendarBean bean = new CalendarBean();
+				bean.setId(rs.getInt("STAFF_ID"));
+				bean.setKintaidate(rs.getDate("WORK_DATE"));
+				bean.setWeek(DayOfWeek.valueOf(rs.getString("WORK_WEEK")));
+				bean.setKintaifrom(rs.getTime("JOB_FROM_TIME"));
+				bean.setKintaito(rs.getTime("JOB_TO_TIME"));
+				bean.setJikangai(rs.getInt("OVERTIME"));
+				bean.setTekiyoukbn(rs.getString("ABSTRACT_ID"));
+				bean.setMemo(rs.getString("REMARKS"));
+				return bean;
+			}
+		}
+		return null; // No record found
+	}
 }

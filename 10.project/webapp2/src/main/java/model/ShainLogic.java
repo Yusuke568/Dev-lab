@@ -8,7 +8,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 
 import javax.naming.NamingException;
-import javax.servlet.http.HttpServletRequest;
+
 
 import com.example.common.MyUtil;
 
@@ -90,20 +90,7 @@ public class ShainLogic {
 	}
 
 
-	//リクエストから社員Beanの作成
-	public ShainBean getShainBean(HttpServletRequest request) {
-		//社員Beanの初期化
-		ShainBean shainBean = new ShainBean();
-		//リクエストから社員Beanの作成
-		shainBean.setId(Integer.parseInt(request.getParameter("id")));
-		shainBean.setName(request.getParameter("name"));
-		shainBean.setNamekana(request.getParameter("namekana"));
-		shainBean.setGender(request.getParameter("gender"));
-		shainBean.setEntryyear(Integer.parseInt(request.getParameter("entryyear")));
-		shainBean.setJobclass(request.getParameter("jobclass"));
-		//作成した社員Beanを戻す
-		return shainBean;
-	}
+
 
 	//社員を登録
 	public void insertShain(ShainBean shainBean) throws SQLException, NamingException, IOException {

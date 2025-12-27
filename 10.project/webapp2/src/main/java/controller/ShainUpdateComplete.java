@@ -40,8 +40,15 @@ public class ShainUpdateComplete extends HttpServlet {
 
 		
 		try {
-			//社員Beanを作成
-			ShainBean shainBean = shainLogic.getShainBean(request);
+			//リクエストから社員Beanの作成
+			ShainBean shainBean = new ShainBean();
+			shainBean.setId(Integer.parseInt(request.getParameter("id")));
+			shainBean.setName(request.getParameter("name"));
+			shainBean.setNamekana(request.getParameter("namekana"));
+			shainBean.setGender(request.getParameter("gender"));
+			shainBean.setEntryyear(Integer.parseInt(request.getParameter("entryyear")));
+			shainBean.setJobclass(request.getParameter("jobclass"));
+
 			// DBへ反映
 			shainLogic.updateShain(shainBean);
 			

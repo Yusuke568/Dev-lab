@@ -39,25 +39,27 @@ public class ShainKintai extends HttpServlet{
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		KintaiLogic kintailogic = new KintaiLogic();
-		AbstractLogic abstractlogic = new AbstractLogic();
-		List<CalendarBean> calendarBeanList = null;
-		List<AbstractBean> abstractBeanList = null;
-		
-		
-	    // パラメータ取得
-	    int id = Integer.parseInt(request.getParameter("id"));
-	    int year = Integer.parseInt(request.getParameter("year"));
-	    int month = Integer.parseInt(request.getParameter("month"));
-	    
-	    
-	    try {
-			abstractBeanList = abstractlogic.getabstract();
-		} catch (SQLException | NamingException | IOException e1) {
-			// TODO 自動生成された catch ブロック
-			e1.printStackTrace();
-		}
-	    
+				KintaiLogic kintailogic = new KintaiLogic();
+				AbstractLogic abstractlogic = new AbstractLogic();
+				ShainLogic shainlogic = new ShainLogic();
+				ShainBean shainbean = new ShainBean();
+				List<CalendarBean> calendarBeanList = null;
+				List<AbstractBean> abstractBeanList = null;
+				
+				
+			    // パラメータ取得
+			    int id = Integer.parseInt(request.getParameter("id"));
+			    int year = Integer.parseInt(request.getParameter("year"));
+			    int month = Integer.parseInt(request.getParameter("month"));
+			    
+			    
+			    try {
+					abstractBeanList = abstractlogic.getabstract();
+					shainbean = shainlogic.getShainBean(id);
+				} catch (SQLException | NamingException | IOException e1) {
+					// TODO 自動生成された catch ブロック
+					e1.printStackTrace();
+				}	    
 		try (Connection con = ConnectionBase.getConnection()) {
 			//対象社員の対象月勤怠情報がない場合
 			if(kintailogic.isStaffidwork(id) == -1) {
@@ -83,6 +85,8 @@ public class ShainKintai extends HttpServlet{
 		//JSP用
 		request.setAttribute("calendarBeanList", calendarBeanList);
 		request.setAttribute("statusOptions", abstractBeanList);
+		request.setAttribute("shainbean", shainbean);
+		request.setAttribute("staff_id", id);
 		
 		//javascript用
 		StringBuilder json = MyUtil.getJsonString(abstractBeanList, "name");

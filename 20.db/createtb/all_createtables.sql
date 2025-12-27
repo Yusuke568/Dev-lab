@@ -14,7 +14,7 @@ CREATE TABLE abstract_master (
   ID int NOT NULL COMMENT '適用区分',
   NAME varchar(40) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '適用名称',
   -- 集計用フラグカラム（新規追加）
-  IS_WORK int(1) DEFAULT 0 COMMENT '労働日フラグ(1：労働, 0：休み)',
+  IS_WORK tinyint(1) DEFAULT 0 COMMENT '労働日フラグ(1：労働, 0：休み)',
   IS_PAID tinyint(1) DEFAULT 0 COMMENT '有給対象フラグ(1：有給, 0：無給)',
   IS_LEGAL_HOLIDAY tinyint(1) DEFAULT 0 COMMENT '法定休日フラグ(1：法定休日)',
   IS_PRESCRIBED_HOLIDAY tinyint(1) DEFAULT 0 COMMENT '所定休日フラグ(1：所定休日)',

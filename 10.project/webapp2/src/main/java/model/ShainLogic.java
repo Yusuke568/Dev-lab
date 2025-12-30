@@ -6,12 +6,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.naming.NamingException;
 
-
 import com.example.common.MyUtil;
 
+import beans.LeaveGrantRuleBean;
 import beans.ShainBean;
 
 public class ShainLogic {

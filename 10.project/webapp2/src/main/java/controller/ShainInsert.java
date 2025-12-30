@@ -59,7 +59,7 @@ public class ShainInsert extends HttpServlet {
 			request.setAttribute("nextID", nextID);
 			
 			// insert.jspへ転送
-			request.getRequestDispatcher("/WEB-INF/view/shianinsert.jsp").forward(request, response);	
+			request.getRequestDispatcher("/WEB-INF/view/shaininsert.jsp").forward(request, response);	
 			
 		} catch (SQLException | NamingException e) {
 			// TODO 自動生成された catch ブロック
@@ -67,14 +67,6 @@ public class ShainInsert extends HttpServlet {
 			//エラーページへ転送
 			request.getRequestDispatcher("/WEB-INF/view/error.jsp").forward(request, response);
 		}
-
-		
-		
-		
-
-		
-
-		
 }
 
 	/**

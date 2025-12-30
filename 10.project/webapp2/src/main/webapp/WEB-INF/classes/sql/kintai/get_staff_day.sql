@@ -1,0 +1,22 @@
+SELECT
+    w.STAFF_ID,
+    w.WORK_DATE,
+    w.WORK_WEEK,
+    w.CORRECTION_ID,
+    w.JOB_FROM_TIME,
+    w.JOB_TO_TIME,
+    w.CORRECTION_US_TIME,
+    w.CORRECTION_MID_TIME,
+    w.INDIRECT_TIME,
+    w.TOTAL_WORK_TIME,
+    w.TOTAL_DIRECT_WORK_TIME,
+    w.OVERTIME,
+    w.ABSTRACT_ID,
+    w.REMARKS,
+    a.NAME AS TEKIYOUKBN
+FROM
+    work_month_table w
+LEFT JOIN
+    abstract_master a ON w.ABSTRACT_ID = a.ID
+WHERE
+    w.STAFF_ID = ? AND w.WORK_DATE = ?;

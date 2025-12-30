@@ -1,0 +1,1 @@
+insert into STAFF_TABLE(id,name,namekana,entry_year,gender,paid_leave_days,class_id)values(?,?,?,?,?,?,(select ID from class_master where NAME = ?));

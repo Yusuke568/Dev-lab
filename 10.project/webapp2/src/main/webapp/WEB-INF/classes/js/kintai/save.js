@@ -2,12 +2,11 @@ import { collectAttendanceRecords } from './utils.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const saveBtn = document.getElementById('save-btn');
-  const contextPath = document.body.dataset.contextPath || '';
 
   saveBtn.addEventListener('click', () => {
     const records = collectAttendanceRecords();
 
-    fetch(`${contextPath}/api/kintai/update.do`, {
+    fetch("/webapp2/Kintaiinsert", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

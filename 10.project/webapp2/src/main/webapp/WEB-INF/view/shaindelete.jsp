@@ -1,7 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
 	pageEncoding="UTF-8"%>
-<%@page import="beans.*"%>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="jakarta.tags.core" prefix="c"%>
 
 <!DOCTYPE html>
 <html lang="ja">
@@ -19,43 +18,43 @@
 			<p class="error-message" style="font-size: 1.2rem;">本当にこの社員情報を削除しますか？<br>この操作は元に戻せません。</p>
 		</div>
 
-		<form action="ShainDeleteComplete" method="post">
+		<form action="${pageContext.request.contextPath}/shainDeleteExecute.do" method="post">
 			<input type="hidden" name="id"
-				value="<c:out value="${shainBean.id}"/>">
+				value="<c:out value="${shain.id}"/>">
 
 			<div class="form-group">
 				<label class="form-label">社員ID</label>
-				<input type="text" class="form-input" value="<c:out value="${shainBean.id}"/>" readonly>
+				<input type="text" class="form-input" value="<c:out value="${shain.id}"/>" readonly>
 			</div>
 
 			<div class="form-group">
 				<label class="form-label">名前</label>
-				<input type="text" class="form-input" value="<c:out value="${shainBean.name}"/>" readonly>
+				<input type="text" class="form-input" value="<c:out value="${shain.name}"/>" readonly>
 			</div>
 			
 			<div class="form-group">
 				<label class="form-label">カナ氏名</label>
-				<input type="text" class="form-input" value="<c:out value="${shainBean.namekana}"/>" readonly>
+				<input type="text" class="form-input" value="<c:out value="${shain.namekana}"/>" readonly>
 			</div>
 
 			<div class="form-group">
 				<label class="form-label">入社年</label>
-				<input type="text" class="form-input" value="<c:out value="${shainBean.entryyear}"/>" readonly>
+				<input type="text" class="form-input" value="<c:out value="${shain.entryyear}"/>" readonly>
 			</div>
 
 			<div class="form-group">
 				<label class="form-label">性別</label>
-				<input type="text" class="form-input" value="<c:out value="${shainBean.gender}"/>" readonly>
+				<input type="text" class="form-input" value="<c:out value="${shain.gender}"/>" readonly>
 			</div>
 
 			<div class="form-group">
 				<label class="form-label">役職</label>
-				<input type="text" class="form-input" value="<c:out value="${shainBean.jobclass}"/>" readonly>
+				<input type="text" class="form-input" value="<c:out value="${shain.jobclass}"/>" readonly>
 			</div>
 
 			<div
 				style="display: flex; justify-content: space-between; margin-top: 40px;">
-				<a href="ShainList" class="btn btn-secondary">‹ キャンセル</a>
+				<a href="${pageContext.request.contextPath}/shainList.do" class="btn btn-secondary">‹ キャンセル</a>
 				<button type="submit" class="btn btn-danger">🗑️ 削除</button>
 			</div>
 		</form>

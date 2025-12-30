@@ -9,8 +9,22 @@ public class ShainBean {
 	private int entryyear;
 	private String gender;
 	private String jobclass;
+	private int paidLeaveDays;
+	private int yearsOfService;
 
-	
+
+	public int getYearsOfService() {
+		return yearsOfService;
+	}
+	public void setYearsOfService(int yearsOfService) {
+		this.yearsOfService = yearsOfService;
+	}
+	public int getPaidLeaveDays() {
+		return paidLeaveDays;
+	}
+	public void setPaidLeaveDays(int paidLeaveDays) {
+		this.paidLeaveDays = paidLeaveDays;
+	}
 	public int getId() {
 		return id;
 	}

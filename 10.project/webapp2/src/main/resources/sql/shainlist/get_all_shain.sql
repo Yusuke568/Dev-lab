@@ -4,5 +4,6 @@ ID
 ,NAMEKANA
 ,ENTRY_YEAR
 ,GENDER
-,(select NAME from class_master where CLASS_ID = ID) AS JOBCLASS
+,PAID_LEAVE_DAYS
+,(select NAME from class_master where class_master.ID = STAFF_TABLE.CLASS_ID) AS JOBCLASS
 from STAFF_TABLE;

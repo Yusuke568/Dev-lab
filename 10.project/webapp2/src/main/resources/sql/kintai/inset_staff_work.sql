@@ -11,4 +11,4 @@ insert into work_month_table(STAFF_ID
 ,TOTAL_DIRECT_WORK_TIME
 ,OVERTIME
 ,ABSTRACT_ID
-,REMARKS) values(?,?,?,null,?,?,null,null,null,null,null,?,(select ID from class_master where NAME = ?),null);
+,REMARKS) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?);

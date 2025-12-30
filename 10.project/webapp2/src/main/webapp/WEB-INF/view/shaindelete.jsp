@@ -4,68 +4,61 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
 <meta charset="UTF-8">
 <title>社員削除画面</title>
-<style>
-.form-input {
-	width: 100%;
-}
-
-.form-table td {
-	padding: 5px;
-}
-
-.form-table label {
-	text-align: right;
-}
-
-.form-button {
-	margin-top: 10px;
-}
-</style>
+<link rel="stylesheet"
+	href="${pageContext.request.contextPath}/css/style.css">
 </head>
 
 <body>
-	<h1>社員削除画面</h1>
-	<form action="ShainDeleteComplete" method="post">
-		<table class="form-table">
-			<tr>
-				<td><label for="id">ID:</label></td>
-				<td>${shainBean.id}</td>
-			</tr>
-			<tr>
-				<td><label for="name">名前:</label></td>
-				<td>${shainBean.name}</td>
-			</tr>
-			<tr>
-				<td><label for="namekana">カナ氏名:</label></td>
-				<td>${shainBean.namekana}</td>
-			</tr>
-			<tr>
-				<td><label for="entryyear">入社年:</label></td>
-				<td>${shainBean.entryyear}</td>
-			</tr>
-			<tr>
-				<td><label for="gender">性別:</label></td>
-				<td>${shainBean.gender}</td>
-			</tr>
-			<tr>
-				<td><label for="jobclass">役職:</label></td>
-				<td>${shainBean.jobclass}</td>
-			</tr>
-		</table>
-		<button type="submit" class="form-button">削除</button>
-		<button type="button" class="form-button"
-			onclick="location.href='ShainList'">キャンセル</button>
+	<div class="card" style="max-width: 600px;">
+		<div class="text-center" style="margin-bottom: 2rem;">
+			<h1>社員情報の削除</h1>
+			<p class="error-message" style="font-size: 1.2rem;">本当にこの社員情報を削除しますか？<br>この操作は元に戻せません。</p>
+		</div>
 
-		<input type="hidden" name="id" value="${shainBean.id}"> 
-		<input type="hidden" name="name" value="${shainBean.name}">
-		<input type="hidden" name="namekana" value="${shainBean.namekana}">
-		<input type="hidden" name="entryyear" value="${shainBean.entryyear}">
-		<input type="hidden" name="gender" value="${shainBean.gender}">
-		<input type="hidden" name="jobclass" value="${shainBean.jobclass}">
-	</form>
+		<form action="ShainDeleteComplete" method="post">
+			<input type="hidden" name="id"
+				value="<c:out value="${shainBean.id}"/>">
+
+			<div class="form-group">
+				<label class="form-label">社員ID</label>
+				<input type="text" class="form-input" value="<c:out value="${shainBean.id}"/>" readonly>
+			</div>
+
+			<div class="form-group">
+				<label class="form-label">名前</label>
+				<input type="text" class="form-input" value="<c:out value="${shainBean.name}"/>" readonly>
+			</div>
+			
+			<div class="form-group">
+				<label class="form-label">カナ氏名</label>
+				<input type="text" class="form-input" value="<c:out value="${shainBean.namekana}"/>" readonly>
+			</div>
+
+			<div class="form-group">
+				<label class="form-label">入社年</label>
+				<input type="text" class="form-input" value="<c:out value="${shainBean.entryyear}"/>" readonly>
+			</div>
+
+			<div class="form-group">
+				<label class="form-label">性別</label>
+				<input type="text" class="form-input" value="<c:out value="${shainBean.gender}"/>" readonly>
+			</div>
+
+			<div class="form-group">
+				<label class="form-label">役職</label>
+				<input type="text" class="form-input" value="<c:out value="${shainBean.jobclass}"/>" readonly>
+			</div>
+
+			<div
+				style="display: flex; justify-content: space-between; margin-top: 40px;">
+				<a href="ShainList" class="btn btn-secondary">‹ キャンセル</a>
+				<button type="submit" class="btn btn-danger">🗑️ 削除</button>
+			</div>
+		</form>
+	</div>
 </body>
 </html>

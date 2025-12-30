@@ -1,71 +1,60 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
 	pageEncoding="UTF-8"%>
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
 <meta charset="UTF-8">
 <title>社員登録画面</title>
-<style>
-.form-input {
-	width: 100%;
-}
-
-.form-table td {
-	padding: 5px;
-}
-
-.form-table label {
-	text-align: right;
-}
-
-.form-button {
-	margin-top: 10px;
-}
-</style>
+<link rel="stylesheet"
+	href="${pageContext.request.contextPath}/css/style.css">
 </head>
 <body>
-	<h1>社員登録画面</h1>
-	<form action="ShainInsertComplete" method="post">
-		<table class="form-table">
-			<tr>
-				<td><label for="id">ID:</label></td>
-				<td><input type="text" id="id" name="id" class="form-input"
-					pattern="\d{3}" required title="IDは3桁の数字で入力してください"></td>
-			</tr>
-			<tr>
-				<td><label for="name">名前:</label></td>
-				<td><input type="text" id="name" name="name" class="form-input"
-					required></td>
-			</tr>
-			<tr>
-				<td><label for="sei">姓:</label></td>
-				<td><select id="sei" name="sei" class="form-input" required>
-						<option value="">選択してください</option>
-						<option value="男">男</option>
-						<option value="女">女</option>
-				</select></td>
-			</tr>
-			<tr>
-				<td><label for="nen">年:</label></td>
-				<td><select id="nen" name="nen" class="form-input" required>
-						<option value="">選択してください</option>
-						<option value="">選択してください</option>
-						<%
+	<div class="card" style="max-width: 600px;">
+		<div class="text-center" style="margin-bottom: 2rem;">
+			<h1>新しい仲間を登録</h1>
+			<p>新しい社員の情報を入力してください。</p>
+		</div>
+		<form action="ShainInsertComplete" method="post">
+			<div class="form-group">
+				<label for="id" class="form-label">社員ID</label> <input type="text"
+					id="id" name="id" class="form-input" pattern="\\d{3}" required
+					title="IDは3桁の数字で入力してください">
+			</div>
+			<div class="form-group">
+				<label for="name" class="form-label">名前</label> <input type="text"
+					id="name" name="name" class="form-input" required>
+			</div>
+			<div class="form-group">
+				<label for="sei" class="form-label">性別</label> <select id="sei"
+					name="sei" class="form-input" required>
+					<option value="">選択してください</option>
+					<option value="男">男</option>
+					<option value="女">女</option>
+				</select>
+			</div>
+			<div class="form-group">
+				<label for="nen" class="form-label">入社年</label> <select id="nen"
+					name="nen" class="form-input" required>
+					<option value="">選択してください</option>
+					<%
 						for (int year = 2001; year <= 2025; year++) {
-						%>
-						<option value="<%=year%>"><%=year%></option>
-						<%
-}
-%>
-				</select></td>
-			</tr>
-			<tr>
-				<td><label for="address">住所:</label></td>
-				<td><input type="text" id="address" name="address"
-					class="form-input" required></td>
-			</tr>
-		</table>
-		<button type="submit" class="form-button">登録</button>
-	</form>
+					%>
+					<option value="<%=year%>"><%=year%></option>
+					<%
+						}
+					%>
+				</select>
+			</div>
+			<div class="form-group">
+				<label for="address" class="form-label">住所</label> <input
+					type="text" id="address" name="address" class="form-input" required>
+			</div>
+
+			<div style="display: flex; justify-content: space-between; margin-top: 40px;">
+				<a href="${pageContext.request.contextPath}/ShainList" class="btn btn-secondary">‹ 戻る</a>
+				<button type="submit" class="btn btn-primary">✓ 登録</button>
+			</div>
+		</form>
+	</div>
 </body>
 </html>

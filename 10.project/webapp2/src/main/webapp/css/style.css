@@ -1,0 +1,217 @@
+/* 
+New Design Concept: Gamification-Lite
+- More vibrant color palette
+- Rounded, friendly web font
+- Gradients for depth and fun
+- Playful animations for interactions
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap');
+
+/* --- :root Color & Font Definitions --- */
+:root {
+  --font-family: 'M PLUS Rounded 1c', 'Segoe UI', 'Meiryo', sans-serif;
+  
+  --primary-color: #007bff;
+  --primary-gradient: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  
+  --secondary-color: #6f42c1;
+  --secondary-gradient: linear-gradient(135deg, #6f42c1 0%, #482a7a 100%);
+
+  --success-color: #28a745;
+  --success-gradient: linear-gradient(135deg, #28a745 0%, #1a6c2e 100%);
+
+  --danger-color: #dc3545;
+  --danger-gradient: linear-gradient(135deg, #dc3545 0%, #a0202d 100%);
+
+  --text-color: #212529;
+  --text-light: #f8f9fa;
+  --background-color: #f4f7f9;
+  --card-background: #ffffff;
+  
+  --border-radius: 16px;
+  --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
+}
+
+/* --- Base Body & Typography Styles --- */
+body {
+  font-family: var(--font-family);
+  background: var(--background-color);
+  color: var(--text-color);
+  margin: 0;
+  padding: 20px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 800;
+  color: var(--text-color);
+}
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.5rem; }
+
+/* --- Main Layout Components --- */
+.card {
+  background: var(--card-background);
+  border-radius: var(--border-radius);
+  padding: 32px;
+  margin-bottom: 24px;
+  box-shadow: var(--card-shadow);
+  width: 100%;
+  max-width: 900px;
+  box-sizing: border-box;
+  border: 1px solid #e9ecef;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.login-card {
+    max-width: 450px;
+    margin-top: 50px;
+}
+
+/* --- Form Element Styles --- */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.form-input {
+  width: 100%;
+  padding: 14px 18px;
+  border: 1px solid #ced4da;
+  border-radius: 10px;
+  background-color: #f8f9fa;
+  font-family: var(--font-family);
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  background-color: var(--card-background);
+  box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.15);
+}
+
+.form-input[readonly] {
+    background-color: #e9ecef;
+    color: #6c757d;
+}
+
+/* --- Button Styles --- */
+.btn {
+  padding: 14px 28px;
+  border: none;
+  border-radius: 50px; /* Fun, pill-shaped buttons */
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.btn:active {
+  transform: translateY(-1px) scale(1.02);
+}
+
+.btn-primary {
+  background: var(--primary-gradient);
+  color: var(--text-light);
+}
+
+.btn-secondary {
+   background: var(--secondary-gradient);
+   color: var(--text-light);
+}
+
+.btn-danger {
+  background: var(--danger-gradient);
+  color: var(--text-light);
+}
+
+/* --- Table Styles --- */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 24px;
+    background: var(--card-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+}
+
+.table th, .table td {
+    padding: 16px 20px;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.table thead th {
+    background: var(--primary-gradient);
+    color: var(--text-light);
+    font-size: 1rem;
+    font-weight: 700;
+    border-bottom: 0;
+}
+
+.table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.table tbody tr:last-of-type {
+    border-bottom: 0;
+}
+
+.table tbody tr:hover {
+    background-color: #f1f6ff;
+}
+
+/* Weekend/Holiday colors for kintai table */
+.saturday { background-color: #e3f2fd !important; }
+.sunday { background-color: #fff0f1 !important; }
+.holiday { background-color: #fffbe5 !important; }
+.today { border: 2px solid var(--success-color); }
+
+
+/* --- Utility & Animation Classes --- */
+.text-center {
+  text-align: center;
+}
+
+.error-message {
+    color: var(--danger-color);
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes popUp {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); }
+}

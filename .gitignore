@@ -1,1 +1,19 @@
+# macOS
 .DS_Store
+
+# Java / Build artifacts
+*.class
+*.jar
+*.war
+*.ear
+build/
+target/
+
+# Log files
+*.log
+hs_err_pid*
+
+# Eclipse
+.project
+.classpath
+.settings/

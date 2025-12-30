@@ -1,8 +1,17 @@
 package beans;
 
 public class LeaveGrantRuleBean {
+    private int id; // Added to match schema
     private int yearsOfService;
     private int grantDays;
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 
     public int getYearsOfService() {
         return yearsOfService;

@@ -42,6 +42,10 @@ public class AbstractLogic {
 				//値を設定
 				calenderbean.setId(rs.getInt("ID"));
 				calenderbean.setName(rs.getString("NAME"));
+				calenderbean.setWork(rs.getBoolean("IS_WORK"));
+				calenderbean.setPaid(rs.getBoolean("IS_PAID"));
+				calenderbean.setLegalHoliday(rs.getBoolean("IS_LEGAL_HOLIDAY"));
+				calenderbean.setPrescribedHoliday(rs.getBoolean("IS_PRESCRIBED_HOLIDAY"));
 				
 				AbstractList.add(calenderbean);
 			}

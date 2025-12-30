@@ -233,7 +233,7 @@ public class ShainLogic {
 	private List<LeaveGrantRuleBean> getLeaveGrantRules() throws SQLException, NamingException {
 		List<LeaveGrantRuleBean> rules = new ArrayList<>();
 		// a new sql file should be created for this
-		String sql = "SELECT years_of_service, grant_days FROM leave_grant_rules ORDER BY years_of_service ASC";
+		String sql = "SELECT id, years_of_service, grant_days FROM leave_grant_rules ORDER BY years_of_service ASC";
 		
 		try (Connection con = ConnectionBase.getConnection();
 			 PreparedStatement pstmt = con.prepareStatement(sql);
@@ -241,6 +241,7 @@ public class ShainLogic {
 			
 			while (rs.next()) {
 				LeaveGrantRuleBean rule = new LeaveGrantRuleBean();
+				rule.setId(rs.getInt("id"));
 				rule.setYearsOfService(rs.getInt("years_of_service"));
 				rule.setGrantDays(rs.getInt("grant_days"));
 				rules.add(rule);

@@ -36,8 +36,8 @@ public class ClassmasterLogic {
 				ClassmasterBean classmasterbean = new ClassmasterBean();
 
 				//値を設定
-				classmasterbean.setId(rs.getInt("id"));
-				classmasterbean.setName(rs.getString("name"));
+				classmasterbean.setId(rs.getString("ID"));
+				classmasterbean.setName(rs.getString("NAME"));
 				classmasterList.add(classmasterbean);
 			}
 		}

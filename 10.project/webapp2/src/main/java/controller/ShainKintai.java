@@ -16,9 +16,11 @@ import com.example.common.MyUtil;
 
 import beans.AbstractBean;
 import beans.CalendarBean;
+import beans.ShainBean;
 import model.AbstractLogic;
 import model.ConnectionBase;
 import model.KintaiLogic;
+import model.ShainLogic;
 
 /**
  * Servlet implementation class ShainMenu

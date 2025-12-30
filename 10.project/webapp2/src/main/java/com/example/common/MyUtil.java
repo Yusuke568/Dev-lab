@@ -13,7 +13,6 @@ import java.util.List;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.sql.Timestamp;
 
 
 public class MyUtil {

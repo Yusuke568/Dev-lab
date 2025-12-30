@@ -4,6 +4,7 @@ import java.sql.Date;
 import java.sql.Timestamp; // Changed from java.sql.Time
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Map;
 
 // Removed JsonDeserialize import as it's not needed for Timestamp if handled correctly or new deserializer will be required
@@ -24,6 +25,8 @@ public class CalendarBean {
 	
 	private int abstractId; // Changed from String tekiyoukbn to int abstractId
 	private String memo; // REMARKS
+	private String tekiyoukbn;
+
 
 	// New fields from work_month_table
 	private Integer correctionId; // CORRECTION_ID
@@ -42,6 +45,13 @@ public class CalendarBean {
 			"土", DayOfWeek.SATURDAY,
 			"日", DayOfWeek.SUNDAY);
 
+	public String getTekiyoukbn() {
+		return tekiyoukbn;
+	}
+	public void setTekiyoukbn(String tekiyoukbn) {
+		this.tekiyoukbn = tekiyoukbn;
+	}
+	
 	public int getJikangai() {
 		return jikangai;
 	}
@@ -51,6 +61,16 @@ public class CalendarBean {
 
 	public LocalDate getKintaidate() {
 		return kintaidate;
+	}
+	
+	public java.util.Date getDateOfKintaidate() {
+	    if (kintaidate == null) return null;
+
+	    return Date.from(
+	        kintaidate
+	            .atStartOfDay(ZoneId.systemDefault())
+	            .toInstant()
+	    );
 	}
 
 	public void setKintaidate(Date kintaidate) {
@@ -62,7 +82,7 @@ public class CalendarBean {
 	}
 	
 	public DayOfWeek getWeek() {
-		return week;
+		return this.week;
 	}
 
 	public void setWeek(String Week) {

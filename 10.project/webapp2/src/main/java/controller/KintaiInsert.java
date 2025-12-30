@@ -2,7 +2,6 @@ package controller;
 
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 
 import javax.servlet.ServletException;
@@ -17,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import beans.CalendarBean;
 import model.ConnectionBase;
 import model.KintaiLogic;
+import model.ShainLogic;
 
 /**
  * Servlet implementation class ShainInsert
@@ -64,18 +64,17 @@ public class KintaiInsert extends HttpServlet {
 		    con.setAutoCommit(false);
 		    
 		    for (CalendarBean newBean : newKintaiList) {
-				// Get the old status before updating
-				CalendarBean oldBean = kintaiLogic.getKintaiDay(newBean.getId(), newBean.getKintaidate().toLocalDate());
+				CalendarBean oldBean = kintaiLogic.getKintaiDay(newBean.getId(), newBean.getKintaidate());
 
 				String oldStatus = (oldBean != null && oldBean.getTekiyoukbn() != null) ? oldBean.getTekiyoukbn() : "";
-				String newStatus = newBean.getTekiyoukbn();
+				String newStatus = (newBean.getTekiyoukbn() != null) ? newBean.getTekiyoukbn() : "";
 
 				// Case 1: Status changed TO "Paid Leave"
-				if (!oldStatus.equals("有給休暇") && newStatus.equals("有給休暇")) {
+				if (!oldStatus.equals("有給") && newStatus.equals("有給")) {
 					shainLogic.decrementLeaveDay(newBean.getId());
 				}
 				// Case 2: Status changed FROM "Paid Leave"
-				else if (oldStatus.equals("有給休暇") && !newStatus.equals("有給休暇")) {
+				else if (oldStatus.equals("有給") && !newStatus.equals("有給")) {
 					shainLogic.incrementLeaveDay(newBean.getId()); // This method needs to be created
 				}
 

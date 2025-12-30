@@ -1,15 +1,16 @@
 UPDATE work_month_table
 SET
-    CORRECTION_ID = null,
+    WORK_WEEK = ?,
+    CORRECTION_ID = ?,
     JOB_FROM_TIME = ?,
     JOB_TO_TIME = ?,
-    CORRECTION_US_TIME = null,
-    CORRECTION_MID_TIME = null,
-    INDIRECT_TIME = null,
-    TOTAL_WORK_TIME = null,
-    TOTAL_DIRECT_WORK_TIME = null,
+    CORRECTION_US_TIME = ?,
+    CORRECTION_MID_TIME = ?,
+    INDIRECT_TIME = ?,
+    TOTAL_WORK_TIME = ?,
+    TOTAL_DIRECT_WORK_TIME = ?,
     OVERTIME = ?,
-    ABSTRACT_ID = (SELECT ID FROM abstract_master WHERE NAME = ?),
+    ABSTRACT_ID = ?,
     REMARKS = ?
 WHERE STAFF_ID = ?
 AND WORK_DATE = ?;

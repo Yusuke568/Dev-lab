@@ -3,6 +3,7 @@
 <%@page import="java.util.ArrayList"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <%@page import="beans.*"%>
 <!DOCTYPE html>
 <html lang="ja">
@@ -82,9 +83,27 @@ th:nth-child(6), td:nth-child(5){
 	width: 30px;
 }
  /*　備考欄 */
-th:nth-child(7), td:nth-child(6) {
+	th:nth-child(7), td:nth-child(6) {
 	width: 50px;
 }
+th:nth-child(8), td:nth-child(7) {
+	width: 30px;
+} /* 稼働補正テンプレートCD */
+th:nth-child(9), td:nth-child(8) {
+	width: 30px;
+} /* 稼働時間補正（通常） */
+th:nth-child(10), td:nth-child(9) {
+	width: 30px;
+} /* 稼働時間補正（深夜） */
+th:nth-child(11), td:nth-child(10) {
+	width: 30px;
+} /* 間接時間 */
+th:nth-child(12), td:nth-child(11) {
+	width: 30px;
+} /* 総稼働時間 */
+th:nth-child(13), td:nth-child(12) {
+	width: 30px;
+} /* 総稼働時間（直接） */
 
 .saturday {
 	background-color: #e3f2fd;
@@ -135,6 +154,12 @@ select {
 					<th>時間外</th>
 					<th>勤務区分</th>
 					<th>備考欄</th>
+					<th>稼働補正テンプレートCD</th>
+					<th>稼働時間補正（通常）</th>
+					<th>稼働時間補正（深夜）</th>
+					<th>間接時間</th>
+					<th>総稼働時間</th>
+					<th>総稼働時間（直接）</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -142,25 +167,31 @@ select {
 					<tr data-date="<c:out value="${calendarbean.kintaidate}"/>">
 						<td><c:out value="${calendarbean.kintaidate}"/></td>
 						<td><c:out value="${calendarbean.week}"/></td>
-						<td data-form="<c:out value="${calendarbean.kintaifrom }"/>">${fn:substring(calendarbean.kintaifrom,0,5) }</td>
-						<td data-to="<c:out value="${calendarbean.kintaito }"/>">${fn:substring(calendarbean.kintaito,0,5) }</td>
+						<td data-form="<fmt:formatDate value="${calendarbean.kintaifrom}" pattern="HH:mm"/>"><fmt:formatDate value="${calendarbean.kintaifrom}" pattern="HH:mm"/></td>
+						<td data-to="<fmt:formatDate value="${calendarbean.kintaito}" pattern="HH:mm"/>"><fmt:formatDate value="${calendarbean.kintaito}" pattern="HH:mm"/></td>
 						<td data-jikangai="<c:out value="${calendarbean.jikangai}"/>"><c:out value="${calendarbean.jikangai}"/></td>
 						<td><select name="status">
 								<c:forEach var="opt" items="${statusOptions}">
-									<option value="<c:out value="${opt.name}"/>" ${opt.name == currentStatus ? 'selected' : ''}><c:out value="${opt.name}"/></option>
+									<option value="<c:out value="${opt.id}"/>" ${opt.id == calendarbean.abstractId ? 'selected' : ''}><c:out value="${opt.name}"/></option>
 								</c:forEach>
 						</select></td>
 					<td><c:out value="${calendarbean.memo}"/></td>
+					<td><input type="number" name="correctionId" value="${calendarbean.correctionId}"/></td>
+					<td><input type="number" name="correctionUsTime" value="${calendarbean.correctionUsTime}"/></td>
+					<td><input type="number" name="correctionMidTime" value="${calendarbean.correctionMidTime}"/></td>
+					<td><input type="number" name="indirectTime" value="${calendarbean.indirectTime}"/></td>
+					<td><input type="number" name="totalWorkTime" value="${calendarbean.totalWorkTime}"/></td>
+					<td><input type="number" name="totalDirectWorkTime" value="${calendarbean.totalDirectWorkTime}"/></td>
 					</tr>
 				</c:forEach>
 		</tbody>
-		</table>
-			<select id="status-template" style="display: none;">
+		</table>			<select id="status-template" style="display: none;">
 				<c:forEach var="opt" items="${statusOptions}">
-					<option value="<c:out value="${opt.name}"/>"><c:out value="${opt.name}"/></option>
+					<option value="<c:out value="${opt.id}"/>"><c:out value="${opt.name}"/></option>
 				</c:forEach>
 			</select>
-	<script>
+	<script type="module">
+	import { collectAttendanceRecords, getMinutes } from './resources/js/kintai/utils.js';
 
 	const staffId = <c:out value="${staff_id}"/>;
 	const statusOptions = JSON.parse('<c:out value="${statusOptionsJson}"/>');
@@ -189,7 +220,7 @@ select {
 	
       const workStart = '09:00';
       const workEnd = '18:00';
-      const attendanceRecords = [];
+
       const rows = document.querySelectorAll('#calendar-log tbody tr');
 
       function collectAttendanceRecords() {
@@ -203,13 +234,20 @@ select {
     	    const kintaito = row.querySelector("td:nth-child(4)").innerText.trim();
 
     	    const jikangaiStr = row.querySelector("td:nth-child(5)").innerText.trim();
-    	    const tekiyoukbn = row.querySelector("select[name='status']").value;
+    	    const abstractId = parseInt(row.querySelector("select[name='status']").value, 10); // Capture as int
     	    const memo = row.querySelector("td:nth-child(7)").textContent.trim();
+    	    // New fields
+    	    const correctionId = row.querySelector("input[name='correctionId']")?.value;
+    	    const correctionUsTime = row.querySelector("input[name='correctionUsTime']")?.value;
+    	    const correctionMidTime = row.querySelector("input[name='correctionMidTime']")?.value;
+    	    const indirectTime = row.querySelector("input[name='indirectTime']")?.value;
+    	    const totalWorkTime = row.querySelector("input[name='totalWorkTime']")?.value;
+    	    const totalDirectWorkTime = row.querySelector("input[name='totalDirectWorkTime']")?.value;
 
     	    let jikangai = 0;
-    	    if (jikangaiStr) {
+    	    if (jikangaiStr && jikangaiStr !== '') { // Check for empty string as well
     	      const [h, m] = jikangaiStr.split(':').map(Number);
-    	      jikangai = h * 60 + m;
+    	      jikangai = h * 60 + m; // Storing as minutes, if needed
     	    }
 
     	    records.push({
@@ -218,35 +256,15 @@ select {
     	      week,
     	      kintaifrom,
     	      kintaito,
-    	      jikangai,
-    	      tekiyoukbn,
-    	      memo
-    	    });
-    	  });
-
-    	  return records;
-    	}").innerText.trim();
-    	    const kintaito = row.querySelector("td:nth-child(4)").innerText.trim();
-
-    	    const jikangaiStr = row.querySelector("td:nth-child(5)").innerText.trim(); // "01:30"
-    	    const tekiyoukbn = row.querySelector("select[name='status']").value;
-    	    const memo = row.querySelector("td:nth-child(7)").textContent.trim();
-
-    	    // ★ 文字列 "01:30" → 分数（例：90）
-    	    let jikangai = 0;
-    	    if (jikangaiStr) {
-    	      const [h, m] = jikangaiStr.split(':').map(Number);
-    	      jikangai = h * 60 + m;
-    	    }
-
-    	    records.push({
-    	      kintaidate,
-    	      week,
-    	      kintaifrom,
-    	      kintaito,
-    	      jikangai, // ← 数値で送信
-    	      tekiyoukbn,
-    	      memo
+    	      jikangai, // Send as int (minutes)
+    	      abstractId, // Renamed from tekiyoukbn
+    	      memo,
+    	      correctionId: correctionId === '' ? null : Number(correctionId),
+    	      correctionUsTime: correctionUsTime === '' ? null : Number(correctionUsTime),
+    	      correctionMidTime: correctionMidTime === '' ? null : Number(correctionMidTime),
+    	      indirectTime: indirectTime === '' ? null : Number(indirectTime),
+    	      totalWorkTime: totalWorkTime === '' ? null : Number(totalWorkTime),
+    	      totalDirectWorkTime: totalDirectWorkTime === '' ? null : Number(totalDirectWorkTime)
     	    });
     	  });
 
@@ -279,6 +297,8 @@ select {
             row.classList.add('holiday');
           }
         });
+        updateButtonState(); // Call on load to set initial button states
+        updateOvertimeSummary(); // Call on load to set initial summary
       });
 
 
@@ -366,21 +386,21 @@ select {
     	}
 
       //指定した任意のレコードを更新する。
-      function updateRecord(date, key, value, status = '通常勤務') {
+      function updateRecord(date, key, value, abstractId = null) { // Renamed status to abstractId
     	  const attendanceRecords = collectAttendanceRecords();
-        let rec = attendanceRecords.find((r) => r.date === date);
+        let rec = attendanceRecords.find((r) => r.kintaidate === date);
         if (!rec) {
       	  console.log("attendanceRecords:", attendanceRecords);
           return;
         }
         rec[key] = value;
-        if (key === 'status') rec.status = status;
+        if (key === 'abstractId') rec.abstractId = abstractId; // Updated for abstractId
   	  console.log("attendanceRecords:", attendanceRecords);
       }		
 
       function renderStatusCell(cell, currentValue, date) {
     	  cell.innerHTML = '';
-    	  const attendanceRecords = collectAttendanceRecords();
+    	  const records = collectAttendanceRecords(); // Use collectAttendanceRecords directly
 
     	  // テンプレートから select を複製
     	  const template = document.getElementById('status-template');
@@ -388,14 +408,16 @@ select {
     	  select.style.display = 'inline'; // 表示する
 
     	  // 初期値を設定
-    	  select.value = currentValue || "通常勤務";
+    	  select.value = currentValue || ""; // Use empty string for no selection
 
     	  select.addEventListener('change', () => {
-    	    const newVal = select.value;
-    	    cell.innerText = newVal;
+    	    const newVal = parseInt(select.value, 10); // Parse to int
+    	    // Find the name for display
+    	    const selectedOption = statusOptions.find(opt => opt.id === newVal);
+    	    cell.innerText = selectedOption ? selectedOption.name : "";
 
-    	    const rec = attendanceRecords.find((r) => r.date === date);
-    	    if (rec) rec.status = newVal;
+    	    const rec = records.find((r) => r.kintaidate === date);
+    	    if (rec) rec.abstractId = newVal; // Updated for abstractId
 
     	    updateOvertimeSummary();
     	    updateButtonState();
@@ -403,7 +425,7 @@ select {
 
     	  cell.appendChild(select);
 
-      	  console.log("attendanceRecords:", attendanceRecords);
+      	  console.log("attendanceRecords:", records);
     	}
 
       function recordAttendance(type) {
@@ -431,15 +453,20 @@ select {
     	          break;
 
     	        case '備考欄':
-    	          row.cells[6].innerText = type;
+    	          row.cells[6].innerText = type; // Assuming type is the memo content
     	          row.cells[6].dataset.memo = type;
     	          updateRecord(dateStr, 'memo', type);
     	          break;
 
     	        default:
-    	          // 勤務区分を設定
-    	          row.cells[5].innerText = type;
-    	          updateRecord(dateStr, 'status', null, type);
+    	          // This case seems to be for directly setting the abstractId based on a string
+    	          // If 'type' is supposed to be the ID, then it needs to be parsed
+    	          // Assuming 'type' here would be the abstract name, which we now map to ID
+    	          const selectedOption = statusOptions.find(opt => opt.name === type);
+    	          if (selectedOption) {
+    	            row.querySelector("select[name='status']").value = selectedOption.id;
+    	            updateRecord(dateStr, 'abstractId', selectedOption.id);
+    	          }
     	          break;
     	      }
     	      break; // 対象の日付の行が見つかったのでループを抜ける
@@ -484,101 +511,158 @@ select {
     	});
 
   	
-      document.addEventListener('DOMContentLoaded', () => {
-        const table = document.getElementById('calendar-log');
-        const attendanceRecords = collectAttendanceRecords();
-
-        const rows = document.querySelectorAll("#calendar-log tbody tr");
-  	  const holidays = ["2025-09-15", "2025-09-23"];
-  	  const holidayOption = statusOptions.find(opt => opt.name === "休日");
-  	  const holidayValue = holidayOption ? holidayOption.name : null;
-
-  	  if (!holidayValue) {
-  	    console.warn("休日の区分が見つかりませんでした！");
-  	    return;
-  	  }
-
-  	  rows.forEach(row => {
-  	    const date = row.dataset.date;
-  	    const weekText = row.cells[1].innerText.trim();
-  	    const select = row.querySelector("select[name='status']");
-
-  	    const isSaturday = weekText === "SATURDAY";
-  	    const isSunday = weekText === "SUNDAY";
-  	    const isHoliday = holidays.includes(date);
-
-  	    if ((isSaturday || isSunday || isHoliday) && select) {
-  	      // ① 見た目を変更
-  	      select.value = holidayValue;
-
-  	      // ② データにも反映
-  	      const rec = attendanceRecords.find(r => r.kintaidate === date);
-  	      if (rec) {
-  	        rec.status = holidayValue;
-  	      }
-  	    }
-  	  });     	        
-
-        table.addEventListener('click', (e) => {
-          const cell = e.target;
-          if (cell.tagName === 'TD' && cell.cellIndex >= 1) {
-            const row = cell.parentElement;
-            const date = row.dataset.date;
-
-                
-            
-            if (cell.cellIndex === 5) {
-              // 勤務区分セル → プルダウン表示
-              const rec = attendanceRecords.find((r) => r.kintaidate === date);
-              const currentVal = rec?.status || '';
-              renderStatusCell(cell, currentVal, date);
-            } else if(cell.cellIndex === 0  || cell.cellIndex === 1 || cell.cellIndex === 4) {
-
-                
-            }
-            else{
-              // 出退勤セルor備考欄 → 直接編集
-              const original = cell.innerText;
-              const input = document.createElement('input');
-              input.type = 'text';
-              input.value = original;
-              cell.innerText = '';
-              cell.appendChild(input);
-              input.focus();
-
-              input.addEventListener('blur', () => {
-            	  const newVal = input.value || original;
-            	  cell.innerText = newVal;
-            	  const rec = attendanceRecords.find((r) => r.date === date);
-            	  if (rec) {
-            	    if (cell.cellIndex === 2) {
-            	      rec.kintaifrom = newVal;
-            	      row.cells[2].dataset.form = newVal;  // ← これを追加
-            	    }
-            	    if (cell.cellIndex === 3) {
-            	      rec.kintaito = newVal;
-            	      row.cells[3].dataset.to = newVal;    // ← これを追加
-            	    }
-            	    if (cell.cellIndex === 6) {
-            	      rec.memo = newVal;
-            	      row.cells[6].dataset.memo = newVal;  // ← 任意（使用していれば）
-            	    }
-            	  }
-                updateOvertimeSummary();
-                updateButtonState();
-              });
-
-              input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') input.blur();
-              });
-            }
-          }
-        });			
-
-        const today = new Date();
-        updateButtonState();
-        updateOvertimeSummary();
-      });
-    </script>
+            document.addEventListener('DOMContentLoaded', () => {
+              const table = document.getElementById('calendar-log');
+              const records = collectAttendanceRecords(); // Use collectAttendanceRecords directly
+      
+              const rows = document.querySelectorAll("#calendar-log tbody tr");
+        	  const holidays = ["2025-09-15", "2025-09-23"];
+        	  const holidayOption = statusOptions.find(opt => opt.name === "休日");
+        	  const holidayId = holidayOption ? holidayOption.id : null; // Use holidayId
+      
+        	  if (!holidayId) {
+        	    console.warn("休日の区分が見つかりませんでした！");
+        	    return;
+        	  }
+      
+        	  rows.forEach(row => {
+        	    const date = row.dataset.date;
+        	    const weekText = row.cells[1].innerText.trim();
+        	    const select = row.querySelector("select[name='status']");
+      
+        	    const isSaturday = weekText === "SATURDAY";
+        	    const isSunday = weekText === "SUNDAY";
+          	    // This checks for calculated holidays, not necessarily from DB flags
+          	    // The 'holidays' array comes from the JS, not necessarily the bean 'isholiday'
+        	    const isHoliday = holidays.includes(date); 
+      
+          	    // This part runs twice if DOMContentLoaded is called twice
+          	    // which it is due to `collectAttendanceRecords` in the outer scope
+          	    // and this block in the inner scope. This should be refactored.
+      
+          	    if ((isSaturday || isSunday || isHoliday) && select) {
+          	      select.value = holidayId; // Set value to ID
+          	      const rec = records.find(r => r.kintaidate === date); // This records is local
+          	      if (rec) {
+          	        rec.abstractId = holidayId; // Set abstractId
+          	      }
+          	    }
+        	  });     	        
+      
+                      table.addEventListener('click', (e) => {
+      
+                        const cell = e.target;
+      
+                        if (cell.tagName === 'TD' && cell.cellIndex >= 1) {
+      
+                          const row = cell.parentElement;
+      
+                          const date = row.dataset.date;
+      
+                          
+      
+                          const isSelect = cell.querySelector("select[name='status']");
+      
+                          // Removed check for isInputNumber here as inputs are always present
+      
+              
+      
+                          if (cell.cellIndex === 5 && isSelect) { // 勤務区分セル → プルダウン表示
+      
+                            const rec = collectAttendanceRecords().find((r) => r.kintaidate === date); // Get fresh records
+      
+                            const currentVal = rec?.abstractId || ''; // Use abstractId
+      
+                            renderStatusCell(cell, currentVal, date);
+      
+                          } else if ([0, 1, 4].includes(cell.cellIndex)) { // Date, Day of Week, Overtime - non-editable cells
+      
+                            // Do nothing for these cells
+      
+                          } // Removed else if (isInputNumber) block
+      
+                          else{ // 出退勤セルor備考欄 → 直接編集 (text input fields)
+      
+                            const original = cell.innerText;
+      
+                            const input = document.createElement('input');
+      
+                            input.type = 'text';
+      
+                            input.value = original;
+      
+                            cell.innerText = '';
+      
+                            cell.appendChild(input);
+      
+                            input.focus();
+      
+              
+      
+                            input.addEventListener('blur', () => {
+      
+                          	  const newVal = input.value || original;
+      
+                          	  cell.innerText = newVal;
+      
+                          	  const currentRecords = collectAttendanceRecords(); // Get fresh records
+      
+                          	  const rec = currentRecords.find((r) => r.kintaidate === date);
+      
+                          	  if (rec) {
+      
+                          	    if (cell.cellIndex === 2) {
+      
+                          	      rec.kintaifrom = newVal;
+      
+                          	      row.cells[2].dataset.form = newVal;
+      
+                          	    }
+      
+                          	    if (cell.cellIndex === 3) {
+      
+                          	      rec.kintaito = newVal;
+      
+                          	      row.cells[3].dataset.to = newVal;
+      
+                          	    }
+      
+                          	    if (cell.cellIndex === 6) {
+      
+                          	      rec.memo = newVal;
+      
+                          	      row.cells[6].dataset.memo = newVal;
+      
+                          	    }
+      
+                          	  }
+      
+                              updateOvertimeSummary();
+      
+                              updateButtonState();
+      
+                            });
+      
+              
+      
+                            input.addEventListener('keydown', (e) => {
+      
+                              if (e.key === 'Enter') input.blur();
+      
+                            });
+      
+                          }
+      
+                        }
+      
+                      });			
+      
+              
+      
+                      updateButtonState();
+      
+                      updateOvertimeSummary();
+      
+                    });    </script>
 </body>
 </html>

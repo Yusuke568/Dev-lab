@@ -10,8 +10,8 @@
 	href="${pageContext.request.contextPath}/css/style.css">
 </head>
 <body>
-	<div class="card" style="max-width: 600px;">
-		<div class="text-center" style="margin-bottom: 2rem;">
+	<div class="card form-card">
+		<div class="text-center page-title-container">
 			<h1>新しい仲間を登録</h1>
 			<p>新しい社員の情報を入力してください。</p>
 		</div>
@@ -61,8 +61,7 @@
 				</select>
 			</div>
 
-			<div
-				style="display: flex; justify-content: space-between; margin-top: 40px;">
+			<div class="form-actions">
 				<a href="${pageContext.request.contextPath}/ShainList"
 					class="btn btn-secondary">‹ 戻る</a>
 				<button type="submit" class="btn btn-primary">✓ 登録</button>

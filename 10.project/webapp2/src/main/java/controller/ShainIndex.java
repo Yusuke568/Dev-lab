@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import beans.ShainBean;
-import model.ShainLogic;
+import model.ShainService;
 
 /**
  * Servlet implementation class ShainIndex
@@ -34,12 +34,12 @@ public class ShainIndex extends HttpServlet {
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		//社員ロジックを取得
-		ShainLogic shainLogic = new ShainLogic();
+		//社員サービスを取得
+		ShainService shainService = new ShainService();
 
 		try {
 			//社員リストを取得
-			ArrayList<ShainBean> shainList = shainLogic.getAllShain();
+			ArrayList<ShainBean> shainList = shainService.getAllShain();
 			// 社員リストをセットする
 			request.setAttribute("shainList", shainList);
 			// index.jspへ転送

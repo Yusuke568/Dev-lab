@@ -6,15 +6,15 @@ New Design Concept: Gamification-Lite
 - Playful animations for interactions
 */
 
-@import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap");
 
 /* --- :root Color & Font Definitions --- */
 :root {
-  --font-family: 'M PLUS Rounded 1c', 'Segoe UI', 'Meiryo', sans-serif;
-  
+  --font-family: "M PLUS Rounded 1c", "Segoe UI", "Meiryo", sans-serif;
+
   --primary-color: #007bff;
   --primary-gradient: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-  
+
   --secondary-color: #6f42c1;
   --secondary-gradient: linear-gradient(135deg, #6f42c1 0%, #482a7a 100%);
 
@@ -28,7 +28,7 @@ New Design Concept: Gamification-Lite
   --text-light: #f8f9fa;
   --background-color: #f4f7f9;
   --card-background: #ffffff;
-  
+
   --border-radius: 16px;
   --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
 }
@@ -44,13 +44,24 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-weight: 800;
   color: var(--text-color);
 }
-h1 { font-size: 2.5rem; }
-h2 { font-size: 2rem; }
-h3 { font-size: 1.5rem; }
+h1 {
+  font-size: 2.5rem;
+}
+h2 {
+  font-size: 2rem;
+}
+h3 {
+  font-size: 1.5rem;
+}
 
 /* --- Main Layout Components --- */
 .card {
@@ -67,8 +78,8 @@ h3 { font-size: 1.5rem; }
 }
 
 .login-card {
-    max-width: 450px;
-    margin-top: 50px;
+  max-width: 450px;
+  margin-top: 50px;
 }
 
 /* --- Form Element Styles --- */
@@ -102,8 +113,8 @@ h3 { font-size: 1.5rem; }
 }
 
 .form-input[readonly] {
-    background-color: #e9ecef;
-    color: #6c757d;
+  background-color: #e9ecef;
+  color: #6c757d;
 }
 
 /* --- Button Styles --- */
@@ -117,7 +128,9 @@ h3 { font-size: 1.5rem; }
   text-decoration: none;
   display: inline-block;
   text-align: center;
-  transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.2s ease;
+  transition:
+    transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    box-shadow 0.2s ease;
 }
 
 .btn:hover {
@@ -135,8 +148,8 @@ h3 { font-size: 1.5rem; }
 }
 
 .btn-secondary {
-   background: var(--secondary-gradient);
-   color: var(--text-light);
+  background: var(--secondary-gradient);
+  color: var(--text-light);
 }
 
 .btn-danger {
@@ -146,47 +159,55 @@ h3 { font-size: 1.5rem; }
 
 /* --- Table Styles --- */
 .table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 24px;
-    background: var(--card-background);
-    border-radius: var(--border-radius);
-    box-shadow: var(--card-shadow);
-    overflow: hidden;
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 24px;
+  background: var(--card-background);
+  border-radius: var(--border-radius);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
 }
 
-.table th, .table td {
-    padding: 16px 20px;
-    text-align: left;
-    border-bottom: 1px solid #dee2e6;
+.table th,
+.table td {
+  padding: 16px 20px;
+  text-align: left;
+  border-bottom: 1px solid #dee2e6;
 }
 
 .table thead th {
-    background: var(--primary-gradient);
-    color: var(--text-light);
-    font-size: 1rem;
-    font-weight: 700;
-    border-bottom: 0;
+  background: var(--primary-gradient);
+  color: var(--text-light);
+  font-size: 1rem;
+  font-weight: 700;
+  border-bottom: 0;
 }
 
 .table tbody tr {
-    transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease;
 }
 
 .table tbody tr:last-of-type {
-    border-bottom: 0;
+  border-bottom: 0;
 }
 
 .table tbody tr:hover {
-    background-color: #f1f6ff;
+  background-color: #f1f6ff;
 }
 
 /* Weekend/Holiday colors for kintai table */
-.saturday { background-color: #e3f2fd !important; }
-.sunday { background-color: #fff0f1 !important; }
-.holiday { background-color: #fffbe5 !important; }
-.today { border: 2px solid var(--success-color); }
-
+.saturday {
+  background-color: #e3f2fd !important;
+}
+.sunday {
+  background-color: #fff0f1 !important;
+}
+.holiday {
+  background-color: #fffbe5 !important;
+}
+.today {
+  border: 2px solid var(--success-color);
+}
 
 /* --- Utility & Animation Classes --- */
 .text-center {
@@ -194,9 +215,9 @@ h3 { font-size: 1.5rem; }
 }
 
 .error-message {
-    color: var(--danger-color);
-    font-weight: 700;
-    margin-bottom: 1.5rem;
+  color: var(--danger-color);
+  font-weight: 700;
+  margin-bottom: 1.5rem;
 }
 
 @keyframes fadeIn {
@@ -211,7 +232,159 @@ h3 { font-size: 1.5rem; }
 }
 
 @keyframes popUp {
-  0% { transform: scale(0.5); opacity: 0; }
-  60% { transform: scale(1.1); opacity: 1; }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* --- Kintai Page Specific Styles --- */
+.kintai-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.kintai-header .user-info {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.stat-card {
+  background: var(--card-background);
+  padding: 1rem 1.5rem;
+  border-radius: var(--border-radius);
+  box-shadow: var(--card-shadow);
+  text-align: center;
+}
+
+.stat-card .label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #6c757d;
+}
+
+.stat-card .value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--primary-color);
+}
+
+.actions-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  gap: 1rem;
+}
+
+#overtime-summary {
+  font-weight: 700;
+}
+
+/* Smaller padding for inputs inside table */
+.table .form-input {
+  padding: 6px 8px;
+  font-size: 0.9rem;
+}
+
+/* --- Paid Leave Admin Page Specific Styles --- */
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 24px;
+  margin: 2rem 0;
+}
+
+.page-header-actions {
+  text-align: right;
+  margin-bottom: 2rem;
+}
+
+.leave-grant-form {
+  margin-top: 1rem;
+}
+
+.leave-grant-form.selected-grant {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.leave-grant-form .form-input {
+  width: 120px;
+}
+
+.individual-update-form {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.individual-update-form .form-input {
+  width: 80px;
+}
+
+.individual-update-form .btn {
+  padding: 8px 16px;
+}
+
+.table th.text-center {
+  text-align: center;
+}
+
+.page-title-container {
+  margin-bottom: 2rem;
+}
+
+.table-title {
+  margin-top: 3rem;
+}
+
+/* --- Shain List Page Specific Styles --- */
+.page-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.page-actions .action-group {
+  display: flex;
+  gap: 10px;
+}
+
+.table .action-cell {
+  text-align: center;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.table .action-cell .btn {
+  padding: 8px 16px;
+}
+
+/* --- Shain Insert/Update Page Specific Styles --- */
+.form-card {
+  max-width: 600px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 40px;
 }

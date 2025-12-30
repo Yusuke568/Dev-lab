@@ -1,0 +1,16 @@
+UPDATE work_month_table
+SET
+    WORK_WEEK = ?,
+    CORRECTION_ID = ?,
+    JOB_FROM_TIME = ?,
+    JOB_TO_TIME = ?,
+    CORRECTION_US_TIME = ?,
+    CORRECTION_MID_TIME = ?,
+    INDIRECT_TIME = ?,
+    TOTAL_WORK_TIME = ?,
+    TOTAL_DIRECT_WORK_TIME = ?,
+    OVERTIME = ?,
+    ABSTRACT_ID = ?,
+    REMARKS = ?
+WHERE STAFF_ID = ?
+AND WORK_DATE = ?;

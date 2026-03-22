@@ -20,7 +20,7 @@ import com.example.service.transaction.TransactionManager;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dao.KintaiDao;
+import com.example.dao.KintaiDao;
 import com.example.infra.ConnectionBase;
 
 public class KintaiService {

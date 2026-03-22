@@ -1,6 +1,9 @@
+package com.example.service.transaction;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+
 
 /**
  * トランザクション内で実行されるデータベース操作を定義するための関数型インターフェース。

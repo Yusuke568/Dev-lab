@@ -8,9 +8,9 @@ import com.example.controller.View;
 import com.example.entity.Shain;
 import com.example.service.ShainService;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * 社員一覧表示リクエストを処理するアクションクラス。

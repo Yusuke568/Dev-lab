@@ -5,9 +5,9 @@ import java.io.IOException;
 import com.example.controller.Action;
 import com.example.controller.View;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * メニュー画面表示のアクションクラス。

@@ -9,8 +9,8 @@ import javax.naming.NamingException;
 
 import com.example.entity.Shain;
 import com.example.service.transaction.TransactionManager;
-import dao.ShainDao;
 import com.example.infra.ConnectionBase;
+import com.example.dao.ShainDao;
 
 public class ShainService {
 

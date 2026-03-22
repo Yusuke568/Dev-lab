@@ -8,8 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const records = collectAttendanceRecords();
   const todayRecord = records.find(r => r.kintaidate === today);
 
-  const isClockedIn = !!todayRecord?.kintaifrom;
-  const isClockedOut = !!todayRecord?.kintaito;
+  const isClockedIn = !!(todayRecord && todayRecord.kintaifrom);
+  const isClockedOut = !!(todayRecord && todayRecord.kintaito);
 
   clockInBtn.disabled = isClockedIn;
   clockInBtn.innerText = isClockedIn ? "出勤済み" : "出勤";

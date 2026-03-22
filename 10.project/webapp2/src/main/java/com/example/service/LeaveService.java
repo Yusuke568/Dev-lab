@@ -11,8 +11,7 @@ import com.example.entity.LeaveGrantRule;
 import com.example.entity.Shain;
 import com.example.service.transaction.TransactionManager;
 
-import dao.LeaveDao;
-import com.example.infra.ConnectionBase;
+import com.example.dao.LeaveDao;
 
 public class LeaveService {
 

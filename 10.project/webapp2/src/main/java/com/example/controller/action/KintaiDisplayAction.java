@@ -5,9 +5,9 @@ import java.sql.SQLException;
 import java.util.List;
 
 import javax.naming.NamingException;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import com.example.common.MyUtil;
 import com.example.controller.Action;

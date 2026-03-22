@@ -92,8 +92,8 @@ function updateButtonState() {
   const clockInBtn = document.getElementById("clock-in-btn");
   const clockOutBtn = document.getElementById("clock-out-btn");
 
-  const isClockedIn = !!rec?.kintaifrom;
-  const isClockedOut = !!rec?.kintaito;
+  const isClockedIn = !!(rec && rec.kintaifrom);
+  const isClockedOut = !!(rec && rec.kintaito);
 
   if (clockInBtn) clockInBtn.disabled = isClockedIn;
   if (clockOutBtn) clockOutBtn.disabled = isClockedOut;
@@ -199,10 +199,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // For status dropdown
       if (cell.cellIndex === 5) {
-        const currentVal =
-          collectAttendanceRecords(staffId).find((r) => r.kintaidate === date)
-            ?.abstractId || "";
-        renderStatusCell(cell, currentVal, date);
+        const record = collectAttendanceRecords(staffId).find((r) => r.kintaidate === date);
+        const currentVal = record ? record.abstractId : null; // Use null to be explicit
+        renderStatusCell(cell, currentVal || "", date); // Pass empty string if null
         cell.querySelector("select").focus();
         return;
       }

@@ -17,12 +17,16 @@ export function collectAttendanceRecords() {
     const abstractId = parseInt(row.querySelector("select[name='status']").value, 10); // Capture as int
     const memo = row.querySelector("td:nth-child(7)").textContent.trim();
     // New fields
-    const correctionId = row.querySelector("input[name='correctionId']")?.value;
-    const correctionUsTime = row.querySelector("input[name='correctionUsTime']")?.value;
-    const correctionMidTime = row.querySelector("input[name='correctionMidTime']")?.value;
-    const indirectTime = row.querySelector("input[name='indirectTime']")?.value;
-    const totalWorkTime = row.querySelector("input[name='totalWorkTime']")?.value;
-    const totalDirectWorkTime = row.querySelector("input[name='totalDirectWorkTime']")?.value;
+    const getInputValue = (name) => {
+      const el = row.querySelector(`input[name='${name}']`);
+      return el ? el.value : null;
+    };
+    const correctionId = getInputValue('correctionId');
+    const correctionUsTime = getInputValue('correctionUsTime');
+    const correctionMidTime = getInputValue('correctionMidTime');
+    const indirectTime = getInputValue('indirectTime');
+    const totalWorkTime = getInputValue('totalWorkTime');
+    const totalDirectWorkTime = getInputValue('totalDirectWorkTime');
 
 
     let jikangai = 0;

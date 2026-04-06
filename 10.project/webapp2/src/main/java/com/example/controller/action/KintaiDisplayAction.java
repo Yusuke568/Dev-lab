@@ -1,77 +1,73 @@
 package com.example.controller.action;
 
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.List;
+import com.example.kintai.adapter.in.web.dto.MonthlyAttendanceDto;
+import com.example.kintai.application.port.in.GetMonthlyAttendanceUseCase;
+import com.example.application.port.in.GetWorkTypesUseCase;
+import com.example.controller.Action;
+import com.example.controller.View;
+import com.example.kintai.domain.model.employee.EmployeeId;
+import com.example.entity.WorkType;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-import javax.naming.NamingException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import com.example.common.MyUtil;
-import com.example.controller.Action;
-import com.example.controller.View;
-import com.example.entity.CalendarDay;
-import com.example.entity.Shain;
-import com.example.entity.WorkType;
-import com.example.service.KintaiService;
-import com.example.service.ShainService;
-import com.example.service.WorkTypeService;
+import java.io.IOException;
+import java.time.YearMonth;
+import java.util.List;
 
 /**
- * 勤怠入力画面を表示するアクションクラス。
+ * 勤怠入力画面を表示するアクションクラス。（リファクタリング後）
+ * 責務：リクエストを解釈し、適切なユースケースを呼び出し、結果をビューに渡す。
  */
 public class KintaiDisplayAction implements Action {
+
+    private final GetMonthlyAttendanceUseCase getMonthlyAttendanceUseCase;
+    private final GetWorkTypesUseCase getWorkTypesUseCase;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    /**
+     * コンストラクタ。
+     * 依存性は外部のファクトリ（DIコンテナ）から注入されます。
+     */
+    public KintaiDisplayAction(GetMonthlyAttendanceUseCase getMonthlyAttendanceUseCase, GetWorkTypesUseCase getWorkTypesUseCase) {
+        this.getMonthlyAttendanceUseCase = getMonthlyAttendanceUseCase;
+        this.getWorkTypesUseCase = getWorkTypesUseCase;
+    }
 
     @Override
     public View execute(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
         try {
-            // Serviceクラスのインスタンス化
-            KintaiService kintaiService = new KintaiService();
-            WorkTypeService workTypeService = new WorkTypeService();
-            ShainService shainService = new ShainService();
-            
-            // パラメータ取得
-            int id = Integer.parseInt(request.getParameter("id"));
-            int year = Integer.parseInt(request.getParameter("year"));
-            int month = Integer.parseInt(request.getParameter("month"));
-            
-            // データの取得
-            List<WorkType> workTypeList = workTypeService.getWorkTypeList();
-            Shain shain = shainService.getShainById(id);
+            // 1. リクエストからコマンドを作成
+            String idParam = request.getParameter("id");
+            String yearParam = request.getParameter("year");
+            String monthParam = request.getParameter("month");
 
-            // 対象社員の対象月勤怠情報がない場合、初期化処理を行う
-            if(!kintaiService.isStaffidwork(id)) {
-                kintaiService.initializeMonthlyKintai(id, year, month);
-            }
-
-            // 月次の勤怠情報を取得する
-            List<CalendarDay> calendarList = kintaiService.getmonthKintai(id, year, month);
-
-            // JSPへのデータ設定
-            request.setAttribute("calendarList", calendarList);
-            request.setAttribute("statusOptions", workTypeList);
-            request.setAttribute("shain", shain);
-            request.setAttribute("staff_id", id);
+            // ログイン中のユーザー情報をセッションから取得する方が望ましいが、ここではパラメータを維持
+            EmployeeId employeeId = new EmployeeId(idParam);
+            YearMonth yearMonth = YearMonth.of(Integer.parseInt(yearParam), Integer.parseInt(monthParam));
             
-            // JavaScriptで使用するためのJSON文字列を作成
-            // (MyUtil.getJsonString が WorkType に対応しているか確認が必要だが、ここではそのまま使用)
-            StringBuilder json = MyUtil.getJsonString(workTypeList, "name");
-            request.setAttribute("statusOptionsJson", json.toString());
+            GetMonthlyAttendanceUseCase.GetMonthlyAttendanceCommand command =
+                    new GetMonthlyAttendanceUseCase.GetMonthlyAttendanceCommand(employeeId, yearMonth);
+
+            // 2. ユースケースを実行
+            MonthlyAttendanceDto attendanceData = getMonthlyAttendanceUseCase.getMonthlyAttendance(command);
+            List<WorkType> workTypes = getWorkTypesUseCase.getWorkTypes();
+            String workTypesJson = objectMapper.writeValueAsString(workTypes);
+
+            // 3. 結果をリクエストスコープに設定
+            request.setAttribute("attendanceData", attendanceData);
+            request.setAttribute("workTypes", workTypes);
+            request.setAttribute("workTypesJson", workTypesJson);
             
-            // 転送先を設定
+            // 4. ビューにフォワード
             return new View("/WEB-INF/view/kintai.jsp");
 
-        } catch (SQLException | NamingException | IOException e) {
+        } catch (Exception e) {
+            // エラーハンドリングを強化することが望ましい
             e.printStackTrace();
-            request.setAttribute("errorMessage", "勤怠情報の表示中にエラーが発生しました。");
-            return new View("/WEB-INF/view/error.jsp");
-        } catch (NumberFormatException e) {
-            e.printStackTrace();
-            request.setAttribute("errorMessage", "ID、年、月の形式が正しくありません。");
+            request.setAttribute("errorMessage", "勤怠情報の表示中にエラーが発生しました: " + e.getMessage());
             return new View("/WEB-INF/view/error.jsp");
         }
     }

@@ -1,1 +1,0 @@
-delete  from STAFF_TABLE where id=?

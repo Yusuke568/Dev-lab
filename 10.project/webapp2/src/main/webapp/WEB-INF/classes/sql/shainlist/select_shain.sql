@@ -1,1 +1,0 @@
-select ID, NAME, NAMEKANA, ENTRY_YEAR, GENDER, PAID_LEAVE_DAYS,(select NAME from class_master where CLASS_ID = ID) AS JOBCLASS from STAFF_TABLE where id=?;

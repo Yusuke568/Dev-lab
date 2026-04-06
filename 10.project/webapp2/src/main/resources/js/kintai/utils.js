@@ -4,7 +4,7 @@ export function getMinutes(t) {
   return h * 60 + m;
 }
 
-export function collectAttendanceRecords() {
+export function collectAttendanceRecords(staffId) {
   const rows = document.querySelectorAll("#calendar-log tbody tr");
   const records = [];
 
@@ -36,6 +36,7 @@ export function collectAttendanceRecords() {
     }
 
     records.push({
+      id: staffId,
       kintaidate,
       week,
       kintaifrom,

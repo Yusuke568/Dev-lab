@@ -17,7 +17,7 @@
 			管理者にお問い合わせいただくか、時間をおいて再度お試しください。
 		</p>
 		<div style="margin-top: 30px;">
-			<a href="${pageContext.request.contextPath}/ShainMenu"
+			<a href="${pageContext.request.contextPath}/menu.do"
 				class="btn btn-primary">‹ メニューに戻る</a>
 		</div>
 	</div>

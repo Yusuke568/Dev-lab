@@ -1,53 +1,55 @@
 package com.example.controller.action;
 
-import java.io.IOException;
-import java.sql.SQLException;
-
-import javax.naming.NamingException;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import com.example.application.port.in.GetShainByIdUseCase;
 import com.example.controller.Action;
 import com.example.controller.View;
 import com.example.entity.Shain;
-import com.example.service.ShainService;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Optional;
 
 /**
- * 社員削除確認画面表示のアクションクラス。
+ * 社員削除確認画面表示のアクションクラス。（新アーキテクチャ）
  */
 public class ShainDeleteFormAction implements Action {
+
+    private final GetShainByIdUseCase getShainByIdUseCase;
+
+    public ShainDeleteFormAction(GetShainByIdUseCase getShainByIdUseCase) {
+        this.getShainByIdUseCase = getShainByIdUseCase;
+    }
 
     @Override
     public View execute(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
         try {
-            ShainService shainService = new ShainService();
-            
             // リクエストから削除対象の社員IDを取得
             int id = Integer.parseInt(request.getParameter("id"));
             
-            // 社員情報を取得
-            Shain shain = shainService.getShainById(id);
-            if (shain == null) {
+            // ユースケースを使って社員情報を取得
+            Optional<Shain> shainOptional = getShainByIdUseCase.getShainById(id);
+            if (!shainOptional.isPresent()) {
                 request.setAttribute("errorMessage", "指定された社員IDの社員は存在しません。");
                 return new View("/WEB-INF/view/error.jsp");
             }
             
             // リクエストスコープにセット
-            request.setAttribute("shain", shain);
+            request.setAttribute("shain", shainOptional.get());
             
             // 削除確認JSPにフォワード
             return new View("/WEB-INF/view/shaindelete.jsp");
             
-        } catch (SQLException | NamingException e) {
-            e.printStackTrace();
-            request.setAttribute("errorMessage", "データベースへの接続中にエラーが発生しました。");
-            return new View("/WEB-INF/view/error.jsp");
         } catch (NumberFormatException e) {
             e.printStackTrace();
             request.setAttribute("errorMessage", "社員IDが不正です。");
+            return new View("/WEB-INF/view/error.jsp");
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.setAttribute("errorMessage", "データの取得中にエラーが発生しました。");
             return new View("/WEB-INF/view/error.jsp");
         }
     }

@@ -14,10 +14,10 @@
 			<h1>新しい仲間を登録</h1>
 			<p>新しい社員の情報を入力してください。</p>
 		</div>
-		<form action="ShainInsertComplete" method="post">
+		<form action="${pageContext.request.contextPath}/shainInsertExecute.do" method="post">
 			<div class="form-group">
 				<label for="id" class="form-label">社員ID</label> <input type="text"
-					id="id" name="id" class="form-input" pattern="\\d{3}" required
+					id="id" name="id" class="form-input" pattern="\d{3}" required
 					title="IDは3桁の数字で入力してください">
 			</div>
 			<div class="form-group">
@@ -51,7 +51,7 @@
 			</div>
 
 			<div style="display: flex; justify-content: space-between; margin-top: 40px;">
-				<a href="${pageContext.request.contextPath}/ShainList" class="btn btn-secondary">‹ 戻る</a>
+				<a href="${pageContext.request.contextPath}/shainList.do" class="btn btn-secondary">‹ 戻る</a>
 				<button type="submit" class="btn btn-primary">✓ 登録</button>
 			</div>
 		</form>

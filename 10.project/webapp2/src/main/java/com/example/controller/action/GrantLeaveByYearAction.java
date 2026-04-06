@@ -1,34 +1,36 @@
 package com.example.controller.action;
 
-import java.io.IOException;
-import java.sql.SQLException;
+import com.example.application.port.in.GrantLeaveByYearsOfServiceUseCase;
+import com.example.controller.Action;
+import com.example.controller.View;
 
-import javax.naming.NamingException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import com.example.controller.Action;
-import com.example.controller.View;
-import com.example.service.LeaveService;
+import java.io.IOException;
 
 /**
- * 勤続年数に応じて一括で有給を付与するアクションクラス。
+ * 勤続年数に応じて一括で有給を付与するアクションクラス。（新アーキテクチャ）
  */
 public class GrantLeaveByYearAction implements Action {
+
+    private final GrantLeaveByYearsOfServiceUseCase grantLeaveByYearsOfServiceUseCase;
+
+    public GrantLeaveByYearAction(GrantLeaveByYearsOfServiceUseCase grantLeaveByYearsOfServiceUseCase) {
+        this.grantLeaveByYearsOfServiceUseCase = grantLeaveByYearsOfServiceUseCase;
+    }
 
     @Override
     public View execute(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
         try {
-            LeaveService leaveService = new LeaveService();
-            leaveService.grantLeaveByYearsOfService();
+            grantLeaveByYearsOfServiceUseCase.grantLeaveByYearsOfService();
             
             // 処理成功後、有給管理画面にリダイレクト
             return new View("/paidLeaveAdmin.do", true);
 
-        } catch (SQLException | NamingException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             request.setAttribute("errorMessage", "有給の一括付与処理中にエラーが発生しました。");
             return new View("/WEB-INF/view/error.jsp");

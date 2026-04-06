@@ -3,14 +3,14 @@ import { collectAttendanceRecords, getMinutes } from "./utils.js";
 // Get data from the root element's dataset
 const rootEl = document.getElementById("kintai-app-root");
 const staffId = parseInt(rootEl.dataset.staffId, 10);
-const statusOptions = JSON.parse(rootEl.dataset.statusOptionsJson);
+const workTypes = JSON.parse(rootEl.dataset.workTypesJson);
 const year = parseInt(rootEl.dataset.year, 10);
 const month = parseInt(rootEl.dataset.month, 10);
 
 function saveAttendance() {
   const records = collectAttendanceRecords(staffId);
 
-  fetch("/webapp2/Kintaiinsert", {
+  fetch("/webapp2/kintaiUpdateApi.do", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -137,7 +137,7 @@ function renderStatusCell(cell, currentValue, date) {
 
   select.addEventListener("change", () => {
     const newVal = parseInt(select.value, 10);
-    const selectedOption = statusOptions.find((opt) => opt.id === newVal);
+    const selectedOption = workTypes.find((opt) => opt.id === newVal);
     cell.innerText = selectedOption ? selectedOption.name : "";
     // No need to update a separate array, `collectAttendanceRecords` will get it
   });
@@ -162,7 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (holidays.includes(date)) row.classList.add("holiday");
 
     // Set default status for holidays/weekends
-    const holidayOption = statusOptions.find((opt) => opt.name === "休日");
+    const holidayOption = workTypes.find((opt) => opt.name === "休日");
     if (
       holidayOption &&
       (weekText === "SATURDAY" ||

@@ -1,7 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
 	pageEncoding="UTF-8"%>
 <%@page import="java.util.ArrayList"%>
-<%@page import="beans.*"%>
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -16,8 +15,11 @@
 		<div class="text-center">
 			<h1>ようこそ！</h1>
 			<p>IDとパスワードを入力してログインしてください</p>
+			<% if (request.getAttribute("errorMessage") != null) { %>
+				<p style="color: red;"><%= request.getAttribute("errorMessage") %></p>
+			<% } %>
 		</div>
-		<form action="${pageContext.request.contextPath}/ShainMenu"
+		<form action="${pageContext.request.contextPath}/loginExecute.do"
 			method="post" style="margin-top: 2rem;">
 			<div class="form-group">
 				<label for="username" class="form-label">ユーザー名</label>

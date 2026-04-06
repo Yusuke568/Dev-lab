@@ -1,6 +1,0 @@
-SELECT
-    USERNAME
-FROM
-    login_table
-WHERE
-    USERNAME = ? AND PASSWORD = ?;

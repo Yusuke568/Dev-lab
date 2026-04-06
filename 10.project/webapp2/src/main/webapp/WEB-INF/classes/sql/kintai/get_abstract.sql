@@ -1,8 +1,0 @@
-select 
-ID
-,NAME
-,IS_WORK
-,IS_PAID
-,IS_LEGAL_HOLIDAY
-,IS_PRESCRIBED_HOLIDAY
-from abstract_master;

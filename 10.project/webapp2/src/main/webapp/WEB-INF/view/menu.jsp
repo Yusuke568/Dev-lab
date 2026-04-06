@@ -55,7 +55,7 @@
 		<div class="menu-card">
 			<div class="icon">📅</div>
 			<h3>勤怠管理</h3>
-			<form action="${pageContext.request.contextPath}/ShainKintai"
+			<form action="${pageContext.request.contextPath}/kintaiDisplay.do"
 				method="post">
 				<div class="form-group">
 					<label for="id-select" class="form-label">社員ID</label>
@@ -85,14 +85,14 @@
 		</div>
 
 		<!-- 社員一覧カード -->
-		<a href="${pageContext.request.contextPath}/ShainList" class="menu-card" style="text-decoration: none; color: inherit;">
+		<a href="${pageContext.request.contextPath}/shainList.do" class="menu-card" style="text-decoration: none; color: inherit;">
 			<div class="icon">👥</div>
 			<h3>社員一覧</h3>
 			<p>社員情報の確認や編集を行います。</p>
 		</a>
 		
 		<!-- ログイン画面へ戻るカード -->
-		<a href="${pageContext.request.contextPath}/" class="menu-card" style="text-decoration: none; color: inherit;">
+		<a href="${pageContext.request.contextPath}/login.do" class="menu-card" style="text-decoration: none; color: inherit;">
 			<div class="icon">↩️</div>
 			<h3>ログアウト</h3>
 			<p>ログイン画面に戻ります。</p>

@@ -13,26 +13,26 @@
 </head>
 <body data-context-path="${pageContext.request.contextPath}">
 	<div id="kintai-app-root" class="card" 
-		data-staff-id="${staff_id}"
-		data-status-options-json='${statusOptionsJson}'
-		data-year="${year}"
-		data-month="${month}">
+		data-staff-id="${attendanceData.employeeName}"
+		data-work-types-json='${workTypesJson}'
+		data-year="${attendanceData.yearMonth.year}"
+		data-month="${attendanceData.yearMonth.monthValue}">
 		<div class="kintai-header">
 			<div>
 				<h1>勤怠管理</h1>
 				<p class="user-info">
-					<c:out value="${shainbean.name}" />
+					<c:out value="${attendanceData.employeeName}" />
 					様 |
-					<c:out value="${year}" />
+					<c:out value="${attendanceData.yearMonth.year}" />
 					年
-					<c:out value="${month}" />
+					<c:out value="${attendanceData.yearMonth.monthValue}" />
 					月
 				</p>
 			</div>
 			<div class="stat-card">
-				<div class="label">有給休暇残日数</div>
+				<div class="label">合計勤務時間</div>
 				<div class="value">
-					<c:out value="${shainbean.paidLeaveDays}" />日
+					<c:out value="${attendanceData.totalWorkHours}" />
 				</div>
 			</div>
 		</div>
@@ -58,7 +58,7 @@
 					<th style="width: 8%;">曜日</th>
 					<th style="width: 8%;">出勤</th>
 					<th style="width: 8%;">退勤</th>
-					<th style="width: 8%;">時間外</th>
+					<th style="width: 8%;">時間</th>
 					<th style="width: 15%;">勤務区分</th>
 					<th>備考</th>
 					<th style="width: 7%;">補正CD</th>
@@ -67,33 +67,31 @@
 				</tr>
 			</thead>
 			<tbody>
-				<c:forEach var="calendarbean" items="${calendarBeanList}">
-					<c:set var="week" value="${calendarbean.week.toString()}" />
-					<tr data-date="${calendarbean.kintaidate}"
+				<c:forEach var="daily" items="${attendanceData.dailyRecords}">
+					<c:set var="week" value="${daily.date.dayOfWeek.toString()}" />
+					<tr data-date="${daily.date}"
 						class="${week == 'SATURDAY' ? 'saturday' : ''} ${week == 'SUNDAY' ? 'sunday' : ''}">
-						<td><fmt:formatDate value="${calendarbean.getDateOfKintaidate()}"
-								pattern="d" /></td>
+						<td><c:out value="${daily.date.dayOfMonth}" /></td>
 						<td>${fn:substring(week, 0, 3)}</td>
-						<td><fmt:formatDate value="${calendarbean.kintaifrom}"
-								pattern="HH:mm" /></td>
-						<td><fmt:formatDate value="${calendarbean.kintaito}"
-								pattern="HH:mm" /></td>
-						<td><c:out value="${calendarbean.jikangai}" /></td>
+						<td><c:out value="${daily.startTime}" /></td>
+						<td><c:out value="${daily.endTime}" /></td>
+						<td><c:out value="${daily.workHours}" /></td>
 						<td><select name="status" class="form-input">
-								<c:forEach var="opt" items="${statusOptions}">
+								<c:forEach var="opt" items="${workTypes}">
 									<option value="${opt.id}"
-										${opt.id == calendarbean.abstractId ? 'selected' : ''}>
+										${opt.id == daily.abstractId ? 'selected' : ''}>
 										<c:out value="${opt.name}" />
 									</option>
 								</c:forEach>
 						</select></td>
-						<td><c:out value="${calendarbean.memo}" /></td>
+						<td><input type="text" name="workDescription"
+							value="${daily.workDescription}" class="form-input" /></td>
 						<td><input type="number" name="correctionId"
-							value="${calendarbean.correctionId}" class="form-input" /></td>
+							value="${daily.correctionId}" class="form-input" /></td>
 						<td><input type="number" name="correctionUsTime"
-							value="${calendarbean.correctionUsTime}" class="form-input" /></td>
+							value="${daily.correctionUsTime}" class="form-input" /></td>
 						<td><input type="number" name="correctionMidTime"
-							value="${calendarbean.correctionMidTime}" class="form-input" /></td>
+							value="${daily.correctionMidTime}" class="form-input" /></td>
 					</tr>
 				</c:forEach>
 			</tbody>
@@ -102,7 +100,7 @@
 
 	<!-- Status dropdown template for JS -->
 	<select id="status-template" style="display: none;">
-		<c:forEach var="opt" items="${statusOptions}">
+		<c:forEach var="opt" items="${workTypes}">
 			<option value="<c:out value="${opt.id}"/>">
 				<c:out value="${opt.name}" />
 			</option>

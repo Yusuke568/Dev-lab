@@ -15,7 +15,7 @@
 			<h1>新しい仲間を登録</h1>
 			<p>新しい社員の情報を入力してください。</p>
 		</div>
-		<form action="ShainInsertComplete" method="post">
+		<form action="${pageContext.request.contextPath}/shainInsertExecute.do" method="post">
 			<div class="form-group">
 				<label for="id" class="form-label">社員ID</label> <input type="text"
 					name="id" value="<c:out value='${nextId}'/>" class="form-input"
@@ -62,7 +62,7 @@
 			</div>
 
 			<div class="form-actions">
-				<a href="${pageContext.request.contextPath}/ShainList"
+				<a href="${pageContext.request.contextPath}/shainList.do"
 					class="btn btn-secondary">‹ 戻る</a>
 				<button type="submit" class="btn btn-primary">✓ 登録</button>
 			</div>

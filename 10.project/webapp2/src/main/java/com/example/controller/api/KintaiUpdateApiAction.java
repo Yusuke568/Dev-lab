@@ -10,15 +10,21 @@ import javax.servlet.http.HttpServletResponse;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.example.adapter.in.web.dto.KintaiRecordDto;
+import com.example.application.port.in.UpdateKintaiUseCase;
 import com.example.controller.Action;
 import com.example.controller.View;
-import com.example.entity.CalendarDay;
-import com.example.service.KintaiService;
 
 /**
  * 勤怠情報を非同期で更新するAPIアクション。
  */
 public class KintaiUpdateApiAction implements Action {
+
+    private final UpdateKintaiUseCase updateKintaiUseCase;
+
+    public KintaiUpdateApiAction(UpdateKintaiUseCase updateKintaiUseCase) {
+        this.updateKintaiUseCase = updateKintaiUseCase;
+    }
 
     @Override
     public View execute(HttpServletRequest request, HttpServletResponse response)
@@ -35,11 +41,10 @@ public class KintaiUpdateApiAction implements Action {
 
             // JSONをJavaオブジェクトにマッピング
             ObjectMapper mapper = new ObjectMapper();
-            List<CalendarDay> newKintaiList = mapper.readValue(jsonData, new TypeReference<List<CalendarDay>>() {});
+            List<KintaiRecordDto> newKintaiList = mapper.readValue(jsonData, new TypeReference<List<KintaiRecordDto>>() {});
             
             // Serviceを呼び出してDBを更新
-            KintaiService kintaiService = new KintaiService();
-            kintaiService.updateKintaiList(newKintaiList);
+            updateKintaiUseCase.updateKintai(newKintaiList);
             
             // 成功ステータスを設定
             response.setStatus(HttpServletResponse.SC_OK);

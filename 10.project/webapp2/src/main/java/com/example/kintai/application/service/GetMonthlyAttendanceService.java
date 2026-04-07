@@ -70,7 +70,12 @@ public class GetMonthlyAttendanceService implements GetMonthlyAttendanceUseCase 
                 startTime,
                 endTime,
                 workHours,
-                record.getWorkDescription()
+                record.getWorkDescription(),
+                record.getAbstractId(),
+                record.getCorrectionId(),
+                record.getCorrectionUsTime(),
+                record.getCorrectionMidTime(),
+                record.getApprovalStatus()
         );
     }
 

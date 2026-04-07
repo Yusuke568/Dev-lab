@@ -108,13 +108,49 @@ public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, S
 
     private AttendanceRecord mapToAttendanceRecord(ResultSet rs) throws SQLException {
         EmployeeId employeeId = new EmployeeId(String.valueOf(rs.getInt("staff_id")));
-        LocalDate workDate = rs.getTimestamp("work_day").toLocalDateTime().toLocalDate();
+        // Note: rs.getTimestamp("work_date") is used since column is WORK_DATE
+        LocalDate workDate = rs.getDate("work_date").toLocalDate();
         
-        LocalTime startTime = rs.getTime("start_time").toLocalTime();
-        LocalTime endTime = rs.getTime("end_time").toLocalTime();
-        WorkTime workTime = new WorkTime(startTime, endTime);
+        LocalTime startTime = null;
+        if (rs.getTimestamp("job_from_time") != null) {
+            startTime = rs.getTimestamp("job_from_time").toLocalDateTime().toLocalTime();
+        }
+        LocalTime endTime = null;
+        if (rs.getTimestamp("job_to_time") != null) {
+            endTime = rs.getTimestamp("job_to_time").toLocalDateTime().toLocalTime();
+        }
+        WorkTime workTime = (startTime != null && endTime != null) ? new WorkTime(startTime, endTime) : null;
         
-        return new AttendanceRecord(employeeId, workDate, workTime);
+        AttendanceRecord record = new AttendanceRecord(employeeId, workDate, workTime);
+        record.setWorkDescription(rs.getString("remarks"));
+        
+        int abstractId = rs.getInt("abstract_id");
+        if (!rs.wasNull()) {
+            record.setAbstractId(abstractId);
+        }
+        int correctionId = rs.getInt("correction_id");
+        if (!rs.wasNull()) {
+            record.setCorrectionId(correctionId);
+        }
+        int correctionUsTime = rs.getInt("correction_us_time");
+        if (!rs.wasNull()) {
+            record.setCorrectionUsTime(correctionUsTime);
+        }
+        int correctionMidTime = rs.getInt("correction_mid_time");
+        if (!rs.wasNull()) {
+            record.setCorrectionMidTime(correctionMidTime);
+        }
+        
+        try {
+            int approvalStatus = rs.getInt("approval_status");
+            if (!rs.wasNull()) {
+                record.setApprovalStatus(approvalStatus);
+            }
+        } catch (SQLException e) {
+            // ignore if column doesn't exist
+        }
+        
+        return record;
     }
     
     private String readSqlFile(String fileName) {

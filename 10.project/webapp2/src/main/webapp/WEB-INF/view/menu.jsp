@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
 	pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -8,9 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/style.css">
-</head>
-<body>
-	<style>
+<style>
 /* Additional styles for menu page */
 .menu-grid {
 	display: grid;
@@ -43,12 +42,19 @@
 	margin-bottom: 1.5rem;
 }
 </style>
-
+</head>
+<body>
 <div class="card">
 	<div class="text-center">
 		<h1>メインメニュー</h1>
 		<p>実行したい操作を選んでください</p>
 	</div>
+
+	<c:if test="${not empty alertMessage}">
+		<div style="background-color: #fff3cd; color: #856404; padding: 1rem; border-radius: 4px; margin-top: 1rem; border: 1px solid #ffeeba;">
+			<strong>お知らせ: </strong> <c:out value="${alertMessage}" />
+		</div>
+	</c:if>
 
 	<div class="menu-grid">
 		<!-- 勤怠管理カード -->
@@ -57,14 +63,19 @@
 			<h3>勤怠管理</h3>
 			<form action="${pageContext.request.contextPath}/kintaiDisplay.do"
 				method="post">
-				<div class="form-group">
-					<label for="id-select" class="form-label">社員ID</label>
-					<select name="id" id="id-select" class="form-input">
-						<option value="668">668</option>
-						<option value="669">669</option>
-						<option value="670">670</option>
-					</select>
-				</div>
+				<c:if test="${sessionScope.loginUserRole != '0'}">
+					<div class="form-group">
+						<label for="id-select" class="form-label">社員ID</label>
+						<select name="id" id="id-select" class="form-input">
+							<option value="668">668</option>
+							<option value="669">669</option>
+							<option value="670">670</option>
+						</select>
+					</div>
+				</c:if>
+				<c:if test="${sessionScope.loginUserRole == '0'}">
+					<input type="hidden" name="id" value="${sessionScope.loginUser}" />
+				</c:if>
 				<div class="form-group">
 					<label for="year-select" class="form-label">年</label>
 					<select name="year" id="year-select" class="form-input">
@@ -84,19 +95,34 @@
 			</form>
 		</div>
 
-		<!-- 社員一覧カード -->
-		<a href="${pageContext.request.contextPath}/shainList.do" class="menu-card" style="text-decoration: none; color: inherit;">
-			<div class="icon">👥</div>
-			<h3>社員一覧</h3>
-			<p>社員情報の確認や編集を行います。</p>
-		</a>
+		<c:if test="${sessionScope.loginUserRole != '0'}">
+			<!-- 社員一覧カード -->
+			<div class="menu-card-wrapper">
+				<a href="${pageContext.request.contextPath}/shainList.do" class="menu-card" style="text-decoration: none; color: inherit; display: block; height: 100%;">
+					<div class="icon">👥</div>
+					<h3>社員一覧</h3>
+					<p>社員情報の確認や編集を行います。</p>
+				</a>
+			</div>
+			
+			<!-- 有給休暇管理カード -->
+			<div class="menu-card-wrapper">
+				<a href="${pageContext.request.contextPath}/paidLeaveAdmin.do" class="menu-card" style="text-decoration: none; color: inherit; display: block; height: 100%;">
+					<div class="icon">🏖️</div>
+					<h3>有給休暇管理</h3>
+					<p>有給休暇の付与や日数の管理を行います。</p>
+				</a>
+			</div>
+		</c:if>
 		
 		<!-- ログイン画面へ戻るカード -->
-		<a href="${pageContext.request.contextPath}/login.do" class="menu-card" style="text-decoration: none; color: inherit;">
-			<div class="icon">↩️</div>
-			<h3>ログアウト</h3>
-			<p>ログイン画面に戻ります。</p>
-		</a>
+		<div class="menu-card-wrapper">
+			<a href="${pageContext.request.contextPath}/logout.do" class="menu-card" style="text-decoration: none; color: inherit; display: block; height: 100%;">
+				<div class="icon">↩️</div>
+				<h3>ログアウト</h3>
+				<p>ログアウトしてログイン画面に戻ります。</p>
+			</a>
+		</div>
 	</div>
 </div>
 </body>

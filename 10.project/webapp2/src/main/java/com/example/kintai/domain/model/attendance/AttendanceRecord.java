@@ -16,6 +16,11 @@ public class AttendanceRecord {
     private final LocalDate workDate;
     private WorkTime workTime;
     private String workDescription; // 作業内容など
+    private Integer abstractId;
+    private Integer correctionId;
+    private Integer correctionUsTime;
+    private Integer correctionMidTime;
+    private int approvalStatus;
 
     public AttendanceRecord(EmployeeId employeeId, LocalDate workDate, WorkTime workTime) {
         this.employeeId = Objects.requireNonNull(employeeId, "employeeId must not be null");
@@ -56,6 +61,21 @@ public class AttendanceRecord {
     public void setWorkDescription(String workDescription) {
         this.workDescription = workDescription;
     }
+
+    public Integer getAbstractId() { return abstractId; }
+    public void setAbstractId(Integer abstractId) { this.abstractId = abstractId; }
+    
+    public Integer getCorrectionId() { return correctionId; }
+    public void setCorrectionId(Integer correctionId) { this.correctionId = correctionId; }
+    
+    public Integer getCorrectionUsTime() { return correctionUsTime; }
+    public void setCorrectionUsTime(Integer correctionUsTime) { this.correctionUsTime = correctionUsTime; }
+    
+    public Integer getCorrectionMidTime() { return correctionMidTime; }
+    public void setCorrectionMidTime(Integer correctionMidTime) { this.correctionMidTime = correctionMidTime; }
+    
+    public int getApprovalStatus() { return approvalStatus; }
+    public void setApprovalStatus(int approvalStatus) { this.approvalStatus = approvalStatus; }
 
     @Override
     public boolean equals(Object o) {

@@ -21,6 +21,7 @@ public class KintaiRecordDto {
     private Integer indirectTime;
     private Integer totalWorkTime;
     private Integer totalDirectWorkTime;
+    private boolean isTemporary;
 
     // Getters and Setters
     public int getId() { return id; }
@@ -51,4 +52,6 @@ public class KintaiRecordDto {
     public void setTotalWorkTime(Integer totalWorkTime) { this.totalWorkTime = totalWorkTime; }
     public Integer getTotalDirectWorkTime() { return totalDirectWorkTime; }
     public void setTotalDirectWorkTime(Integer totalDirectWorkTime) { this.totalDirectWorkTime = totalDirectWorkTime; }
+    public boolean isTemporary() { return isTemporary; }
+    public void setTemporary(boolean isTemporary) { this.isTemporary = isTemporary; }
 }

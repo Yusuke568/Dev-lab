@@ -46,6 +46,32 @@ public class UpdateKintaiService implements UpdateKintaiUseCase {
 
             for (KintaiRecordDto dto : records) {
                 LocalDate date = LocalDate.parse(dto.getKintaidate(), DateTimeFormatter.ISO_LOCAL_DATE);
+
+                if (!dto.isTemporary()) {
+                    // Backend Validation (UC-VAL-01, 02, 03)
+                    if (dto.getKintaifrom() != null && !dto.getKintaifrom().isEmpty() &&
+                        dto.getKintaito() != null && !dto.getKintaito().isEmpty()) {
+                        
+                        String[] fromParts = dto.getKintaifrom().split(":");
+                        String[] toParts = dto.getKintaito().split(":");
+                        int fromMin = Integer.parseInt(fromParts[0]) * 60 + Integer.parseInt(fromParts[1]);
+                        int toMin = Integer.parseInt(toParts[0]) * 60 + Integer.parseInt(toParts[1]);
+                        
+                        if (toMin < fromMin) {
+                            throw new IllegalArgumentException("退勤時刻が出勤時刻より前になっています: " + dto.getKintaidate());
+                        }
+                        if (toMin - fromMin > 24 * 60) {
+                            throw new IllegalArgumentException("実働時間が24時間を超えています: " + dto.getKintaidate());
+                        }
+                    }
+                    if (paidLeaveId != -1 && dto.getAbstractId() != null && dto.getAbstractId() == paidLeaveId) {
+                        if ((dto.getKintaifrom() != null && !dto.getKintaifrom().isEmpty()) || 
+                            (dto.getKintaito() != null && !dto.getKintaito().isEmpty())) {
+                            throw new IllegalArgumentException("有給申請日に勤務実績が入力されています: " + dto.getKintaidate());
+                        }
+                    }
+                }
+
                 DailyWorkRecord oldBean = kintaiUpdatePort.findByDate(dto.getId(), date);
                 
                 int oldStatusId = (oldBean != null) ? oldBean.getAbstractId() : -1;
@@ -80,6 +106,7 @@ public class UpdateKintaiService implements UpdateKintaiUseCase {
                 newBean.setIndirectTime(dto.getIndirectTime());
                 newBean.setTotalWorkTime(dto.getTotalWorkTime());
                 newBean.setTotalDirectWorkTime(dto.getTotalDirectWorkTime());
+                newBean.setApprovalStatus(dto.isTemporary() ? 0 : 1);
 
                 kintaiUpdatePort.update(newBean);
             }

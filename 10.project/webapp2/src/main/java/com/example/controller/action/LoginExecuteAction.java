@@ -1,8 +1,10 @@
 package com.example.controller.action;
 
 import com.example.application.port.in.AuthenticateUseCase;
+import com.example.application.port.in.GetShainByIdUseCase;
 import com.example.controller.Action;
 import com.example.controller.View;
+import com.example.entity.Shain;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -16,9 +18,11 @@ import java.io.IOException;
 public class LoginExecuteAction implements Action {
 
     private final AuthenticateUseCase authenticateUseCase;
+    private final GetShainByIdUseCase getShainByIdUseCase;
 
-    public LoginExecuteAction(AuthenticateUseCase authenticateUseCase) {
+    public LoginExecuteAction(AuthenticateUseCase authenticateUseCase, GetShainByIdUseCase getShainByIdUseCase) {
         this.authenticateUseCase = authenticateUseCase;
+        this.getShainByIdUseCase = getShainByIdUseCase;
     }
 
     @Override
@@ -38,6 +42,16 @@ public class LoginExecuteAction implements Action {
             // ログイン成功
             HttpSession session = request.getSession();
             session.setAttribute("loginUser", username);
+            
+            try {
+                java.util.Optional<Shain> optionalShain = getShainByIdUseCase.getShainById(Integer.parseInt(username));
+                if (optionalShain.isPresent()) {
+                    session.setAttribute("loginUserRole", optionalShain.get().getJobclass()); // '0' for 一般, others for Admin/Manager
+                }
+            } catch (NumberFormatException e) {
+                // Ignore parsing error
+            }
+
             return new View("/menu.do", true); // Redirect to menu
         } else {
             // ログイン失敗

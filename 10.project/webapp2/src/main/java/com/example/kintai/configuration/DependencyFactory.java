@@ -52,6 +52,7 @@ public class DependencyFactory {
     private final PaidLeavePort paidLeavePort;
 
     // --- Use Cases ---
+    private final AuthenticateUseCase authenticateUseCase;
     private final GetMonthlyAttendanceUseCase getMonthlyAttendanceUseCase;
     private final GetShainListUseCase getShainListUseCase;
     private final GetShainByIdUseCase getShainByIdUseCase;
@@ -80,8 +81,10 @@ public class DependencyFactory {
         this.workTypePort = new WorkTypePersistenceAdapter();
         this.kintaiUpdatePort = new KintaiPersistenceAdapter();
         this.paidLeavePort = new PaidLeavePersistenceAdapter();
+        LoginPort loginPort = new LoginPersistenceAdapter();
 
         // --- Service (Use Cases) を生成し、Adapter(Port)をコンストラクタで注入 ---
+        this.authenticateUseCase = new AuthenticateService(loginPort);
         this.getMonthlyAttendanceUseCase = new GetMonthlyAttendanceService(
                 this.attendancePersistenceAdapter,
                 this.employeePersistenceAdapter
@@ -104,6 +107,10 @@ public class DependencyFactory {
     }
 
     private void initializeActions() {
+        // Login Actions
+        actionMap.put("Login", new LoginAction());
+        actionMap.put("LoginExecute", new LoginExecuteAction(this.authenticateUseCase, this.getShainByIdUseCase));
+
         // KintaiDisplayAction
         actionMap.put("KintaiDisplay", new KintaiDisplayAction(this.getMonthlyAttendanceUseCase, this.getWorkTypesUseCase));
 
@@ -117,7 +124,8 @@ public class DependencyFactory {
         actionMap.put("ShainDeleteExecute", new ShainDeleteExecuteAction(this.deleteShainUseCase));
 
         // Menu Action
-        actionMap.put("Menu", new MenuAction());
+        actionMap.put("Menu", new MenuAction(this.getMonthlyAttendanceUseCase));
+        actionMap.put("Logout", new LogoutAction());
 
         // Paid Leave Admin Actions
         actionMap.put("PaidLeaveAdmin", new PaidLeaveAdminAction(this.getShainListUseCase));

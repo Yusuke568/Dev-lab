@@ -10,17 +10,17 @@ export function collectAttendanceRecords(staffId) {
 
   rows.forEach(row => {
     const kintaidate = row.dataset.date;
-    const week = row.querySelector("td:nth-child(2)").textContent.trim();
-    const kintaifrom = row.querySelector("td:nth-child(3)").innerText.trim();
-    const kintaito = row.querySelector("td:nth-child(4)").innerText.trim();
-    const jikangaiStr = row.querySelector("td:nth-child(5)").innerText.trim();
+    const week = row.querySelector("td:nth-child(3)").textContent.trim();
+    const kintaifrom = row.querySelector("td:nth-child(4)").innerText.trim();
+    const kintaito = row.querySelector("td:nth-child(5)").innerText.trim();
+    const jikangaiStr = row.querySelector("td:nth-child(6)").innerText.trim();
     const abstractId = parseInt(row.querySelector("select[name='status']").value, 10); // Capture as int
-    const memo = row.querySelector("td:nth-child(7)").textContent.trim();
     // New fields
     const getInputValue = (name) => {
-      const el = row.querySelector(`input[name='${name}']`);
+      const el = row.querySelector(`input[name='${name}'], textarea[name='${name}']`);
       return el ? el.value : null;
     };
+    const memo = getInputValue('workDescription') || '';
     const correctionId = getInputValue('correctionId');
     const correctionUsTime = getInputValue('correctionUsTime');
     const correctionMidTime = getInputValue('correctionMidTime');

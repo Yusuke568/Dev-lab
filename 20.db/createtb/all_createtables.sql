@@ -71,9 +71,9 @@ CREATE TABLE `work_month_table` (
   `TOTAL_DIRECT_WORK_TIME` int DEFAULT NULL COMMENT '総稼働時間（直接）',
   `OVERTIME` int DEFAULT NULL COMMENT '残業時間',
   `ABSTRACT_ID` int DEFAULT NULL COMMENT '摘要区分',
-  `REMARKS` varchar(200) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '備考',
-  PRIMARY KEY (`STAFF_ID`, `WORK_DATE`),
-  KEY `idx_work_date` (`WORK_DATE`),
+  `REMARKS` varchar(500) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '備考',
+  `APPROVAL_STATUS` int DEFAULT 0 COMMENT '承認ステータス(0:未申請, 1:申請中, 2:承認済)',
+  PRIMARY KEY (`STAFF_ID`, `WORK_DATE`),  KEY `idx_work_date` (`WORK_DATE`),
   KEY `idx_abstract_id` (`ABSTRACT_ID`),
   CONSTRAINT `work_month_table_ibfk_1` FOREIGN KEY (`STAFF_ID`) REFERENCES `staff_table` (`ID`) ON UPDATE CASCADE,
   CONSTRAINT `work_month_table_ibfk_2` FOREIGN KEY (`ABSTRACT_ID`) REFERENCES `abstract_master` (`ID`) ON UPDATE CASCADE

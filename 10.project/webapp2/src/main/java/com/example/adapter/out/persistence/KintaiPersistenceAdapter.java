@@ -39,8 +39,9 @@ public class KintaiPersistenceAdapter implements KintaiUpdatePort {
                 }
                 
                 pstmt.setString(12, bean.getMemo());
-                pstmt.setInt(13, bean.getId());
-                pstmt.setDate(14, java.sql.Date.valueOf(bean.getKintaidate()));
+                pstmt.setInt(13, bean.getApprovalStatus());
+                pstmt.setInt(14, bean.getId());
+                pstmt.setDate(15, java.sql.Date.valueOf(bean.getKintaidate()));
 
                 int updatedRows = pstmt.executeUpdate();
                 if (updatedRows == 0) {
@@ -76,6 +77,7 @@ public class KintaiPersistenceAdapter implements KintaiUpdatePort {
             }
             
             pstmt.setString(14, bean.getMemo());
+            pstmt.setInt(15, bean.getApprovalStatus());
             pstmt.executeUpdate();
         }
     }
@@ -107,6 +109,14 @@ public class KintaiPersistenceAdapter implements KintaiUpdatePort {
                         bean.setJikangai(rs.getInt("OVERTIME"));
                         bean.setAbstractId(rs.getInt("ABSTRACT_ID"));
                         bean.setMemo(rs.getString("REMARKS"));
+                        
+                        // Check if column exists, to be safe. But we know we are adding it.
+                        // However, FIND_BY_DATE_SQL needs to be updated too if it's a SELECT * or SELECT specific columns.
+                        try {
+                            bean.setApprovalStatus(rs.getInt("APPROVAL_STATUS"));
+                        } catch (java.sql.SQLException e) {
+                            // Column might not exist in old queries, ignore
+                        }
                         return bean;
                     }
                 }

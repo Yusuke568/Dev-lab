@@ -7,8 +7,33 @@ const workTypes = JSON.parse(rootEl.dataset.workTypesJson);
 const year = parseInt(rootEl.dataset.year, 10);
 const month = parseInt(rootEl.dataset.month, 10);
 
-function saveAttendance() {
-  const records = collectAttendanceRecords(staffId);
+function saveAttendance(isTemporary = false) {
+  let records = collectAttendanceRecords(staffId);
+  
+  if (!isTemporary) {
+    for (const r of records) {
+      if (r.kintaifrom && r.kintaito) {
+        const s = getMinutes(r.kintaifrom);
+        const e = getMinutes(r.kintaito);
+        if (e < s) {
+          alert(`${r.kintaidate}: 退勤時刻が出勤時刻より前になっています`);
+          return;
+        }
+        if (e - s > 24 * 60) {
+          alert(`${r.kintaidate}: 実働時間が24時間を超えています`);
+          return;
+        }
+      }
+      const paidLeaveId = workTypes.find(w => w.name === '有給')?.id;
+      if (r.abstractId === paidLeaveId && (r.kintaifrom || r.kintaito)) {
+        alert(`${r.kintaidate}: 有給申請日に勤務実績が入力されています`);
+        return;
+      }
+    }
+  }
+
+  // add isTemporary to records
+  records = records.map(r => ({ ...r, isTemporary }));
 
   fetch("/webapp2/kintaiUpdateApi.do", {
     method: "POST",
@@ -29,6 +54,9 @@ function saveAttendance() {
 // Make it globally accessible from the JSP
 window.saveAttendance = saveAttendance;
 window.recordAttendance = recordAttendance;
+window.insertTemplate = insertTemplate;
+window.toggleAllRows = toggleAllRows;
+window.applyBulkInput = applyBulkInput;
 
 const workStart = "09:00";
 const workEnd = "18:00";
@@ -40,28 +68,89 @@ const holidays = ["2025-09-15", "2025-09-23"];
 
 // -------- Functions --------
 
-function calculateOvertime(start, end) {
+function toggleAllRows(checkbox) {
+  const checkboxes = document.querySelectorAll(".row-checkbox");
+  checkboxes.forEach((cb) => (cb.checked = checkbox.checked));
+}
+
+function applyBulkInput() {
+  const bulkStart = document.getElementById("bulk-start").value;
+  const bulkEnd = document.getElementById("bulk-end").value;
+  const bulkStatus = document.getElementById("bulk-status").value;
+
+  let updated = false;
+  rows.forEach((row) => {
+    const cb = row.querySelector(".row-checkbox");
+    if (cb && cb.checked) {
+      updated = true;
+      if (bulkStart) row.cells[3].innerText = bulkStart;
+      if (bulkEnd) row.cells[4].innerText = bulkEnd;
+      if (bulkStatus !== "") {
+        const select = row.querySelector("select[name='status']");
+        if (select) select.value = bulkStatus;
+      }
+    }
+  });
+
+  if (updated) {
+    updateOvertimePerRow();
+    updateOvertimeSummary();
+  } else {
+    alert("反映する行を選択してください。");
+  }
+}
+
+function insertTemplate(btnEl) {
+  const input = btnEl.previousElementSibling;
+  if (input) {
+    const templateText = "【所感】\n本日も滞りなく業務を遂行しました。\n";
+    if (input.value.indexOf("【所感】") === -1) {
+      input.value = (input.value + " " + templateText).trim();
+    }
+  }
+}
+
+function calculateTotalWorkMinutes(start, end) {
   const s = getMinutes(start);
   const e = getMinutes(end);
-  const rS = getMinutes(workStart);
-  const rE = getMinutes(workEnd);
-  return (rS > s ? rS - s : 0) + (e > rE ? e - rE : 0);
+  if (s >= e) return 0;
+  
+  let total = e - s;
+  
+  // 休憩時間 12:00 - 13:00 の自動控除
+  const breakStart = getMinutes("12:00");
+  const breakEnd = getMinutes("13:00");
+  const overlapStart = Math.max(s, breakStart);
+  const overlapEnd = Math.min(e, breakEnd);
+  
+  if (overlapStart < overlapEnd) {
+    total -= (overlapEnd - overlapStart);
+  }
+  
+  return total;
+}
+
+function calculateOvertime(start, end) {
+  const totalMinutes = calculateTotalWorkMinutes(start, end);
+  // 1日の所定労働時間を8時間(480分)とする
+  const standardWorkMinutes = 480;
+  return totalMinutes > standardWorkMinutes ? totalMinutes - standardWorkMinutes : 0;
 }
 
 function updateOvertimePerRow() {
   rows.forEach((row) => {
-    const start = row.cells[2].innerText.trim();
-    const end = row.cells[3].innerText.trim();
-    const overtimeCell = row.cells[4];
+    const start = row.cells[3].innerText.trim();
+    const end = row.cells[4].innerText.trim();
+    const workTimeCell = row.cells[5]; // 実働時間を表示するセル
 
     if (start && end) {
-      const overtimeMinutes = calculateOvertime(start, end);
-      const hours = Math.floor(overtimeMinutes / 60);
-      const minutes = overtimeMinutes % 60;
-      overtimeCell.innerText =
+      const totalMinutes = calculateTotalWorkMinutes(start, end);
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      workTimeCell.innerText =
         String(hours).padStart(2, "0") + ":" + String(minutes).padStart(2, "0");
     } else {
-      overtimeCell.innerText = "";
+      workTimeCell.innerText = "";
     }
   });
 }
@@ -114,10 +203,10 @@ function recordAttendance(type) {
     if (row.dataset.date === dateStr) {
       switch (type) {
         case "出勤":
-          row.cells[2].innerText = timeStr;
+          row.cells[3].innerText = timeStr;
           break;
         case "退勤":
-          row.cells[3].innerText = timeStr;
+          row.cells[4].innerText = timeStr;
           break;
       }
       break;
@@ -152,7 +241,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   rows.forEach((row) => {
     const date = row.dataset.date;
-    const weekText = row.cells[1].innerText.trim();
+    const weekText = row.cells[2].innerText.trim();
     const select = row.querySelector("select[name='status']");
 
     // Apply styles for weekends and holidays
@@ -188,7 +277,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const date = row.dataset.date;
 
       // Non-editable cells
-      if ([0, 1, 4].includes(cell.cellIndex) || cell.querySelector("select"))
+      if ([0, 1, 2, 5, 8].includes(cell.cellIndex) || cell.querySelector("select"))
         return;
 
       // Switch to input for editable cells
@@ -198,7 +287,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const originalText = cell.innerText;
 
       // For status dropdown
-      if (cell.cellIndex === 5) {
+      if (cell.cellIndex === 6) {
         const record = collectAttendanceRecords(staffId).find((r) => r.kintaidate === date);
         const currentVal = record ? record.abstractId : null; // Use null to be explicit
         renderStatusCell(cell, currentVal || "", date); // Pass empty string if null

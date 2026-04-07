@@ -13,6 +13,7 @@ STAFF_ID
 ,OVERTIME
 ,ABSTRACT_ID
 ,REMARKS
+,APPROVAL_STATUS
 from work_month_table
 where STAFF_ID = ?
 AND DATE_FORMAT(WORK_DATE, '%Y%m') = CONCAT(?, ?);

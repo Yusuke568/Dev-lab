@@ -13,6 +13,7 @@ SELECT
     w.OVERTIME,
     w.ABSTRACT_ID,
     w.REMARKS,
+    w.APPROVAL_STATUS,
     a.NAME AS TEKIYOUKBN
 FROM
     work_month_table w

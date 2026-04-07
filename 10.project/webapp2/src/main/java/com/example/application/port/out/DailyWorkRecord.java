@@ -21,6 +21,7 @@ public class DailyWorkRecord {
     private int jikangai;
     private int abstractId;
     private String memo;
+    private int approvalStatus;
 
     // Getters and Setters
     public int getId() { return id; }
@@ -51,4 +52,6 @@ public class DailyWorkRecord {
     public void setAbstractId(int abstractId) { this.abstractId = abstractId; }
     public String getMemo() { return memo; }
     public void setMemo(String memo) { this.memo = memo; }
+    public int getApprovalStatus() { return approvalStatus; }
+    public void setApprovalStatus(int approvalStatus) { this.approvalStatus = approvalStatus; }
 }

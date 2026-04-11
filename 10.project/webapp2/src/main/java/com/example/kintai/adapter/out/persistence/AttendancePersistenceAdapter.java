@@ -34,16 +34,13 @@ public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, S
     public List<AttendanceRecord> loadByEmployeeAndMonth(EmployeeId employeeId, YearMonth yearMonth) {
         String sql = readSqlFile("get_staff_month.sql");
         List<AttendanceRecord> records = new ArrayList<>();
-        
-        LocalDate startDate = yearMonth.atDay(1);
-        LocalDate endDate = yearMonth.atEndOfMonth();
 
         try (Connection con = ConnectionBase.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(1, Integer.parseInt(employeeId.getValue()));
-            ps.setTimestamp(2, Timestamp.valueOf(startDate.atStartOfDay()));
-            ps.setTimestamp(3, Timestamp.valueOf(endDate.atTime(23, 59, 59)));
+            ps.setString(2, String.valueOf(yearMonth.getYear()));
+            ps.setString(3, String.format("%02d", yearMonth.getMonthValue()));
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {

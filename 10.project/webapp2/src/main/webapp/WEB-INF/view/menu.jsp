@@ -98,30 +98,30 @@
 		<c:if test="${sessionScope.loginUserRole != '0'}">
 			<!-- 社員一覧カード -->
 			<div class="menu-card-wrapper">
-				<a href="${pageContext.request.contextPath}/shainList.do" class="menu-card" style="text-decoration: none; color: inherit; display: block; height: 100%;">
+				<div class="menu-card" style="cursor: pointer; height: 100%;" onclick="location.href='${pageContext.request.contextPath}/shainList.do'">
 					<div class="icon">👥</div>
 					<h3>社員一覧</h3>
 					<p>社員情報の確認や編集を行います。</p>
-				</a>
+				</div>
 			</div>
 			
 			<!-- 有給休暇管理カード -->
 			<div class="menu-card-wrapper">
-				<a href="${pageContext.request.contextPath}/paidLeaveAdmin.do" class="menu-card" style="text-decoration: none; color: inherit; display: block; height: 100%;">
+				<div class="menu-card" style="cursor: pointer; height: 100%;" onclick="location.href='${pageContext.request.contextPath}/paidLeaveAdmin.do'">
 					<div class="icon">🏖️</div>
 					<h3>有給休暇管理</h3>
 					<p>有給休暇の付与や日数の管理を行います。</p>
-				</a>
+				</div>
 			</div>
 		</c:if>
 		
 		<!-- ログイン画面へ戻るカード -->
 		<div class="menu-card-wrapper">
-			<a href="${pageContext.request.contextPath}/logout.do" class="menu-card" style="text-decoration: none; color: inherit; display: block; height: 100%;">
+			<div class="menu-card" style="cursor: pointer; height: 100%;" onclick="location.href='${pageContext.request.contextPath}/logout.do'">
 				<div class="icon">↩️</div>
 				<h3>ログアウト</h3>
 				<p>ログアウトしてログイン画面に戻ります。</p>
-			</a>
+			</div>
 		</div>
 	</div>
 </div>

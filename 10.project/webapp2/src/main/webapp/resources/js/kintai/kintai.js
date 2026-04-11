@@ -16,24 +16,25 @@ function saveAttendance(isTemporary = false) {
         const s = getMinutes(r.kintaifrom);
         const e = getMinutes(r.kintaito);
         if (e < s) {
-          alert(`${r.kintaidate}: 退勤時刻が出勤時刻より前になっています`);
+          alert(r.kintaidate + ": 退勤時刻が出勤時刻より前になっています");
           return;
         }
         if (e - s > 24 * 60) {
-          alert(`${r.kintaidate}: 実働時間が24時間を超えています`);
+          alert(r.kintaidate + ": 実働時間が24時間を超えています");
           return;
         }
       }
-      const paidLeaveId = workTypes.find(w => w.name === '有給')?.id;
+      const paidLeaveObj = workTypes.find(w => w.name === '有給');
+      const paidLeaveId = paidLeaveObj ? paidLeaveObj.id : undefined;
       if (r.abstractId === paidLeaveId && (r.kintaifrom || r.kintaito)) {
-        alert(`${r.kintaidate}: 有給申請日に勤務実績が入力されています`);
+        alert(r.kintaidate + ": 有給申請日に勤務実績が入力されています");
         return;
       }
     }
   }
 
   // add isTemporary to records
-  records = records.map(r => ({ ...r, isTemporary }));
+  records = records.map(r => Object.assign({}, r, { isTemporary: isTemporary }));
 
   fetch("/webapp2/kintaiUpdateApi.do", {
     method: "POST",

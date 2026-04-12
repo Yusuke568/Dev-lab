@@ -55,14 +55,15 @@
 						<td><c:out value="${shain.gender}" /></td>
 						<td><c:out value="${shain.jobclass}" /></td>
 						<td class="action-cell">
-							<a href="<c:url value='/shainUpdateForm.do'>
+							<c:url value='/shainUpdateForm.do' var='updateUrl'>
 								<c:param name='id' value='${shain.id}'/>
-							</c:url>"
-							class="btn btn-secondary">変更</a>
-							<a href="<c:url value='/shainDeleteForm.do'>
+							</c:url>
+							<a href="${updateUrl}" class="btn btn-secondary">変更</a>
+
+							<c:url value='/shainDeleteForm.do' var='deleteUrl'>
 								<c:param name='id' value='${shain.id}'/>
-							</c:url>"
-							class="btn btn-danger">削除</a>
+							</c:url>
+							<a href="${deleteUrl}" class="btn btn-danger">削除</a>
 						</td>
 					</tr>
 				</c:forEach>
@@ -82,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const keyword = e.target.value;
 
         debounceTimer = setTimeout(() => {
-            fetch(`${contextPath}/searchShainApi.do?keyword=${encodeURIComponent(keyword)}`)
+            fetch(contextPath + '/searchShainApi.do?keyword=' + encodeURIComponent(keyword))
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok');
@@ -110,22 +111,22 @@ document.addEventListener('DOMContentLoaded', () => {
         shainList.forEach(shain => {
             const row = document.createElement('tr');
             
-            const updateUrl = new URL(`${contextPath}/shainUpdateForm.do`, window.location.origin);
+            const updateUrl = new URL(contextPath + '/shainUpdateForm.do', window.location.origin);
             updateUrl.searchParams.append('id', shain.id);
 
-            const deleteUrl = new URL(`${contextPath}/shainDeleteForm.do`, window.location.origin);
+            const deleteUrl = new URL(contextPath + '/shainDeleteForm.do', window.location.origin);
             deleteUrl.searchParams.append('id', shain.id);
 
             row.innerHTML = `
-                <td>${escapeHTML(shain.id)}</td>
-                <td>${escapeHTML(shain.name)}</td>
-                <td>${escapeHTML(shain.namekana)}</td>
-                <td>${escapeHTML(shain.entryyear)}</td>
-                <td>${escapeHTML(shain.gender)}</td>
-                <td>${escapeHTML(shain.jobclass)}</td>
+                <td>\${escapeHTML(shain.id)}</td>
+                <td>\${escapeHTML(shain.name)}</td>
+                <td>\${escapeHTML(shain.namekana)}</td>
+                <td>\${escapeHTML(shain.entryyear)}</td>
+                <td>\${escapeHTML(shain.gender)}</td>
+                <td>\${escapeHTML(shain.jobclass)}</td>
                 <td class="action-cell">
-                    <a href="${updateUrl.pathname}${updateUrl.search}" class="btn btn-secondary">変更</a>
-                    <a href="${deleteUrl.pathname}${deleteUrl.search}" class="btn btn-danger">削除</a>
+                    <a href="\${updateUrl.pathname}\${updateUrl.search}" class="btn btn-secondary">変更</a>
+                    <a href="\${deleteUrl.pathname}\${deleteUrl.search}" class="btn btn-danger">削除</a>
                 </td>
             `;
             tableBody.appendChild(row);

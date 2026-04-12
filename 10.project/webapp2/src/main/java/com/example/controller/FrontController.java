@@ -61,9 +61,9 @@ public class FrontController extends HttpServlet {
             }
 
         } catch (Exception e) {
-            // ClassNotFoundExceptionやAction未設定時のIllegalArgumentExceptionをハンドリング
+            // 例外をキャッチした場合、500エラーとして処理（ログ出力含む）
             e.printStackTrace(); // 実際にはロギングする
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Resource not found.");
+            throw new ServletException("Internal Server Error in FrontController", e);
         }
     }
 

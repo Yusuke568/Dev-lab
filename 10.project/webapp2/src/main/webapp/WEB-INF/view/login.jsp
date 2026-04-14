@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
 	pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@page import="java.util.ArrayList"%>
 <!DOCTYPE html>
 <html lang="ja">
@@ -15,9 +16,9 @@
 		<div class="text-center">
 			<h1>ようこそ！</h1>
 			<p>IDとパスワードを入力してログインしてください</p>
-			<% if (request.getAttribute("errorMessage") != null) { %>
-				<p style="color: red;"><%= request.getAttribute("errorMessage") %></p>
-			<% } %>
+			<c:if test="${not empty errorMessage}">
+				<p style="color: red;"><c:out value="${errorMessage}" /></p>
+			</c:if>
 		</div>
 		<form action="${pageContext.request.contextPath}/loginExecute.do"
 			method="post" style="margin-top: 2rem;">

@@ -19,7 +19,7 @@ function postUpdate(id, days) {
     // Create a form dynamically to submit the data
     const form = document.createElement('form');
     form.method = 'post';
-    form.action = contextPath + '/paid_leave/update.do';
+    form.action = contextPath + '/updateLeave.do';
 
     const idInput = document.createElement('input');
     idInput.type = 'hidden';

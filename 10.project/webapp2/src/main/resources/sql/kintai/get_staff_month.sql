@@ -16,4 +16,5 @@ STAFF_ID
 ,APPROVAL_STATUS
 from work_month_table
 where STAFF_ID = ?
-AND DATE_FORMAT(WORK_DATE, '%Y%m') = CONCAT(?, ?);
+AND WORK_DATE >= ?
+AND WORK_DATE < ?;

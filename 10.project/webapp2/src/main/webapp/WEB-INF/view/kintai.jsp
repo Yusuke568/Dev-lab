@@ -119,7 +119,7 @@
 								</c:forEach>
 						</select></td>
 						<td><div style="display: flex; gap: 4px;">
-							<input type="text" name="workDescription" value="${daily.workDescription}" class="form-input" maxlength="500" style="flex: 1;" />
+							<input type="text" name="workDescription" value="<c:out value='${daily.workDescription}'/>" class="form-input" maxlength="500" style="flex: 1;" />
 							<button type="button" class="btn btn-secondary" onclick="insertTemplate(this)" style="padding: 2px 4px; font-size: 0.8rem;">定型</button>
 						</div></td>
 						<td>

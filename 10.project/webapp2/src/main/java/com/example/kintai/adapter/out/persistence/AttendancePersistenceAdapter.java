@@ -39,8 +39,8 @@ public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, S
              PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(1, Integer.parseInt(employeeId.getValue()));
-            ps.setString(2, String.valueOf(yearMonth.getYear()));
-            ps.setString(3, String.format("%02d", yearMonth.getMonthValue()));
+            ps.setDate(2, java.sql.Date.valueOf(yearMonth.atDay(1)));
+            ps.setDate(3, java.sql.Date.valueOf(yearMonth.plusMonths(1).atDay(1)));
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {

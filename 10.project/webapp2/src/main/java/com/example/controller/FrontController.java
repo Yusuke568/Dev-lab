@@ -44,6 +44,8 @@ public class FrontController extends HttpServlet {
     private void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         try {
+            request.setCharacterEncoding("UTF-8");
+            
             // 1. Actionの特定
             Action action = getAction(request);
 

@@ -49,8 +49,8 @@ public class UpdateKintaiService implements UpdateKintaiUseCase {
 
                 if (!dto.isTemporary()) {
                     // Backend Validation (UC-VAL-01, 02, 03)
-                    if (dto.getKintaifrom() != null && !dto.getKintaifrom().isEmpty() &&
-                        dto.getKintaito() != null && !dto.getKintaito().isEmpty()) {
+                    if (dto.getKintaifrom() != null && dto.getKintaifrom().contains(":") &&
+                        dto.getKintaito() != null && dto.getKintaito().contains(":")) {
                         
                         String[] fromParts = dto.getKintaifrom().split(":");
                         String[] toParts = dto.getKintaito().split(":");
@@ -65,8 +65,8 @@ public class UpdateKintaiService implements UpdateKintaiUseCase {
                         }
                     }
                     if (paidLeaveId != -1 && dto.getAbstractId() != null && dto.getAbstractId() == paidLeaveId) {
-                        if ((dto.getKintaifrom() != null && !dto.getKintaifrom().isEmpty()) || 
-                            (dto.getKintaito() != null && !dto.getKintaito().isEmpty())) {
+                        if ((dto.getKintaifrom() != null && dto.getKintaifrom().contains(":")) || 
+                            (dto.getKintaito() != null && dto.getKintaito().contains(":"))) {
                             throw new IllegalArgumentException("有給申請日に勤務実績が入力されています: " + dto.getKintaidate());
                         }
                     }
@@ -90,10 +90,10 @@ public class UpdateKintaiService implements UpdateKintaiUseCase {
                 newBean.setKintaidate(date);
                 newBean.setWeek(dto.getWeek());
                 
-                if (dto.getKintaifrom() != null && !dto.getKintaifrom().isEmpty()) {
+                if (dto.getKintaifrom() != null && dto.getKintaifrom().contains(":")) {
                     newBean.setKintaifrom(Timestamp.valueOf(date.toString() + " " + dto.getKintaifrom() + ":00"));
                 }
-                if (dto.getKintaito() != null && !dto.getKintaito().isEmpty()) {
+                if (dto.getKintaito() != null && dto.getKintaito().contains(":")) {
                     newBean.setKintaito(Timestamp.valueOf(date.toString() + " " + dto.getKintaito() + ":00"));
                 }
                 

@@ -11,10 +11,12 @@ export function collectAttendanceRecords(staffId) {
   rows.forEach(row => {
     const kintaidate = row.dataset.date;
     const week = row.querySelector("td:nth-child(3)").textContent.trim();
-    const kintaifrom = row.querySelector("td:nth-child(4)").innerText.trim();
-    const kintaito = row.querySelector("td:nth-child(5)").innerText.trim();
-    const jikangaiStr = row.querySelector("td:nth-child(6)").innerText.trim();
-    const abstractId = parseInt(row.querySelector("select[name='status']").value, 10); // Capture as int
+    const kintaifrom = row.querySelector("td:nth-child(4)").textContent.trim();
+    const kintaito = row.querySelector("td:nth-child(5)").textContent.trim();
+    const jikangaiStr = row.querySelector("td:nth-child(6)").textContent.trim();
+    const statusSelect = row.querySelector("select[name='status']");
+    const abstractId = statusSelect && statusSelect.value ? parseInt(statusSelect.value, 10) : null;
+    
     // New fields
     const getInputValue = (name) => {
       const el = row.querySelector(`input[name='${name}'], textarea[name='${name}']`);
@@ -28,6 +30,7 @@ export function collectAttendanceRecords(staffId) {
     const totalWorkTime = getInputValue('totalWorkTime');
     const totalDirectWorkTime = getInputValue('totalDirectWorkTime');
 
+    const parseNum = (val) => (val !== null && val !== '') ? Number(val) : null;
 
     let jikangai = 0;
     if (jikangaiStr && jikangaiStr !== '') {
@@ -44,12 +47,12 @@ export function collectAttendanceRecords(staffId) {
       jikangai,
       abstractId, // Renamed from tekiyoukbn
       memo,
-      correctionId: correctionId === '' ? null : Number(correctionId),
-      correctionUsTime: correctionUsTime === '' ? null : Number(correctionUsTime),
-      correctionMidTime: correctionMidTime === '' ? null : Number(correctionMidTime),
-      indirectTime: indirectTime === '' ? null : Number(indirectTime),
-      totalWorkTime: totalWorkTime === '' ? null : Number(totalWorkTime),
-      totalDirectWorkTime: totalDirectWorkTime === '' ? null : Number(totalDirectWorkTime)
+      correctionId: parseNum(correctionId),
+      correctionUsTime: parseNum(correctionUsTime),
+      correctionMidTime: parseNum(correctionMidTime),
+      indirectTime: parseNum(indirectTime),
+      totalWorkTime: parseNum(totalWorkTime),
+      totalDirectWorkTime: parseNum(totalDirectWorkTime)
     });
   });
 

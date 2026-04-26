@@ -60,6 +60,7 @@ public class KintaiDisplayAction implements Action {
             request.setAttribute("attendanceData", attendanceData);
             request.setAttribute("workTypes", workTypes);
             request.setAttribute("workTypesJson", workTypesJson);
+            request.setAttribute("staffId", idParam);
             
             // 4. ビューにフォワード
             return new View("/WEB-INF/view/kintai.jsp");

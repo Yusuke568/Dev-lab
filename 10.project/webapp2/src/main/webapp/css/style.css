@@ -388,3 +388,193 @@ h3 {
   justify-content: space-between;
   margin-top: 40px;
 }
+
+/* --- Table Responsive & Kintai Specific --- */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 24px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--card-shadow);
+}
+
+.table-responsive .table {
+  margin-top: 0;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.table-kintai {
+  min-width: 1200px;
+}
+
+.table-kintai th,
+.table-kintai td {
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.table-kintai th:nth-child(8),
+.table-kintai td:nth-child(8) {
+  white-space: normal;
+  min-width: 250px;
+}
+
+/* Hide the mobile toggle column on PC */
+.mobile-only {
+  display: none !important;
+}
+
+/* --- Mobile Accordion Style for Kintai Table --- */
+@media (max-width: 900px) {
+  .table-responsive {
+    overflow-x: visible; /* Disable horizontal scroll on mobile */
+  }
+  .table-kintai {
+    min-width: 100%;
+    display: block;
+  }
+  .table-kintai thead {
+    display: none; /* Hide original headers */
+  }
+  .table-kintai tbody {
+    display: block;
+  }
+  .table-kintai tr {
+    display: flex;
+    flex-wrap: wrap;
+    background: var(--card-background);
+    border: 1px solid #dee2e6;
+    border-radius: 8px; /* Slimmer radius */
+    margin-bottom: 8px; /* Slimmer margin */
+    padding: 8px; /* Slimmer padding */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+    align-items: center;
+    row-gap: 4px;
+    column-gap: 4px;
+  }
+  .table-kintai td {
+    display: flex;
+    align-items: center;
+    border-bottom: none;
+    padding: 0; /* Remove default padding for slimness */
+    white-space: normal !important;
+    min-width: 0 !important; /* Override PC min-width */
+  }
+  
+  /* Labels for mobile */
+  .table-kintai td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: #6c757d;
+    font-size: 0.75rem; /* Smaller labels */
+    margin-right: 4px;
+  }
+
+  /* 1st Line: Checkbox, Day, Week, Status(Approval) */
+  .table-kintai td:nth-child(1)::before,
+  .table-kintai td:nth-child(2)::before,
+  .table-kintai td:nth-child(3)::before,
+  .table-kintai td:nth-child(9)::before {
+    display: none; /* Hide obvious labels */
+  }
+  .table-kintai td:nth-child(1) { width: auto; order: 1; } /* Checkbox */
+  .table-kintai td:nth-child(2) { width: auto; order: 2; font-size: 1.1rem; font-weight: bold; margin-left: 4px; } /* Day */
+  .table-kintai td:nth-child(3) { width: auto; order: 3; font-size: 0.85rem; color: #666; margin-right: auto; margin-left: 2px; } /* Week */
+  .table-kintai td:nth-child(9) { width: auto; order: 4; font-size: 0.8rem; } /* Approval */
+
+  /* 2nd Line: Start, End, Hours */
+  .table-kintai td:nth-child(4) { width: 31%; order: 5; } /* Start */
+  .table-kintai td:nth-child(5) { width: 31%; order: 6; } /* End */
+  .table-kintai td:nth-child(6) { width: auto; order: 7; margin-left: auto; } /* Hours */
+  
+  .table-kintai td:nth-child(4)::before,
+  .table-kintai td:nth-child(5)::before,
+  .table-kintai td:nth-child(6)::before {
+    width: 26px; /* Fixed small width for time labels */
+  }
+
+  /* 3rd Line: Work Type (Status) */
+  .table-kintai td:nth-child(7) { width: 100%; order: 8; margin-top: 4px; } /* Status */
+  .table-kintai td:nth-child(7)::before { width: 50px; }
+  .table-kintai td:nth-child(7) select { padding: 4px 8px; font-size: 0.9rem; } /* Slimmer input */
+  
+  /* Details: Hidden by default */
+  .table-kintai td.detail-col {
+    display: none !important; /* Force hide */
+    width: 100%;
+    order: 9;
+    margin-top: 4px;
+  }
+  .table-kintai td.detail-col::before { width: 50px; }
+  .table-kintai td.detail-col input { padding: 4px 8px; font-size: 0.9rem; }
+
+  /* Expanded Details: Overrides hide */
+  .table-kintai tr.expanded td.detail-col {
+    display: flex !important; /* Force show */
+    animation: fadeIn 0.2s ease-out;
+  }
+  
+  /* Show toggle column on mobile */
+  .table-kintai .mobile-only {
+    display: flex !important;
+  }
+  
+  /* The toggle button column */
+  .table-kintai td.toggle-col {
+    width: 100%;
+    order: 10;
+    justify-content: center;
+    margin-top: 4px;
+    padding-top: 8px;
+    border-top: 1px dashed #dee2e6;
+  }
+  .table-kintai td.toggle-col::before { display: none; }
+  .table-kintai td.toggle-col button { padding: 2px 16px; font-size: 0.8rem; border-radius: 20px; }
+  
+  /* Editable time fields look clickable */
+  .table-kintai td.editable-time {
+    background-color: transparent;
+    cursor: pointer;
+  }
+}
+
+/* --- Mobile Global Padding Tweaks for Small Screens (e.g. iPhone SE) --- */
+@media (max-width: 600px) {
+  body {
+    padding: 10px;
+  }
+  .card {
+    padding: 16px;
+  }
+  .actions-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .actions-card > div {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+  }
+  .actions-card button {
+    flex: 1; /* Make buttons expand to fill width */
+    padding: 10px;
+    font-size: 0.9rem;
+  }
+  #overtime-summary {
+    text-align: center;
+  }
+  .kintai-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .kintai-header > div:last-child {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+}
+

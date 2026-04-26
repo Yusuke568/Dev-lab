@@ -58,6 +58,7 @@ window.recordAttendance = recordAttendance;
 window.insertTemplate = insertTemplate;
 window.toggleAllRows = toggleAllRows;
 window.applyBulkInput = applyBulkInput;
+window.toggleRowDetails = toggleRowDetails;
 
 const workStart = "09:00";
 const workEnd = "18:00";
@@ -68,6 +69,18 @@ const rows = document.querySelectorAll("#calendar-log tbody tr");
 const holidays = ["2025-09-15", "2025-09-23"];
 
 // -------- Functions --------
+
+function toggleRowDetails(btn) {
+  const tr = btn.closest('tr');
+  if (tr) {
+    tr.classList.toggle('expanded');
+    if (tr.classList.contains('expanded')) {
+      btn.textContent = '詳細を閉じる ∧';
+    } else {
+      btn.textContent = '詳細を開く ∨';
+    }
+  }
+}
 
 function toggleAllRows(checkbox) {
   const checkboxes = document.querySelectorAll(".row-checkbox");
@@ -84,8 +97,8 @@ function applyBulkInput() {
     const cb = row.querySelector(".row-checkbox");
     if (cb && cb.checked) {
       updated = true;
-      if (bulkStart) row.cells[3].innerText = bulkStart;
-      if (bulkEnd) row.cells[4].innerText = bulkEnd;
+      if (bulkStart) row.cells[3].textContent = bulkStart;
+      if (bulkEnd) row.cells[4].textContent = bulkEnd;
       if (bulkStatus !== "") {
         const select = row.querySelector("select[name='status']");
         if (select) select.value = bulkStatus;
@@ -140,18 +153,18 @@ function calculateOvertime(start, end) {
 
 function updateOvertimePerRow() {
   rows.forEach((row) => {
-    const start = row.cells[3].innerText.trim();
-    const end = row.cells[4].innerText.trim();
+    const start = row.cells[3].textContent.trim();
+    const end = row.cells[4].textContent.trim();
     const workTimeCell = row.cells[5]; // 実働時間を表示するセル
 
     if (start && end) {
       const totalMinutes = calculateTotalWorkMinutes(start, end);
       const hours = Math.floor(totalMinutes / 60);
       const minutes = totalMinutes % 60;
-      workTimeCell.innerText =
+      workTimeCell.textContent =
         String(hours).padStart(2, "0") + ":" + String(minutes).padStart(2, "0");
     } else {
-      workTimeCell.innerText = "";
+      workTimeCell.textContent = "";
     }
   });
 }
@@ -170,7 +183,7 @@ function updateOvertimeSummary() {
   if (summaryEl) {
     const hours = Math.floor(total / 60);
     const minutes = total % 60;
-    summaryEl.innerText = "時間外労働: " + hours + "時間" + minutes + "分";
+    summaryEl.textContent = "時間外労働: " + hours + "時間" + minutes + "分";
   }
 }
 
@@ -204,10 +217,10 @@ function recordAttendance(type) {
     if (row.dataset.date === dateStr) {
       switch (type) {
         case "出勤":
-          row.cells[3].innerText = timeStr;
+          row.cells[3].textContent = timeStr;
           break;
         case "退勤":
-          row.cells[4].innerText = timeStr;
+          row.cells[4].textContent = timeStr;
           break;
       }
       break;
@@ -228,7 +241,7 @@ function renderStatusCell(cell, currentValue, date) {
   select.addEventListener("change", () => {
     const newVal = parseInt(select.value, 10);
     const selectedOption = workTypes.find((opt) => opt.id === newVal);
-    cell.innerText = selectedOption ? selectedOption.name : "";
+    cell.textContent = selectedOption ? selectedOption.name : "";
     // No need to update a separate array, `collectAttendanceRecords` will get it
   });
 
@@ -242,7 +255,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   rows.forEach((row) => {
     const date = row.dataset.date;
-    const weekText = row.cells[2].innerText.trim();
+    const weekText = row.cells[2].textContent.trim();
     const select = row.querySelector("select[name='status']");
 
     // Apply styles for weekends and holidays
@@ -278,14 +291,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const date = row.dataset.date;
 
       // Non-editable cells
-      if ([0, 1, 2, 5, 8].includes(cell.cellIndex) || cell.querySelector("select"))
+      if ([0, 1, 2, 5, 8, 12].includes(cell.cellIndex) || cell.querySelector("select") || cell.classList.contains("toggle-col"))
         return;
 
       // Switch to input for editable cells
       const isEditableInput = cell.querySelector("input");
       if (isEditableInput) return; // Already in edit mode
 
-      const originalText = cell.innerText;
+      const originalText = cell.textContent;
 
       // For status dropdown
       if (cell.cellIndex === 6) {
@@ -302,12 +315,12 @@ document.addEventListener("DOMContentLoaded", () => {
       input.value = originalText;
       input.classList.add("form-input"); // Use a consistent input style
 
-      cell.innerText = "";
+      cell.textContent = "";
       cell.appendChild(input);
       input.focus();
 
       const handleBlur = () => {
-        cell.innerText = input.value;
+        cell.textContent = input.value;
         updateOvertimeSummary();
         updateButtonState();
       };
@@ -318,7 +331,7 @@ document.addEventListener("DOMContentLoaded", () => {
           input.blur();
         } else if (e.key === "Escape") {
           input.removeEventListener("blur", handleBlur);
-          cell.innerText = originalText;
+          cell.textContent = originalText;
         }
       });
     });

@@ -50,7 +50,63 @@ public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, S
         } catch (Exception e) {
             throw new RuntimeException("Failed to load monthly attendance.", e);
         }
+
+        int daysInMonth = yearMonth.lengthOfMonth();
+        if (records.size() < daysInMonth) {
+            autoInsertMissingDays(employeeId, yearMonth, records);
+            records.clear();
+            try (Connection con = ConnectionBase.getConnection();
+                 PreparedStatement ps = con.prepareStatement(sql)) {
+
+                ps.setInt(1, Integer.parseInt(employeeId.getValue()));
+                ps.setDate(2, java.sql.Date.valueOf(yearMonth.atDay(1)));
+                ps.setDate(3, java.sql.Date.valueOf(yearMonth.plusMonths(1).atDay(1)));
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        records.add(mapToAttendanceRecord(rs));
+                    }
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to reload monthly attendance after auto-insert.", e);
+            }
+        }
+
         return records;
+    }
+
+    private void autoInsertMissingDays(EmployeeId employeeId, YearMonth yearMonth, List<AttendanceRecord> existingRecords) {
+        int daysInMonth = yearMonth.lengthOfMonth();
+        List<LocalDate> existingDates = existingRecords.stream()
+                .map(AttendanceRecord::getWorkDate)
+                .collect(Collectors.toList());
+
+        String insertSql = "INSERT INTO work_month_table(STAFF_ID, WORK_DATE, WORK_WEEK, ABSTRACT_ID, OVERTIME, APPROVAL_STATUS) VALUES(?, ?, ?, ?, 0, 0)";
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(insertSql)) {
+            
+            boolean hasMissing = false;
+            for (int i = 1; i <= daysInMonth; i++) {
+                LocalDate date = yearMonth.atDay(i);
+                if (!existingDates.contains(date)) {
+                    ps.setInt(1, Integer.parseInt(employeeId.getValue()));
+                    ps.setDate(2, java.sql.Date.valueOf(date));
+                    ps.setString(3, date.getDayOfWeek().name());
+                    
+                    // Weekend -> 10, Weekday -> 1
+                    int abstractId = (date.getDayOfWeek() == java.time.DayOfWeek.SATURDAY || date.getDayOfWeek() == java.time.DayOfWeek.SUNDAY) ? 10 : 1;
+                    ps.setInt(4, abstractId);
+                    
+                    ps.addBatch();
+                    hasMissing = true;
+                }
+            }
+            if (hasMissing) {
+                ps.executeBatch();
+            }
+        } catch (Exception e) {
+            System.err.println("Warning: Auto-insert failed for missing days. " + e.getMessage());
+        }
     }
 
     @Override

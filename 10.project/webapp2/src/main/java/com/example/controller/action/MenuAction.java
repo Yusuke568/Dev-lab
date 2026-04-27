@@ -4,6 +4,14 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.YearMonth;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import com.example.infra.ConnectionBase;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+
 import com.example.controller.Action;
 import com.example.controller.View;
 import com.example.kintai.adapter.in.web.dto.DailyAttendanceDto;
@@ -38,6 +46,31 @@ public class MenuAction implements Action {
             YearMonth currentMonth = YearMonth.now();
             
             try {
+                // ログインユーザーの過去の勤怠月リストを取得
+                List<YearMonth> availableMonths = new ArrayList<>();
+                try (Connection con = ConnectionBase.getConnection();
+                     PreparedStatement ps = con.prepareStatement(
+                             "SELECT DISTINCT YEAR(WORK_DATE) AS y, MONTH(WORK_DATE) AS m " +
+                             "FROM work_month_table " +
+                             "WHERE STAFF_ID = ? AND WORK_DATE <= CURRENT_DATE() " +
+                             "ORDER BY y DESC, m DESC")) {
+                    ps.setInt(1, Integer.parseInt(loginUser));
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                            availableMonths.add(YearMonth.of(rs.getInt("y"), rs.getInt("m")));
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                // 今月が含まれていなければ追加
+                if (!availableMonths.contains(currentMonth)) {
+                    availableMonths.add(currentMonth);
+                }
+                Collections.sort(availableMonths, Collections.reverseOrder());
+                request.setAttribute("availableMonths", availableMonths);
+                request.setAttribute("currentMonth", currentMonth);
+
                 GetMonthlyAttendanceUseCase.GetMonthlyAttendanceCommand command = 
                     new GetMonthlyAttendanceUseCase.GetMonthlyAttendanceCommand(employeeId, currentMonth);
                 MonthlyAttendanceDto dto = getMonthlyAttendanceUseCase.getMonthlyAttendance(command);

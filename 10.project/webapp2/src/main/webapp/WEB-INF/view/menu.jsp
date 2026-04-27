@@ -63,34 +63,21 @@
 			<h3>勤怠管理</h3>
 			<form action="${pageContext.request.contextPath}/kintaiDisplay.do"
 				method="post">
-				<c:if test="${sessionScope.loginUserRole != '0'}">
-					<div class="form-group">
-						<label for="id-select" class="form-label">社員ID</label>
-						<select name="id" id="id-select" class="form-input">
-							<option value="668">668</option>
-							<option value="669">669</option>
-							<option value="670">670</option>
-						</select>
-					</div>
-				</c:if>
-				<c:if test="${sessionScope.loginUserRole == '0'}">
-					<input type="hidden" name="id" value="${sessionScope.loginUser}" />
-				</c:if>
-				<div class="form-group">
-					<label for="year-select" class="form-label">年</label>
-					<select name="year" id="year-select" class="form-input">
-						<option value="2025">2025</option>
-						<option value="2024">2024</option>
-					</select>
+				<input type="hidden" name="id" value="${sessionScope.loginUser}" />
+				<div class="form-group" style="text-align: left; padding: 0.5rem 0;">
+					<label class="form-label" style="display: inline;">社員ID: </label>
+					<span style="font-weight: bold;"><c:out value="${sessionScope.loginUser}" /></span>
 				</div>
 				<div class="form-group">
-					<label for="month-select" class="form-label">月</label>
-					<select name="month" id="month-select" class="form-input">
-						<option value="9">9</option>
-						<option value="10">10</option>
-						<option value="11">11</option>
+					<label for="ym-select" class="form-label">年月</label>
+					<select id="ym-select" class="form-input" onchange="document.getElementById('hidden-year').value = this.value.split('-')[0]; document.getElementById('hidden-month').value = this.value.split('-')[1];">
+						<c:forEach var="ym" items="${availableMonths}">
+							<option value="${ym.year}-${ym.monthValue}" <c:if test="${ym == currentMonth}">selected</c:if>>${ym.year}年${ym.monthValue}月</option>
+						</c:forEach>
 					</select>
 				</div>
+				<input type="hidden" name="year" id="hidden-year" value="${currentMonth.year}">
+				<input type="hidden" name="month" id="hidden-month" value="${currentMonth.monthValue}">
 				<button type="submit" class="btn btn-primary" style="width: 100%;">勤怠情報を表示</button>
 			</form>
 		</div>

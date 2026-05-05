@@ -14,7 +14,7 @@ public class LoginPersistenceAdapter implements LoginPort {
 
     @Override
     public boolean authenticate(String username, String password) {
-        String sql = "SELECT COUNT(*) FROM staff_table WHERE id = ? AND password = ?";
+        String sql = "SELECT COUNT(*) FROM login_table WHERE USERNAME = ? AND PASSWORD = ? AND ENABLED = 1";
         try (Connection con = ConnectionBase.getConnection();
              PreparedStatement pstmt = con.prepareStatement(sql)) {
             

@@ -15,8 +15,9 @@ hs_err_pid*
 
 # Eclipse
 # .project
-.classpath
 .settings/
+.classpath
+.project
 
 # AI
 .gemini/

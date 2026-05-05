@@ -5,7 +5,7 @@ import com.example.kintai.domain.model.attendance.WorkTime;
 import com.example.kintai.domain.model.employee.EmployeeId;
 import com.example.kintai.domain.port.out.LoadAttendanceRecordPort;
 import com.example.kintai.domain.port.out.SaveAttendanceRecordPort;
-import com.example.infra.ConnectionBase;
+import com.example.adapter.out.persistence.ConnectionBase;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -142,7 +142,7 @@ public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, S
             if (exists) { // UPDATE
                 ps.setTime(1, Time.valueOf(record.getWorkTime().getStartTime()));
                 ps.setTime(2, Time.valueOf(record.getWorkTime().getEndTime()));
-                // ... 他の更新項目
+                // ... 他�E更新頁E��
                 ps.setInt(3, Integer.parseInt(record.getEmployeeId().getValue()));
                 ps.setTimestamp(4, Timestamp.valueOf(record.getWorkDate().atStartOfDay()));
             } else { // INSERT
@@ -150,7 +150,7 @@ public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, S
                 ps.setTimestamp(2, Timestamp.valueOf(record.getWorkDate().atStartOfDay()));
                 ps.setTime(3, Time.valueOf(record.getWorkTime().getStartTime()));
                 ps.setTime(4, Time.valueOf(record.getWorkTime().getEndTime()));
-                // ... 他の登録項目
+                // ... 他�E登録頁E��
             }
             
             ps.executeUpdate();

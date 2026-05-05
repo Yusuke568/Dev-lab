@@ -3,7 +3,7 @@ package com.example.application.service;
 import com.example.adapter.in.web.dto.KintaiRecordDto;
 import com.example.application.port.in.UpdateKintaiUseCase;
 import com.example.application.port.out.KintaiUpdatePort;
-import com.example.application.port.out.PaidLeavePort;
+import com.example.leave.domain.port.out.PaidLeavePort;
 import com.example.application.port.out.TransactionManager;
 import com.example.application.port.out.WorkTypePort;
 import com.example.application.port.out.DailyWorkRecord;
@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 勤怠情報を更新するユースケースの実装。
+ * 勤怠惁E��を更新するユースケースの実裁E��E
  */
 public class UpdateKintaiService implements UpdateKintaiUseCase {
 
@@ -58,16 +58,16 @@ public class UpdateKintaiService implements UpdateKintaiUseCase {
                         int toMin = Integer.parseInt(toParts[0]) * 60 + Integer.parseInt(toParts[1]);
                         
                         if (toMin < fromMin) {
-                            throw new IllegalArgumentException("退勤時刻が出勤時刻より前になっています: " + dto.getKintaidate());
+                            throw new IllegalArgumentException("退勤時刻が�E勤時刻より前になってぁE��ぁE " + dto.getKintaidate());
                         }
                         if (toMin - fromMin > 24 * 60) {
-                            throw new IllegalArgumentException("実働時間が24時間を超えています: " + dto.getKintaidate());
+                            throw new IllegalArgumentException("実働時間ぁE4時間を趁E��てぁE��ぁE " + dto.getKintaidate());
                         }
                     }
                     if (paidLeaveId != -1 && dto.getAbstractId() != null && dto.getAbstractId() == paidLeaveId) {
                         if ((dto.getKintaifrom() != null && dto.getKintaifrom().contains(":")) || 
                             (dto.getKintaito() != null && dto.getKintaito().contains(":"))) {
-                            throw new IllegalArgumentException("有給申請日に勤務実績が入力されています: " + dto.getKintaidate());
+                            throw new IllegalArgumentException("有給申請日に勤務実績が�E力されてぁE��ぁE " + dto.getKintaidate());
                         }
                     }
                 }

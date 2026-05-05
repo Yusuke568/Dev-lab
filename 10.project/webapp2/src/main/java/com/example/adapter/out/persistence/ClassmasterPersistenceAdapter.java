@@ -3,7 +3,7 @@ package com.example.adapter.out.persistence;
 import com.example.application.port.out.ClassmasterPort;
 import com.example.common.MyUtil;
 import com.example.entity.Classmaster;
-import com.example.infra.ConnectionBase;
+import com.example.adapter.out.persistence.ConnectionBase;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 役職データのための永続化アダプタ。
+ * 役職チE�Eタのための永続化アダプタ、E
  */
 public class ClassmasterPersistenceAdapter implements ClassmasterPort {
 

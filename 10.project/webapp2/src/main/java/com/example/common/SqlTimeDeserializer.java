@@ -16,7 +16,7 @@ public class SqlTimeDeserializer extends JsonDeserializer<Time> {
             return null;
         }
 
-        // "09:00" → "09:00:00" に補正
+        // "09:00" ↁE"09:00:00" に補正
         if (value.length() == 5) {
             value += ":00";
         }

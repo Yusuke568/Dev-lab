@@ -13,7 +13,7 @@
 
     <servlet>
         <servlet-name>FrontController</servlet-name>
-        <servlet-class>com.example.controller.FrontController</servlet-class>
+        <servlet-class>com.example.adapter.in.web.FrontController</servlet-class>
     </servlet>
 
     <servlet-mapping>

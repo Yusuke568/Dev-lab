@@ -1,7 +1,5 @@
 package com.example.shain.application.port.in;
 
-import com.example.shain.domain.model.Shain;
-
 /**
  * 社員更新ユースケース。
  */

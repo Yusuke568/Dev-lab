@@ -3,8 +3,6 @@ package com.example.adapter.out.persistence;
 import com.example.application.port.out.KintaiUpdatePort;
 import com.example.application.port.out.DailyWorkRecord;
 import com.example.common.MyUtil;
-import com.example.adapter.out.persistence.ConnectionBase;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

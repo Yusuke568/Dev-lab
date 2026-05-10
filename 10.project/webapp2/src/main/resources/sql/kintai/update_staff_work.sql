@@ -1,4 +1,4 @@
-UPDATE work_month_table
+UPDATE kttb_work_month
 SET
     WORK_WEEK = ?,
     CORRECTION_ID = ?,

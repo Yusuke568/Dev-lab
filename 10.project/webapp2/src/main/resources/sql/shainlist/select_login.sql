@@ -1,6 +1,6 @@
 SELECT
     USERNAME
 FROM
-    login_table
+    aatb_login
 WHERE
     USERNAME = ? AND PASSWORD = ?;

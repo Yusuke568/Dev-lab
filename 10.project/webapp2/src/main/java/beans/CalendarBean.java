@@ -1,13 +1,26 @@
 package beans;
 
 import java.sql.Date;
-import java.sql.Timestamp; // Changed from java.sql.Time
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonSetter;
+
 // Removed JsonDeserialize import as it's not needed for Timestamp if handled correctly or new deserializer will be required
+
+
+/**
+ * 勤怠カレンダー1日分のデータを保持するBean。
+ * DB（kttb_work_month）および画面表示用の中間オブジェクトとして利用。
+ *
+ * @author 中島祐介
+ * @version 1.00
+ * @since 2026-05-09
+ * @see java.time.LocalDate
+ */
 
 
 public class CalendarBean {
@@ -20,8 +33,8 @@ public class CalendarBean {
 	private int jikangai; // OVERTIME
 	
 	// Changed from Time to Timestamp, removed JsonDeserialize
-	private Timestamp kintaifrom; 
-	private Timestamp kintaito;
+	private String kintaifrom; 
+	private String kintaito;
 	
 	private int abstractId; // Changed from String tekiyoukbn to int abstractId
 	private String memo; // REMARKS
@@ -35,16 +48,34 @@ public class CalendarBean {
 	private Integer indirectTime; // INDIRECT_TIME
 	private Integer totalWorkTime; // TOTAL_WORK_TIME
 	private Integer totalDirectWorkTime; // TOTAL_DIRECT_WORK_TIME
+	
+	public String getJapaneseWeek() {
+	    return switch (week) {
+	        case MONDAY -> "月";
+	        case TUESDAY -> "火";
+	        case WEDNESDAY -> "水";
+	        case THURSDAY -> "木";
+	        case FRIDAY -> "金";
+	        case SATURDAY -> "土";
+	        case SUNDAY -> "日";
+	    };
+	}
+	
+	private static final Map<String, DayOfWeek> STR_TO_DAY = Map.of(
+		    "MON", DayOfWeek.MONDAY,
+		    "TUE", DayOfWeek.TUESDAY,
+		    "WED", DayOfWeek.WEDNESDAY,
+		    "THU", DayOfWeek.THURSDAY,
+		    "FRI", DayOfWeek.FRIDAY,
+		    "SAT", DayOfWeek.SATURDAY,
+		    "SUN", DayOfWeek.SUNDAY
+		);
 
-	private static Map<String, DayOfWeek> japaneseDays = Map.of(
-			"月", DayOfWeek.MONDAY,
-			"火", DayOfWeek.TUESDAY,
-			"水", DayOfWeek.WEDNESDAY,
-			"木", DayOfWeek.THURSDAY,
-			"金", DayOfWeek.FRIDAY,
-			"土", DayOfWeek.SATURDAY,
-			"日", DayOfWeek.SUNDAY);
-
+		@JsonSetter("week")
+		public void setWeek(String s) {
+		    this.week = STR_TO_DAY.get(s);
+		}
+	
 	public String getTekiyoukbn() {
 		return tekiyoukbn;
 	}
@@ -73,6 +104,7 @@ public class CalendarBean {
 	    );
 	}
 
+	@JsonIgnore
 	public void setKintaidate(Date kintaidate) {
 		this.kintaidate = kintaidate.toLocalDate();
 	}
@@ -81,17 +113,23 @@ public class CalendarBean {
 		this.kintaidate = kintaidate;
 	}
 	
+	@JsonSetter("kintaidate")
+	public void setKintaidate(String date) {
+	    if (date == null || date.isEmpty()) {
+	        this.kintaidate = null;
+	    } else {
+	        this.kintaidate = LocalDate.parse(date);
+	    }
+	}
+	
+	
 	public DayOfWeek getWeek() {
 		return this.week;
 	}
-
-	public void setWeek(String Week) {
-		this.week = japaneseDays.get(Week);
-	}
+	
 	public void setWeek(DayOfWeek Week) {
 		this.week = Week;
 	}
-	
 
 	public boolean getIsholiday() {
 		return isholiday;
@@ -113,22 +151,28 @@ public class CalendarBean {
 	public void setId(int id) {
 		this.id = id;
 	}
+	
+	@JsonSetter("kintaifrom")
+	public void setKintaifrom(String kintaifrom) {
+	    this.kintaifrom = kintaifrom;
+	}
+
+	@JsonSetter("kintaito")
+	public void setKintaito(String kintaito) {
+	    this.kintaito = kintaito;
+	}
 
 	// Changed from Time to Timestamp
-	public Timestamp getKintaifrom() {
+	public String getKintaifrom() {
 		return kintaifrom;
 	}
-	public void setKintaifrom(Timestamp kintaifrom) { // Changed from Time to Timestamp
-		this.kintaifrom = kintaifrom;
-	}
+
 
 	// Changed from Time to Timestamp
-	public Timestamp getKintaito() {
+	public String getKintaito() {
 		return kintaito;
 	}
-	public void setKintaito(Timestamp kintaito) { // Changed from Time to Timestamp
-		this.kintaito = kintaito;
-	}
+
 
 	// Changed from String tekiyoukbn to int abstractId
 	public int getAbstractId() {

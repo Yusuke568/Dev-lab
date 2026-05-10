@@ -59,25 +59,49 @@
 				method="post">
 				<div class="form-group">
 					<label for="id-select" class="form-label">社員ID</label>
+					
 					<select name="id" id="id-select" class="form-input">
+						<option value="1">1</option>
+						<option value="7">7</option>
+						<option value="47">47</option>
+						<option value="125">125</option>
+						<option value="505">505</option>
+						<option value="617">617</option>
 						<option value="668">668</option>
-						<option value="669">669</option>
-						<option value="670">670</option>
+						<option value="711">711</option>
+						<option value="830">830</option>
+						<option value="1023">1023</option>
+						<option value="1126">1126</option>
+						<option value="1224">1224</option>
+
+
 					</select>
 				</div>
 				<div class="form-group">
 					<label for="year-select" class="form-label">年</label>
 					<select name="year" id="year-select" class="form-input">
+						<option value="2026">2026</option>
 						<option value="2025">2025</option>
 						<option value="2024">2024</option>
+
 					</select>
 				</div>
 				<div class="form-group">
 					<label for="month-select" class="form-label">月</label>
 					<select name="month" id="month-select" class="form-input">
+					
+						<option value="1">1</option>
+						<option value="2">2</option>
+						<option value="3">3</option>
+						<option value="4">4</option>
+						<option value="5">5</option>
+						<option value="6">6</option>
+						<option value="7">7</option>
+						<option value="8">8</option>
 						<option value="9">9</option>
 						<option value="10">10</option>
 						<option value="11">11</option>
+						<option value="12">12</option>
 					</select>
 				</div>
 				<button type="submit" class="btn btn-primary" style="width: 100%;">勤怠情報を表示</button>

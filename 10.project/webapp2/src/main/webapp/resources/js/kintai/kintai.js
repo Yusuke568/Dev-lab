@@ -1,14 +1,44 @@
-
 import { collectAttendanceRecords, getMinutes } from './utils.js';
 
 // These are now passed from the JSP in a separate script tag
 // const staffId = <c:out value="${staff_id}"/>;
 // const statusOptions = JSON.parse('<c:out value="${statusOptionsJson}"/>');
+
+// JSP のグローバル変数を module 内で使えるようにする
+const staffId = window.staffId;
+const statusOptionsJson = window.statusOptionsJson;
+
+const rows = document.querySelectorAll('#calendar-log tbody tr');
 const statusOptions = JSON.parse(statusOptionsJson);
 
+function recordAttendance(type) {
+  const now = new Date();
+  const dateStr = now.toISOString().slice(0, 10);
+
+  const timeStr = now.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  for (const row of rows) {
+    if (row.dataset.date === dateStr) {
+      switch (type) {
+        case '出勤':
+          row.cells[2].innerText = timeStr;
+          break;
+        case '退勤':
+          row.cells[3].innerText = timeStr;
+          break;
+      }
+      break; 
+    }
+  }
+  updateOvertimeSummary();
+  updateButtonState();
+}
 
 function saveAttendance() {
-	  const records = collectAttendanceRecords(staffId);
+	  const records = collectAttendanceRecords();
 	  
 	  fetch("/webapp2/Kintaiinsert", {
 	    method: "POST",
@@ -27,15 +57,12 @@ function saveAttendance() {
 	  });
 }
 
-// Make it globally accessible from the JSP
-window.saveAttendance = saveAttendance;
-window.recordAttendance = recordAttendance;
 
 
 const workStart = '09:00';
 const workEnd = '18:00';
 
-const rows = document.querySelectorAll('#calendar-log tbody tr');
+
 
 // Holidays - this should ideally come from the server as well
 const holidays = ["2025-09-15", "2025-09-23"];
@@ -69,7 +96,7 @@ function updateOvertimePerRow() {
 
 function updateOvertimeSummary() {
   let total = 0;
-  const attendanceRecords = collectAttendanceRecords(staffId);
+  const attendanceRecords = collectAttendanceRecords();
 
   attendanceRecords.forEach((r) => {
     if (r.kintaifrom && r.kintaito) {
@@ -87,7 +114,7 @@ function updateOvertimeSummary() {
 
 function updateButtonState() {
 	  const today = new Date().toISOString().slice(0, 10); 
-	  const attendanceRecords = collectAttendanceRecords(staffId);
+	  const attendanceRecords = collectAttendanceRecords();
 	  const rec = attendanceRecords.find((r) => r.kintaidate === today);
 
 	  const clockInBtn = document.getElementById('clock-in-btn');
@@ -102,31 +129,7 @@ function updateButtonState() {
       updateOvertimePerRow();
 	}
 
-function recordAttendance(type) {
-  const now = new Date();
-  const dateStr = now.toISOString().slice(0, 10);
 
-  const timeStr = now.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-
-  for (const row of rows) {
-    if (row.dataset.date === dateStr) {
-      switch (type) {
-        case '出勤':
-          row.cells[2].innerText = timeStr;
-          break;
-        case '退勤':
-          row.cells[3].innerText = timeStr;
-          break;
-      }
-      break; 
-    }
-  }
-  updateOvertimeSummary();
-  updateButtonState();
-}
 
 function renderStatusCell(cell, currentValue, date) {
     cell.innerHTML = '';
@@ -228,3 +231,8 @@ document.addEventListener('DOMContentLoaded', () => {
   updateButtonState();
   updateOvertimeSummary();
 });
+
+
+// Make it globally accessible from the JSP
+window.saveAttendance = saveAttendance;
+window.recordAttendance = recordAttendance;

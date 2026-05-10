@@ -1,1 +1,1 @@
-select ID, NAME, NAMEKANA, ENTRY_YEAR, GENDER, PAID_LEAVE_DAYS,(select NAME from class_master where CLASS_ID = ID) AS JOBCLASS from STAFF_TABLE where id=?;
+select ID, NAME, NAMEKANA, ENTRY_YEAR, GENDER, PAID_LEAVE_DAYS,(select NAME from aatm_jobclass where CLASS_ID = ID) AS JOBCLASS from aatb_staff where id=?;

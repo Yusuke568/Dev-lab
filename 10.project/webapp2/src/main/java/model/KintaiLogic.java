@@ -10,8 +10,10 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,6 +26,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import beans.CalendarBean;
+
 
 public class KintaiLogic {
 
@@ -70,7 +73,7 @@ public class KintaiLogic {
 
 	// 指定された年月からカレンダーを作成する。
 	@SuppressWarnings("unlikely-arg-type")
-	public List<CalendarBean> generateCalendar(int id, int year, int month) {
+	public List<CalendarBean> generateCalendar(int staffId, int year, int month) {
 		LocalDate date = LocalDate.of(year, month, 1);
 
 		// 外部APIから祝日データを取得
@@ -81,7 +84,7 @@ public class KintaiLogic {
 		while (date.getMonthValue() == month) {
 
 			CalendarBean calenderbaen = new CalendarBean();
-			calenderbaen.setId(id);
+			calenderbaen.setId(staffId);
 			calenderbaen.setKintaidate(Date.valueOf(date));
 			calenderbaen.setWeek(date.getDayOfWeek());
 			calenderbaen.setIsholiday(holidays.containsKey(calenderbaen.getKintaidate()));
@@ -92,7 +95,7 @@ public class KintaiLogic {
 	}
 
 	// 勤怠情報が存在するか確認
-	public int isStaffidwork(int id) throws SQLException, NamingException, IOException {
+	public int isStaffidwork(int id , int year, int month) throws SQLException, NamingException, IOException {
 
 		// 指定されたIDが勤怠テーブルに存在しているかSQL
 		String sql = MyUtil.loadSqlFromClasspath("sql/kintai/get_staff_work_cont.sql");
@@ -102,6 +105,8 @@ public class KintaiLogic {
 
 			// パラメータをSQLにセット
 			pstmt.setInt(1, id);
+			pstmt.setInt(2, year);
+			pstmt.setInt(3, month);
 			// SQL文を表示
 			System.out.println(pstmt.toString());
 
@@ -129,15 +134,17 @@ public class KintaiLogic {
 			pstmt.setDate(2, Date.valueOf(kintaiBean.getKintaidate()));
 			pstmt.setString(3, kintaiBean.getWeek().toString()); // WORK_WEEK
 			MyUtil.setObjectOrNull(pstmt, 4, kintaiBean.getCorrectionId()); // CORRECTION_ID
-			pstmt.setTimestamp(5, kintaiBean.getKintaifrom()); // JOB_FROM_TIME
-			pstmt.setTimestamp(6, kintaiBean.getKintaito()); // JOB_TO_TIME
+			pstmt.setTimestamp(5, MyUtil.toTimestamp(kintaiBean.getKintaifrom())); // JOB_FROM_TIME
+			pstmt.setTimestamp(6, MyUtil.toTimestamp(kintaiBean.getKintaito())); // JOB_TO_TIME
 			MyUtil.setObjectOrNull(pstmt, 7, kintaiBean.getCorrectionUsTime()); // CORRECTION_US_TIME
 			MyUtil.setObjectOrNull(pstmt, 8, kintaiBean.getCorrectionMidTime()); // CORRECTION_MID_TIME
 			MyUtil.setObjectOrNull(pstmt, 9, kintaiBean.getIndirectTime()); // INDIRECT_TIME
 			MyUtil.setObjectOrNull(pstmt, 10, kintaiBean.getTotalWorkTime()); // TOTAL_WORK_TIME
 			MyUtil.setObjectOrNull(pstmt, 11, kintaiBean.getTotalDirectWorkTime()); // TOTAL_DIRECT_WORK_TIME
 			MyUtil.setObjectOrNull(pstmt, 12, kintaiBean.getJikangai()); // OVERTIME
-			pstmt.setInt(13, kintaiBean.getAbstractId()); // ABSTRACT_ID
+			//pstmt.setInt(13, kintaiBean.getAbstractId()); // ABSTRACT_ID
+			
+			pstmt.setInt(13, 1); // ABSTRACT_ID
 			pstmt.setString(14, kintaiBean.getMemo()); // REMARKS
 			// SQL文を表示
 			System.out.println(pstmt.toString());
@@ -157,8 +164,8 @@ public class KintaiLogic {
 			// パラメータをSQLにセット
 			pstmt.setString(1, kintaiBean.getWeek().toString()); // WORK_WEEK
 			MyUtil.setObjectOrNull(pstmt, 2, kintaiBean.getCorrectionId()); // CORRECTION_ID
-			pstmt.setTimestamp(3, kintaiBean.getKintaifrom()); // JOB_FROM_TIME
-			pstmt.setTimestamp(4, kintaiBean.getKintaito()); // JOB_TO_TIME
+			pstmt.setTimestamp(3, MyUtil.toTimestamp(kintaiBean.getKintaifrom())); // JOB_FROM_TIME
+			pstmt.setTimestamp(4, MyUtil.toTimestamp(kintaiBean.getKintaito())); // JOB_TO_TIME
 			MyUtil.setObjectOrNull(pstmt, 5, kintaiBean.getCorrectionUsTime()); // CORRECTION_US_TIME
 			MyUtil.setObjectOrNull(pstmt, 6, kintaiBean.getCorrectionMidTime()); // CORRECTION_MID_TIME
 			MyUtil.setObjectOrNull(pstmt, 7, kintaiBean.getIndirectTime()); // INDIRECT_TIME
@@ -210,8 +217,28 @@ public class KintaiLogic {
 				calenderbean.setKintaidate(rs.getDate("WORK_DATE").toLocalDate()); // Set as LocalDate
 				calenderbean.setWeek(DayOfWeek.valueOf(rs.getString("WORK_WEEK")));
 				calenderbean.setCorrectionId(rs.getObject("CORRECTION_ID", Integer.class));
-				calenderbean.setKintaifrom(rs.getTimestamp("JOB_FROM_TIME")); // Changed to getTimestamp
-				calenderbean.setKintaito(rs.getTimestamp("JOB_TO_TIME")); // Changed to getTimestamp
+				Timestamp from = rs.getTimestamp("JOB_FROM_TIME");
+				if (from != null) {
+				    String time = from.toLocalDateTime()
+				                      .toLocalTime()
+				                      .withSecond(0)
+				                      .format(DateTimeFormatter.ofPattern("HH:mm"));
+				    calenderbean.setKintaifrom(time);
+				} else {
+				    calenderbean.setKintaifrom(null);
+				}
+
+				Timestamp to = rs.getTimestamp("JOB_TO_TIME");
+				if (to != null) {
+				    String time = to.toLocalDateTime()
+				                    .toLocalTime()
+				                    .withSecond(0)
+				                    .format(DateTimeFormatter.ofPattern("HH:mm"));
+				    calenderbean.setKintaito(time);
+				} else {
+				    calenderbean.setKintaito(null);
+				}
+
 				calenderbean.setCorrectionUsTime(rs.getObject("CORRECTION_US_TIME", Integer.class));
 				calenderbean.setCorrectionMidTime(rs.getObject("CORRECTION_MID_TIME", Integer.class));
 				calenderbean.setIndirectTime(rs.getObject("INDIRECT_TIME", Integer.class));
@@ -244,8 +271,28 @@ public class KintaiLogic {
 				bean.setKintaidate(rs.getDate("WORK_DATE").toLocalDate());
 				bean.setWeek(DayOfWeek.valueOf(rs.getString("WORK_WEEK")));
 				bean.setCorrectionId(rs.getObject("CORRECTION_ID", Integer.class));
-				bean.setKintaifrom(rs.getTimestamp("JOB_FROM_TIME"));
-				bean.setKintaito(rs.getTimestamp("JOB_TO_TIME"));
+				Timestamp from = rs.getTimestamp("JOB_FROM_TIME");
+				if (from != null) {
+				    String time = from.toLocalDateTime()
+				                      .toLocalTime()
+				                      .withSecond(0)
+				                      .format(DateTimeFormatter.ofPattern("HH:mm"));
+				    bean.setKintaifrom(time);
+				} else {
+					bean.setKintaifrom(null);
+				}
+
+				Timestamp to = rs.getTimestamp("JOB_TO_TIME");
+				if (to != null) {
+				    String time = to.toLocalDateTime()
+				                    .toLocalTime()
+				                    .withSecond(0)
+				                    .format(DateTimeFormatter.ofPattern("HH:mm"));
+				    bean.setKintaito(time);
+				} else {
+					bean.setKintaito(null);
+				}
+
 				bean.setCorrectionUsTime(rs.getObject("CORRECTION_US_TIME", Integer.class));
 				bean.setCorrectionMidTime(rs.getObject("CORRECTION_MID_TIME", Integer.class));
 				bean.setIndirectTime(rs.getObject("INDIRECT_TIME", Integer.class));

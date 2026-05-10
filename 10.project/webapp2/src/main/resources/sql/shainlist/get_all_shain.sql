@@ -5,5 +5,5 @@ ID
 ,ENTRY_YEAR
 ,GENDER
 ,PAID_LEAVE_DAYS
-,(select NAME from class_master where class_master.ID = STAFF_TABLE.CLASS_ID) AS JOBCLASS
-from STAFF_TABLE;
+,(select NAME from aatm_jobclass where aatm_jobclass.ID = aatb_staff.CLASS_ID) AS JOBCLASS
+from aatb_staff;

@@ -50,23 +50,23 @@ public class ShainKintai extends HttpServlet{
 				
 				
 			    // パラメータ取得
-			    int id = Integer.parseInt(request.getParameter("id"));
+			    int staffId = Integer.parseInt(request.getParameter("id"));
 			    int year = Integer.parseInt(request.getParameter("year"));
 			    int month = Integer.parseInt(request.getParameter("month"));
 			    
 			    
 			    try {
 					abstractBeanList = abstractlogic.getabstract();
-					shainbean = shainlogic.getShainBean(id);
+					shainbean = shainlogic.getShainBean(staffId);
 				} catch (SQLException | NamingException | IOException e1) {
 					// TODO 自動生成された catch ブロック
 					e1.printStackTrace();
 				}	    
 		try (Connection con = ConnectionBase.getConnection()) {
 			//対象社員の対象月勤怠情報がない場合
-			if(kintailogic.isStaffidwork(id) == -1) {
+			if(kintailogic.isStaffidwork(staffId,year,month) == -1) {
 				
-				calendarBeanList = kintailogic.generateCalendar(id,year, month);
+				calendarBeanList = kintailogic.generateCalendar(staffId,year, month);
 				
 				con.setAutoCommit(false);
 			    for (CalendarBean bean : calendarBeanList) {
@@ -76,7 +76,7 @@ public class ShainKintai extends HttpServlet{
 			}
 			//対象社員の勤怠情報がある場合はDbより指定月の情報を取得する。
 			else {
-				calendarBeanList = kintailogic.getmonthKintai(id, year, month);
+				calendarBeanList = kintailogic.getmonthKintai(staffId, year, month);
 			}
 			
 		} catch (SQLException | NamingException e) {
@@ -88,7 +88,9 @@ public class ShainKintai extends HttpServlet{
 		request.setAttribute("calendarBeanList", calendarBeanList);
 		request.setAttribute("statusOptions", abstractBeanList);
 		request.setAttribute("shainbean", shainbean);
-		request.setAttribute("staff_id", id);
+		request.setAttribute("staff_id", staffId);
+		request.setAttribute("select_year", year);
+		request.setAttribute("select_month", month);
 		
 		//javascript用
 		StringBuilder json = MyUtil.getJsonString(abstractBeanList, "name");

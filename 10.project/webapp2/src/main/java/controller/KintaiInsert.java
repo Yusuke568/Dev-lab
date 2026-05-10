@@ -64,6 +64,13 @@ public class KintaiInsert extends HttpServlet {
 		    con.setAutoCommit(false);
 		    
 		    for (CalendarBean newBean : newKintaiList) {
+		    	
+		    	System.out.println("=== DEBUG NEW BEAN ===");
+		    	System.out.println("ID: " + newBean.getId());
+		    	System.out.println("DATE: " + newBean.getKintaidate());
+		    	System.out.println("FROM: " + newBean.getKintaifrom());
+		    	System.out.println("TO: " + newBean.getKintaito());
+		    	System.out.println("STATUS: " + newBean.getTekiyoukbn());
 				CalendarBean oldBean = kintaiLogic.getKintaiDay(newBean.getId(), newBean.getKintaidate());
 
 				String oldStatus = (oldBean != null && oldBean.getTekiyoukbn() != null) ? oldBean.getTekiyoukbn() : "";
@@ -81,6 +88,7 @@ public class KintaiInsert extends HttpServlet {
 				// Update the attendance record
 		    	kintaiLogic.updatetKintai(newBean);
 		    }
+		    
 
 		    con.commit();
 		} catch (Exception e) {

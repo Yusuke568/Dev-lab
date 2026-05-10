@@ -6,17 +6,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Method;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Types;
 
 
 public class MyUtil {
-	
 	
 	 public static Date localDateToDate(LocalDate localDate) {
 	        return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
@@ -94,6 +94,15 @@ public class MyUtil {
             }
         }
     }
-
-
+    
+    
+    public static Timestamp toTimestamp(String time) {
+        if (time == null || time.isEmpty()) {
+            return null;
+        }
+        return Timestamp.valueOf("1970-01-01 " + time + ":00");
+    }
 }
+
+
+

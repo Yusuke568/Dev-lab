@@ -1,4 +1,4 @@
 select 
 ID
 ,NAME
-from CLASS_MASTER;
+from aatm_jobclass;

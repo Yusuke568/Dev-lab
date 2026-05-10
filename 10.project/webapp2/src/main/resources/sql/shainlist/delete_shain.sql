@@ -1,1 +1,1 @@
-delete  from STAFF_TABLE where id=?
+delete  from aatb_staff where id=?

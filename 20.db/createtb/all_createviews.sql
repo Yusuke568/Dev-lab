@@ -66,10 +66,52 @@ SELECT wm.STAFF_ID,
     ) AS LEGAL_HOLIDAY_WORK_MINUTES,
     -- 6. 深夜時間
     IFNULL(SUM(wm.CORRECTION_MID_TIME), 0) AS NIGHT_WORK_MINUTES
-FROM work_month_table wm
-    INNER JOIN staff_table st ON wm.STAFF_ID = st.ID
-    LEFT JOIN abstract_master am ON wm.ABSTRACT_ID = am.ID
+FROM kttb_work_month wm
+    INNER JOIN aatb_staff st ON wm.STAFF_ID = st.ID
+    LEFT JOIN ktmt_abstract am ON wm.ABSTRACT_ID = am.ID
 GROUP BY wm.STAFF_ID,
     st.NAME,
     st.CLASS_ID,
     DATE_FORMAT(wm.WORK_DATE, '%Y-%m');
+
+
+
+    -- --------------------------------------------------------
+-- 社員ごとの月次勤怠集約ビューの作成
+-- 日次テーブル(work_month_table)を集計し、残業・休日等の計算を行う
+-- --------------------------------------------------------
+
+DROP VIEW IF EXISTS view_work_month_summary;
+CREATE VIEW ktvw_roudoulimitcheck AS
+SELECT
+    wm.STAFF_ID AS "社員ID",
+    YEAR(wm.WORK_DATE) AS "年",
+    MONTH(wm.WORK_DATE) AS "月",
+    -- 当月残業
+    SUM(wm.OVERTIME) AS "当月時間外",
+    -- 深夜残業
+    SUM(wm.CORRECTION_MID_TIME) AS "当月深夜残業",
+    -- 休日労働（法定 or 所定）
+    SUM(
+        CASE
+            WHEN abs.IS_LEGAL_HOLIDAY = 1 
+              OR abs.IS_PRESCRIBED_HOLIDAY = 1
+            THEN wm.TOTAL_WORK_TIME
+            ELSE 0
+        END
+    ) AS "当月休日労働",
+    -- 総労働時間
+    SUM(wm.TOTAL_WORK_TIME) AS "当月労働時間",
+    -- 有給残数
+    st.PAID_LEAVE_DAYS AS "有給残"
+FROM kttb_work_month wm
+LEFT JOIN aatb_staff st
+    ON wm.STAFF_ID = st.ID
+LEFT JOIN ktmt_abstract abs
+    ON wm.ABSTRACT_ID = abs.ID
+GROUP BY
+    wm.STAFF_ID,
+    YEAR(wm.WORK_DATE),
+    MONTH(wm.WORK_DATE);
+
+

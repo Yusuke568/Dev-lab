@@ -1,4 +1,5 @@
-insert into work_month_table(STAFF_ID
+insert into kttb_work_month(
+ STAFF_ID
 ,WORK_DATE
 ,WORK_WEEK
 ,CORRECTION_ID
@@ -11,4 +12,8 @@ insert into work_month_table(STAFF_ID
 ,TOTAL_DIRECT_WORK_TIME
 ,OVERTIME
 ,ABSTRACT_ID
-,REMARKS) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?);
+,PROJECT_CD
+,REMARKS
+,CREATESTAFF
+,CREATEDAY
+) values(?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,'administrator',NOW());

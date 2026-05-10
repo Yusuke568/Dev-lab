@@ -4,13 +4,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const today = new Date().toISOString().slice(0, 10);
   const clockInBtn = document.getElementById('clock-in-btn');
   const clockOutBtn = document.getElementById('clock-out-btn');
-
   const records = collectAttendanceRecords();
   const todayRecord = records.find(r => r.kintaidate === today);
-
   const isClockedIn = !!todayRecord?.kintaifrom;
   const isClockedOut = !!todayRecord?.kintaito;
-
+  
   clockInBtn.disabled = isClockedIn;
   clockInBtn.innerText = isClockedIn ? "出勤済み" : "出勤";
   clockInBtn.title = isClockedIn ? "すでに出勤しています" : "出勤時間を記録します";

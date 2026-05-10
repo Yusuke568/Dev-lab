@@ -15,8 +15,8 @@ SELECT
     w.REMARKS,
     a.NAME AS TEKIYOUKBN
 FROM
-    work_month_table w
+    kttb_work_month w
 LEFT JOIN
-    abstract_master a ON w.ABSTRACT_ID = a.ID
+    ktmt_abstract a ON w.ABSTRACT_ID = a.ID
 WHERE
     w.STAFF_ID = ? AND w.WORK_DATE = ?;

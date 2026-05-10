@@ -5,4 +5,4 @@ ID
 ,IS_PAID
 ,IS_LEGAL_HOLIDAY
 ,IS_PRESCRIBED_HOLIDAY
-from abstract_master;
+from ktmt_abstract;

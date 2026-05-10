@@ -13,6 +13,6 @@ STAFF_ID
 ,OVERTIME
 ,ABSTRACT_ID
 ,REMARKS
-from work_month_table
+from kttb_work_month
 where STAFF_ID = ?
 AND DATE_FORMAT(WORK_DATE, '%Y%m') = CONCAT(?, ?);

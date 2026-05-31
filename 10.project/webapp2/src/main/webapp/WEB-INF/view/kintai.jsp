@@ -210,7 +210,7 @@
 	        <span class="icon">ℹ️</span>
 	        <span class="msg">勤怠データは最新です</span>
 	    </div>
-	    <c:if test="${attendanceData.totalWorkHours > 160}">
+	    <c:if test="${attendanceData.totalWorkMinutes > 9600}">
 		    <div class="status-banner status-warning">
 		        <span class="icon">⚠️</span>
 		        <span class="msg">36協定：時間外労働が上限に近づいています（目安160H超）</span>

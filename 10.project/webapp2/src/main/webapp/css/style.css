@@ -1,580 +1,266 @@
 /* 
-New Design Concept: Gamification-Lite
-- More vibrant color palette
-- Rounded, friendly web font
-- Gradients for depth and fun
-- Playful animations for interactions
+Modern Enterprise Design System
+- Reliable and trustworthy (Solid)
+- Refined professional aesthetics
+- Subtle depth and balanced whitespace
+- Muted professional color palette (Business Blue, Slate)
+- Clear hierarchy without unnecessary decoration
 */
-
-@import url("https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap");
-
-/* --- :root Color & Font Definitions --- */
-:root {
-  --font-family: "M PLUS Rounded 1c", "Segoe UI", "Meiryo", sans-serif;
-
-  --primary-color: #007bff;
-  --primary-gradient: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-
-  --secondary-color: #6f42c1;
-  --secondary-gradient: linear-gradient(135deg, #6f42c1 0%, #482a7a 100%);
-
-  --success-color: #28a745;
-  --success-gradient: linear-gradient(135deg, #28a745 0%, #1a6c2e 100%);
-
-  --danger-color: #dc3545;
-  --danger-gradient: linear-gradient(135deg, #dc3545 0%, #a0202d 100%);
-
-  --text-color: #212529;
-  --text-light: #f8f9fa;
-  --background-color: #f4f7f9;
-  --card-background: #ffffff;
-
-  --border-radius: 16px;
-  --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
-}
 
 /* --- Base Body & Typography Styles --- */
 body {
-  font-family: var(--font-family);
-  background: var(--background-color);
-  color: var(--text-color);
-  margin: 0;
-  padding: 20px;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Meiryo", sans-serif;
+    background-color: #f5f7f9; /* Soft grey background for depth */
+    color: #333d47;
+    line-height: 1.6;
+    margin: 0;
+    padding: 30px;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-weight: 800;
-  color: var(--text-color);
-}
 h1 {
-  font-size: 2.5rem;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1a3d6d; /* Refined business navy */
+    border-bottom: 2px solid #e0e6ed;
+    padding-bottom: 15px;
+    margin-bottom: 30px;
 }
+
 h2 {
-  font-size: 2rem;
-}
-h3 {
-  font-size: 1.5rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1a3d6d;
+    padding: 5px 0 5px 15px;
+    border-left: 4px solid #1a3d6d;
+    margin-top: 40px;
+    margin-bottom: 20px;
 }
 
-/* --- Main Layout Components --- */
+h3, h4 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #4a5568;
+    margin-top: 25px;
+}
+
+/* --- Layout Components --- */
 .card {
-  background: var(--card-background);
-  border-radius: var(--border-radius);
-  padding: 32px;
-  margin-bottom: 24px;
-  box-shadow: var(--card-shadow);
-  width: 100%;
-  max-width: 900px;
-  box-sizing: border-box;
-  border: 1px solid #e9ecef;
-  animation: fadeIn 0.5s ease-out;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); /* Very subtle elevation */
+    width: 100%;
+    box-sizing: border-box;
 }
 
-.login-card {
-  max-width: 450px;
-  margin-top: 50px;
+.stat-card {
+    background: #ffffff;
+    padding: 20px;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    text-align: center;
 }
 
-/* --- Form Element Styles --- */
-.form-group {
-  margin-bottom: 1.5rem;
+.stat-card .label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 5px;
 }
 
-.form-label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 700;
-  font-size: 1rem;
-}
-
-.form-input {
-  width: 100%;
-  padding: 14px 18px;
-  border: 1px solid #ced4da;
-  border-radius: 10px;
-  background-color: #f8f9fa;
-  font-family: var(--font-family);
-  font-size: 1rem;
-  transition: all 0.3s ease;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  background-color: var(--card-background);
-  box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.15);
-}
-
-.form-input[readonly] {
-  background-color: #e9ecef;
-  color: #6c757d;
+.stat-card .value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2d3748;
 }
 
 /* --- Button Styles --- */
 .btn {
-  padding: 14px 28px;
-  border: none;
-  border-radius: 50px; /* Fun, pill-shaped buttons */
-  font-weight: 700;
-  font-size: 1rem;
-  cursor: pointer;
-  text-decoration: none;
-  display: inline-block;
-  text-align: center;
-  transition:
-    transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    box-shadow 0.2s ease;
+    display: inline-block;
+    padding: 8px 20px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    border: 1px solid #cbd5e0;
+    background-color: #ffffff;
+    color: #4a5568;
+    border-radius: 4px;
+    margin: 4px;
+    transition: all 0.2s ease;
 }
 
 .btn:hover {
-  transform: translateY(-3px) scale(1.05);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-}
-
-.btn:active {
-  transform: translateY(-1px) scale(1.02);
+    background-color: #f7fafc;
+    border-color: #a0aec0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
 .btn-primary {
-  background: var(--primary-gradient);
-  color: var(--text-light);
+    background-color: #1a3d6d;
+    color: #ffffff;
+    border-color: #1a3d6d;
 }
 
-.btn-secondary {
-  background: var(--secondary-gradient);
-  color: var(--text-light);
+.btn-primary:hover {
+    background-color: #2c5282;
+    border-color: #2c5282;
+}
+
+.btn-success {
+    background-color: #38a169;
+    color: #ffffff;
+    border-color: #38a169;
+}
+
+.btn-success:hover {
+    background-color: #2f855a;
+    border-color: #2f855a;
 }
 
 .btn-danger {
-  background: var(--danger-gradient);
-  color: var(--text-light);
+    background-color: #e53e3e;
+    color: #ffffff;
+    border-color: #e53e3e;
+}
+
+.btn:disabled {
+    background-color: #edf2f7;
+    color: #a0aec0;
+    border-color: #e2e8f0;
+    cursor: not-allowed;
+}
+
+/* --- Form Element Styles --- */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #4a5568;
+    margin-bottom: 6px;
+}
+
+.form-input {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 0.95rem;
+    border: 1px solid #cbd5e0;
+    background-color: #ffffff;
+    border-radius: 4px;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-input:focus {
+    border-color: #1a3d6d;
+    box-shadow: 0 0 0 3px rgba(26, 61, 109, 0.1);
+    outline: none;
 }
 
 /* --- Table Styles --- */
 .table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 24px;
-  background: var(--card-background);
-  border-radius: var(--border-radius);
-  box-shadow: var(--card-shadow);
-  overflow: hidden;
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #e2e8f0;
+    background-color: #ffffff;
+    font-size: 0.9rem;
+    margin-top: 15px;
 }
 
-.table th,
-.table td {
-  padding: 16px 20px;
-  text-align: left;
-  border-bottom: 1px solid #dee2e6;
+.table th, .table td {
+    border: 1px solid #e2e8f0;
+    padding: 12px 15px;
+    text-align: center;
 }
 
 .table thead th {
-  background: var(--primary-gradient);
-  color: var(--text-light);
-  font-size: 1rem;
-  font-weight: 700;
-  border-bottom: 0;
+    background-color: #f8fafc;
+    color: #4a5568;
+    font-weight: 600;
+    border-bottom: 2px solid #e2e8f0;
 }
 
-.table tbody tr {
-  transition: background-color 0.2s ease;
-}
-
-.table tbody tr:last-of-type {
-  border-bottom: 0;
+.table tbody tr:nth-child(even) {
+    background-color: #fafbfc;
 }
 
 .table tbody tr:hover {
-  background-color: #f1f6ff;
+    background-color: #f1f5f9;
 }
 
-/* Weekend/Holiday colors for kintai table */
-.saturday {
-  background-color: #e3f2fd !important;
-}
-.sunday {
-  background-color: #fff0f1 !important;
-}
-.holiday {
-  background-color: #fffbe5 !important;
-}
-.today {
-  border: 2px solid var(--success-color);
+/* Weekend/Holiday colors (Refined Tones) */
+.saturday { background-color: #ebf8ff !important; color: #2b6cb0; }
+.sunday { background-color: #fff5f5 !important; color: #c53030; }
+.holiday { background-color: #fefcbf !important; }
+.today { box-shadow: inset 0 0 0 2px #38a169 !important; }
+
+/* Status Area & Banners */
+.status-area {
+    margin-bottom: 25px;
 }
 
-/* --- Utility & Animation Classes --- */
-.text-center {
-  text-align: center;
-}
-
-.error-message {
-  color: var(--danger-color);
-  font-weight: 700;
-  margin-bottom: 1.5rem;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes popUp {
-  0% {
-    transform: scale(0.5);
-    opacity: 0;
-  }
-  60% {
-    transform: scale(1.1);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-/* --- Kintai Page Specific Styles --- */
-.kintai-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  flex-wrap: wrap;
-  margin-bottom: 1.5rem;
-}
-
-.kintai-header .user-info {
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 700;
-}
-
-.stat-card {
-  background: var(--card-background);
-  padding: 1rem 1.5rem;
-  border-radius: var(--border-radius);
-  box-shadow: var(--card-shadow);
-  text-align: center;
-}
-
-.stat-card .label {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #6c757d;
-}
-
-.stat-card .value {
-  font-size: 1.8rem;
-  font-weight: 800;
-  color: var(--primary-color);
-}
-
-.actions-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem;
-  gap: 1rem;
-}
-
-#overtime-summary {
-  font-weight: 700;
-}
-
-/* Smaller padding for inputs inside table */
-.table .form-input {
-  padding: 6px 8px;
-  font-size: 0.9rem;
-}
-
-/* --- Paid Leave Admin Page Specific Styles --- */
-.admin-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 24px;
-  margin: 2rem 0;
-}
-
-.page-header-actions {
-  text-align: right;
-  margin-bottom: 2rem;
-}
-
-.leave-grant-form {
-  margin-top: 1rem;
-}
-
-.leave-grant-form.selected-grant {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.leave-grant-form .form-input {
-  width: 120px;
-}
-
-.individual-update-form {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.individual-update-form .form-input {
-  width: 80px;
-}
-
-.individual-update-form .btn {
-  padding: 8px 16px;
-}
-
-.table th.text-center {
-  text-align: center;
-}
-
-.page-title-container {
-  margin-bottom: 2rem;
-}
-
-.table-title {
-  margin-top: 3rem;
-}
-
-/* --- Shain List Page Specific Styles --- */
-.page-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.page-actions .action-group {
-  display: flex;
-  gap: 10px;
-}
-
-.table .action-cell {
-  text-align: center;
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-}
-
-.table .action-cell .btn {
-  padding: 8px 16px;
-}
-
-/* --- Shain Insert/Update Page Specific Styles --- */
-.form-card {
-  max-width: 600px;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 40px;
-}
-
-/* --- Table Responsive & Kintai Specific --- */
-.table-responsive {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  margin-top: 24px;
-  border-radius: var(--border-radius);
-  box-shadow: var(--card-shadow);
-}
-
-.table-responsive .table {
-  margin-top: 0;
-  box-shadow: none;
-  border-radius: 0;
-}
-
-.table-kintai {
-  min-width: 1200px;
-}
-
-.table-kintai th,
-.table-kintai td {
-  white-space: nowrap;
-  vertical-align: middle;
-}
-
-.table-kintai th:nth-child(8),
-.table-kintai td:nth-child(8) {
-  white-space: normal;
-  min-width: 250px;
-}
-
-/* Hide the mobile toggle column on PC */
-.mobile-only {
-  display: none !important;
-}
-
-/* --- Mobile Accordion Style for Kintai Table --- */
-@media (max-width: 900px) {
-  .table-responsive {
-    overflow-x: visible; /* Disable horizontal scroll on mobile */
-  }
-  .table-kintai {
-    min-width: 100%;
-    display: block;
-  }
-  .table-kintai thead {
-    display: none; /* Hide original headers */
-  }
-  .table-kintai tbody {
-    display: block;
-  }
-  .table-kintai tr {
-    display: flex;
-    flex-wrap: wrap;
-    background: var(--card-background);
-    border: 1px solid #dee2e6;
-    border-radius: 8px; /* Slimmer radius */
-    margin-bottom: 8px; /* Slimmer margin */
-    padding: 8px; /* Slimmer padding */
-    box-shadow: 0 2px 5px rgba(0,0,0,0.04);
-    align-items: center;
-    row-gap: 4px;
-    column-gap: 4px;
-  }
-  .table-kintai td {
+.status-banner {
+    padding: 12px 20px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 12px;
     display: flex;
     align-items: center;
-    border-bottom: none;
-    padding: 0; /* Remove default padding for slimness */
-    white-space: normal !important;
-    min-width: 0 !important; /* Override PC min-width */
-  }
-  
-  /* Labels for mobile */
-  .table-kintai td::before {
-    content: attr(data-label);
-    font-weight: 700;
-    color: #6c757d;
-    font-size: 0.75rem; /* Smaller labels */
-    margin-right: 4px;
-  }
-
-  /* 1st Line: Checkbox, Day, Week, Status(Approval) */
-  .table-kintai td:nth-child(1)::before,
-  .table-kintai td:nth-child(2)::before,
-  .table-kintai td:nth-child(3)::before,
-  .table-kintai td:nth-child(9)::before {
-    display: none; /* Hide obvious labels */
-  }
-  .table-kintai td:nth-child(1) { width: auto; order: 1; } /* Checkbox */
-  .table-kintai td:nth-child(2) { width: auto; order: 2; font-size: 1.1rem; font-weight: bold; margin-left: 4px; } /* Day */
-  .table-kintai td:nth-child(3) { width: auto; order: 3; font-size: 0.85rem; color: #666; margin-right: auto; margin-left: 2px; } /* Week */
-  .table-kintai td:nth-child(9) { width: auto; order: 4; font-size: 0.8rem; } /* Approval */
-
-  /* 2nd Line: Start, End, Hours */
-  .table-kintai td:nth-child(4) { width: 31%; order: 5; } /* Start */
-  .table-kintai td:nth-child(5) { width: 31%; order: 6; } /* End */
-  .table-kintai td:nth-child(6) { width: auto; order: 7; margin-left: auto; } /* Hours */
-  
-  .table-kintai td:nth-child(4)::before,
-  .table-kintai td:nth-child(5)::before,
-  .table-kintai td:nth-child(6)::before {
-    width: 26px; /* Fixed small width for time labels */
-  }
-
-  /* 3rd Line: Work Type (Status) */
-  .table-kintai td:nth-child(7) { width: 100%; order: 8; margin-top: 4px; } /* Status */
-  .table-kintai td:nth-child(7)::before { width: 50px; }
-  .table-kintai td:nth-child(7) select { padding: 4px 8px; font-size: 0.9rem; } /* Slimmer input */
-  
-  /* Details: Hidden by default */
-  .table-kintai td.detail-col {
-    display: none !important; /* Force hide */
-    width: 100%;
-    order: 9;
-    margin-top: 4px;
-  }
-  .table-kintai td.detail-col::before { width: 50px; }
-  .table-kintai td.detail-col input { padding: 4px 8px; font-size: 0.9rem; }
-
-  /* Expanded Details: Overrides hide */
-  .table-kintai tr.expanded td.detail-col {
-    display: flex !important; /* Force show */
-    animation: fadeIn 0.2s ease-out;
-  }
-  
-  /* Show toggle column on mobile */
-  .table-kintai .mobile-only {
-    display: flex !important;
-  }
-  
-  /* The toggle button column */
-  .table-kintai td.toggle-col {
-    width: 100%;
-    order: 10;
-    justify-content: center;
-    margin-top: 4px;
-    padding-top: 8px;
-    border-top: 1px dashed #dee2e6;
-  }
-  .table-kintai td.toggle-col::before { display: none; }
-  .table-kintai td.toggle-col button { padding: 2px 16px; font-size: 0.8rem; border-radius: 20px; }
-  
-  /* Editable time fields look clickable */
-  .table-kintai td.editable-time {
-    background-color: transparent;
-    cursor: pointer;
-  }
 }
 
-/* --- Mobile Global Padding Tweaks for Small Screens (e.g. iPhone SE) --- */
-@media (max-width: 600px) {
-  body {
-    padding: 10px;
-  }
-  .card {
-    padding: 16px;
-  }
-  .actions-card {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 16px;
-  }
-  .actions-card > div {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    width: 100%;
-  }
-  .actions-card button {
-    flex: 1; /* Make buttons expand to fill width */
-    padding: 10px;
+.status-info { background-color: #e1effe; color: #1e429f; border-color: #bcdefa; }
+.status-warning { background-color: #fdf6b2; color: #723b13; border-color: #fce96a; }
+.status-danger { background-color: #fde8e8; color: #9b1c1c; border-color: #f8b4b4; }
+
+.status-banner .icon {
+    margin-right: 12px;
+    font-size: 1.1rem;
+}
+
+/* Info Section */
+.info-section {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 25px;
+    display: none;
+}
+
+.info-toggle {
+    display: inline-block;
+    color: #1a3d6d;
+    font-weight: 600;
     font-size: 0.9rem;
-  }
-  #overtime-summary {
-    text-align: center;
-  }
-  .kintai-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 16px;
-  }
-  .kintai-header > div:last-child {
-    flex-wrap: wrap;
-    justify-content: flex-start;
-  }
+    cursor: pointer;
+    margin-bottom: 10px;
+    border-bottom: 1px dashed #1a3d6d;
 }
 
+/* Utility Classes */
+.table-responsive {
+    overflow-x: auto;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+}
+
+.mobile-only {
+    display: none;
+}
+
+/* Print Styles */
+@media print {
+    body { background-color: #fff; padding: 0; }
+    .btn, .info-toggle { display: none; }
+}

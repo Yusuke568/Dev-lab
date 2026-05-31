@@ -4,19 +4,21 @@ import java.time.YearMonth;
 import java.util.List;
 
 /**
- * 月次勤怠惁E��を表現するDTO、E
- * DTO (DailyAttendanceDto) のリストと、月全体�Eサマリー惁E��を保持します、E
+ * 月次勤怠惁E��を表現するDTO、E
+ * DTO (DailyAttendanceDto) のリストと、月全体�Eサマリー惁E��を保持します、E
  */
 public class MonthlyAttendanceDto {
     private final YearMonth yearMonth;
     private final List<DailyAttendanceDto> dailyRecords;
     private final String totalWorkHours;
+    private final long totalWorkMinutes;
     private final String employeeName;
 
-    public MonthlyAttendanceDto(YearMonth yearMonth, List<DailyAttendanceDto> dailyRecords, String totalWorkHours, String employeeName) {
+    public MonthlyAttendanceDto(YearMonth yearMonth, List<DailyAttendanceDto> dailyRecords, String totalWorkHours, long totalWorkMinutes, String employeeName) {
         this.yearMonth = yearMonth;
         this.dailyRecords = dailyRecords;
         this.totalWorkHours = totalWorkHours;
+        this.totalWorkMinutes = totalWorkMinutes;
         this.employeeName = employeeName;
     }
 
@@ -30,6 +32,10 @@ public class MonthlyAttendanceDto {
 
     public String getTotalWorkHours() {
         return totalWorkHours;
+    }
+
+    public long getTotalWorkMinutes() {
+        return totalWorkMinutes;
     }
 
     public String getEmployeeName() {

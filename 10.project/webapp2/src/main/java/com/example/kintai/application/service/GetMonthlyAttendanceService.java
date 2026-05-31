@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 月次勤怠惁E��取得ユースケースの実裁E��ラス、E
+ * 月次勤怠惁E��取得ユースケースの実裁E��ラス、E
  */
 public class GetMonthlyAttendanceService implements GetMonthlyAttendanceUseCase {
 
@@ -23,10 +23,10 @@ public class GetMonthlyAttendanceService implements GetMonthlyAttendanceUseCase 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
     /**
-     * 依存性をコンストラクタ経由で注入します！EI�E�、E
+     * 依存性をコンストラクタ経由で注入します！EI�E�、E
      *
-     * @param loadAttendanceRecordPort 勤怠記録をロードするため�Eポ�EチE
-     * @param loadEmployeePort 社員惁E��をロードするため�Eポ�EチE
+     * @param loadAttendanceRecordPort 勤怠記録をロードするため�Eポ�EチE
+     * @param loadEmployeePort 社員惁E��をロードするため�Eポ�EチE
      */
     public GetMonthlyAttendanceService(LoadAttendanceRecordPort loadAttendanceRecordPort, LoadEmployeePort loadEmployeePort) {
         this.loadAttendanceRecordPort = loadAttendanceRecordPort;
@@ -35,7 +35,7 @@ public class GetMonthlyAttendanceService implements GetMonthlyAttendanceUseCase 
 
     @Override
     public MonthlyAttendanceDto getMonthlyAttendance(GetMonthlyAttendanceCommand command) {
-        // 1. ポ�Eトを通じて永続化層からドメインオブジェクトを取征E
+        // 1. ポ�Eトを通じて永続化層からドメインオブジェクトを取征E
         List<AttendanceRecord> records = loadAttendanceRecordPort.loadByEmployeeAndMonth(
                 command.getEmployeeId(), command.getYearMonth());
         
@@ -47,18 +47,20 @@ public class GetMonthlyAttendanceService implements GetMonthlyAttendanceUseCase 
                 .map(this::toDailyDto)
                 .collect(Collectors.toList());
 
-        // 3. サマリー惁E��を計箁E
+        // 3. サマリー惁Eを計箁E
         Duration totalDuration = records.stream()
                 .map(AttendanceRecord::calculateWorkDuration)
                 .reduce(Duration.ZERO, Duration::plus);
         String totalWorkHours = formatDuration(totalDuration);
+        long totalWorkMinutes = totalDuration.toMinutes();
 
-        // 4. 最終的なDTOを絁E��立てて返す
-        return new MonthlyAttendanceDto(command.getYearMonth(), dailyDtos, totalWorkHours, employee.getName());
-    }
+        // 4. 最終的なDTOを絁E立てて返す
+        return new MonthlyAttendanceDto(command.getYearMonth(), dailyDtos, totalWorkHours, totalWorkMinutes, employee.getName());
+        }
+
 
     /**
-     * AttendanceRecord (ドメインモチE��) めEDailyAttendanceDto に変換します、E
+     * AttendanceRecord (ドメインモチE��) めEDailyAttendanceDto に変換します、E
      */
     private DailyAttendanceDto toDailyDto(AttendanceRecord record) {
         String startTime = record.getWorkTime() != null ? record.getWorkTime().getStartTime().format(TIME_FORMATTER) : "-";
@@ -80,7 +82,7 @@ public class GetMonthlyAttendanceService implements GetMonthlyAttendanceUseCase 
     }
 
     /**
-     * DurationめE"HH:mm" 形式�E斁E���Eにフォーマットします、E
+     * DurationめE"HH:mm" 形式�E斁E���Eにフォーマットします、E
      */
     private String formatDuration(Duration duration) {
         if (duration == null || duration.isZero()) {

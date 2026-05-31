@@ -95,5 +95,12 @@ public class MyUtil {
         }
     }
 
+    public static java.sql.Timestamp toTimestamp(String time) {
+        if (time == null || time.isEmpty()) {
+            return null;
+        }
+        return java.sql.Timestamp.valueOf("1970-01-01 " + time + ":00");
+    }
+
 
 }

@@ -11,8 +11,213 @@
 <title>勤怠管理システム</title>
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/style.css">
+<style>
+/* Additional styles for kintai page */
+.kintai-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-end;
+	flex-wrap: wrap;
+	margin-bottom: 1.5rem;
+}
+.stat-card {
+	background: var(--card-background);
+	padding: 1rem 1.5rem;
+	border-radius: var(--border-radius);
+	box-shadow: var(--card-shadow);
+	text-align: center;
+}
+.stat-card .label {
+	font-size: 0.9rem;
+	font-weight: 700;
+	color: #6c757d;
+}
+.stat-card .value {
+	font-size: 1.8rem;
+	font-weight: 800;
+	color: var(--primary-color);
+}
+.actions-card {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 1.5rem;
+	gap: 1rem;
+}
+.table .form-input {
+	padding: 6px 8px; /* Smaller padding for inputs inside table */
+	font-size: 0.9rem;
+}
+
+.status-area {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 1rem;
+}
+
+.status-banner {
+    width: 100%;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.status-banner .icon {
+    font-size: 1.3rem;
+}
+
+.status-banner .msg {
+    flex: 1;
+}
+
+.status-info {
+    background-color: #e7f3ff;
+    color: #0b63c5;
+}
+
+.status-warning {
+    background-color: #fff4e5;
+    color: #c56a00;
+}
+
+.status-danger {
+    background-color: #ffe5e5;
+    color: #c50000;
+}
+
+.law-check-card {
+    background: #ffffff;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 1.5rem;
+}
+
+.law-check-card h2 {
+    font-size: 1.2rem;
+    font-weight: 800;
+    margin-bottom: 0.8rem;
+}
+
+.law-check-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.law-check-table th {
+    width: 30%;
+    text-align: left;
+    padding: 6px;
+    background: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+}
+
+.law-check-table td {
+    padding: 6px;
+    border-bottom: 1px solid #ddd;
+}
+
+.law-check-notes {
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    color: #555;
+    line-height: 1.4;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 1.5rem;
+}
+
+.law-check-card,
+.worktype-card {
+    background: #ffffff;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+}
+
+.status-card {
+    background: #ffffff;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+    max-height: 250px;
+    overflow-y: auto;
+    position: sticky;
+    top: 20px;
+}
+
+.status-card h2 {
+    font-size: 1.2rem;
+    font-weight: 800;
+    margin-bottom: 0.8rem;
+}
+
+.status-item {
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.status-success {
+    background: #e8f8e8;
+    color: #1a7f1a;
+}
+
+.info-section {
+    background: #f0f7ff;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #d0e4ff;
+    display: none;
+}
+
+.info-toggle {
+    font-size: 1.1rem;
+    font-weight: 800;
+    cursor: pointer;
+    margin-bottom: 8px;
+    color: #0b63c5;
+    user-select: none;
+}
+
+.info-toggle:hover {
+    opacity: 0.7;
+}
+
+.status-wide {
+    grid-column: 1 / 4;
+}
+</style>
 </head>
 <body data-context-path="${pageContext.request.contextPath}">
+
+	<!-- ▼ ステータスエリア ▼ -->
+	<div class="status-area">
+	    <div class="status-banner status-info">
+	        <span class="icon">ℹ️</span>
+	        <span class="msg">勤怠データは最新です</span>
+	    </div>
+	    <c:if test="${attendanceData.totalWorkHours > 160}">
+		    <div class="status-banner status-warning">
+		        <span class="icon">⚠️</span>
+		        <span class="msg">36協定：時間外労働が上限に近づいています（目安160H超）</span>
+		    </div>
+	    </c:if>
+	</div>
+
 	<div id="kintai-app-root" class="card" style="max-width: 98%; margin: 0 auto;"
 		data-staff-id="${staffId}"
 		data-work-types-json='${workTypesJson}'
@@ -21,7 +226,7 @@
 		<div class="kintai-header">
 			<div>
 				<h1>勤怠管理</h1>
-				<p class="user-info">
+				<p class="user-info" style="margin: 0; font-size: 1.2rem; font-weight: 700;">
 					<c:out value="${attendanceData.employeeName}" />
 					様 |
 					<c:out value="${attendanceData.yearMonth.year}" />
@@ -29,7 +234,12 @@
 					<c:out value="${attendanceData.yearMonth.monthValue}" />
 					月
 				</p>
+				
+				<div class="info-toggle" onclick="toggleInfo()">
+				    <span id="info-arrow">▼</span> 勤務情報一覧
+				</div>
 			</div>
+			
 			<div style="display: flex; gap: 1rem; align-items: center;">
 				<div class="stat-card">
 					<div class="label">合計勤務時間</div>
@@ -39,6 +249,52 @@
 				</div>
 				<a href="${pageContext.request.contextPath}/logout.do" class="btn btn-secondary">ログアウト</a>
 				<a href="${pageContext.request.contextPath}/menu.do" class="btn btn-secondary">メニュー</a>
+			</div>
+		</div>
+
+		<div class="info-section" id="info-section">
+			<div class="info-grid">
+				<!-- 労働基準法チェック -->
+				<div class="law-check-card">
+					<h2>労働基準法に基づく制限チェック</h2>
+					<table class="law-check-table">
+						<tr>
+							<th>当月時間外</th>
+							<td>0:00</td>
+							<td>〇 原則45H迄</td>
+						</tr>
+						<tr>
+							<th>年間時間外</th>
+							<td>93:10</td>
+							<td>〇 540H/年迄</td>
+						</tr>
+					</table>
+					<div class="law-check-notes">
+						<p>※チェック結果がOKではない場合、内容を必ず確認すること。</p>
+					</div>
+				</div>
+
+				<!-- 勤務区分一覧 -->
+				<div class="worktype-card">
+					<h2>勤務区分一覧</h2>
+					<table class="worktype-table" style="width: 100%; font-size: 0.9rem;">
+						<c:forEach var="opt" items="${workTypes}">
+							<tr>
+								<th><c:out value="${opt.name}"/></th>
+								<td>ID: <c:out value="${opt.id}"/></td>
+							</tr>
+						</c:forEach>
+					</table>
+				</div>
+
+				<!-- ステータス通知カード -->
+				<div class="status-wrapper">
+					<div class="status-card">
+						<h2>ステータス通知</h2>
+						<div class="status-item status-success">✔ 勤怠システム稼働中</div>
+						<div class="status-item status-info">ℹ 提出期限：毎月3営業日以内</div>
+					</div>
+				</div>
 			</div>
 		</div>
 
@@ -159,5 +415,19 @@
 		type="module">
 	</script>
 
+	<script>
+	function toggleInfo() {
+	    const section = document.getElementById("info-section");
+	    const arrow = document.getElementById("info-arrow");
+	
+	    if (section.style.display === "none" || section.style.display === "") {
+	        section.style.display = "block";
+	        arrow.textContent = "▲";
+	    } else {
+	        section.style.display = "none";
+	        arrow.textContent = "▼";
+	    }
+	}
+	</script>
 </body>
 </html>

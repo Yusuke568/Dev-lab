@@ -3,6 +3,7 @@ package com.example.adapter.out.persistence;
 import com.example.application.port.out.ClassmasterPort;
 import com.example.common.MyUtil;
 import com.example.entity.Classmaster;
+import com.example.shared.persistence.ConnectionBase;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

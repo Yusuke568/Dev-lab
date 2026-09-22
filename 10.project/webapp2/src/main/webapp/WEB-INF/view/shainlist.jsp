@@ -28,8 +28,14 @@
 			</div>
 		</div>
 
-		<div class="search-container">
+		<div class="search-container" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
 			<input type="text" id="searchInput" class="form-control" placeholder="名前で社員を検索...">
+			<select id="jobClassFilter" class="form-input">
+				<option value="">職種：すべて</option>
+				<c:forEach var="cm" items="${classmasters}">
+					<option value="${cm.name}"><c:out value="${cm.name}" /></option>
+				</c:forEach>
+			</select>
 		</div>
 
 		<table class="table">
@@ -74,16 +80,19 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('searchInput');
+    const jobClassFilter = document.getElementById('jobClassFilter');
     const tableBody = document.getElementById('shainTableBody');
     const contextPath = '${pageContext.request.contextPath}';
     let debounceTimer;
 
-    searchInput.addEventListener('input', (e) => {
+    function runSearch() {
         clearTimeout(debounceTimer);
-        const keyword = e.target.value;
+        const keyword = searchInput.value;
+        const jobClass = jobClassFilter.value;
 
         debounceTimer = setTimeout(() => {
-            fetch(contextPath + '/searchShainApi.do?keyword=' + encodeURIComponent(keyword))
+            const params = new URLSearchParams({ keyword: keyword, jobClass: jobClass });
+            fetch(contextPath + '/searchShainApi.do?' + params.toString())
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok');
@@ -98,7 +107,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     tableBody.innerHTML = '<tr><td colspan="7" class="text-center">検索中にエラーが発生しました。</td></tr>';
                 });
         }, 300); // 300msのデバウンス
-    });
+    }
+
+    searchInput.addEventListener('input', runSearch);
+    jobClassFilter.addEventListener('change', runSearch);
 
     function updateTable(shainList) {
         tableBody.innerHTML = ''; // テーブルをクリア

@@ -4,7 +4,7 @@ import com.example.shain.domain.model.Shain;
 import com.example.shain.domain.model.ShainId;
 import com.example.shain.domain.port.out.ShainPort;
 import com.example.dao.ShainDao;
-import com.example.adapter.out.persistence.ConnectionBase;
+import com.example.shared.persistence.ConnectionBase;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

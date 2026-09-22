@@ -2,8 +2,8 @@ package com.example.shain.adapter.in.web;
 
 import com.example.shain.application.port.in.GetNextShainIdUseCase;
 import com.example.application.port.in.GetAllClassmastersUseCase;
-import com.example.adapter.in.web.Action;
-import com.example.adapter.in.web.View;
+import com.example.shared.web.Action;
+import com.example.shared.web.View;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;

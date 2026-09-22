@@ -1,4 +1,4 @@
-import { collectAttendanceRecords, getMinutes } from "./utils.js";
+import { collectAttendanceRecords, getMinutes, calculateTotalWorkMinutes } from "./utils.js";
 
 // Get data from the root element's dataset
 const rootEl = document.getElementById("kintai-app-root");
@@ -108,7 +108,6 @@ function applyBulkInput() {
 
   if (updated) {
     updateOvertimePerRow();
-    updateOvertimeSummary();
   } else {
     alert("反映する行を選択してください。");
   }
@@ -124,41 +123,37 @@ function insertTemplate(btnEl) {
   }
 }
 
-function calculateTotalWorkMinutes(start, end) {
-  const s = getMinutes(start);
-  const e = getMinutes(end);
-  if (s >= e) return 0;
-  
-  let total = e - s;
-  
-  // 休憩時間 12:00 - 13:00 の自動控除
-  const breakStart = getMinutes("12:00");
-  const breakEnd = getMinutes("13:00");
-  const overlapStart = Math.max(s, breakStart);
-  const overlapEnd = Math.min(e, breakEnd);
-  
-  if (overlapStart < overlapEnd) {
-    total -= (overlapEnd - overlapStart);
-  }
-  
-  return total;
+function getRowCorrectionMinutes(row) {
+  const us = row.querySelector("input[name='correctionUsTime']");
+  const mid = row.querySelector("input[name='correctionMidTime']");
+  const usVal = us && us.value !== "" ? getMinutes(us.value) : 0;
+  const midVal = mid && mid.value !== "" ? getMinutes(mid.value) : 0;
+  return (isNaN(usVal) ? 0 : usVal) + (isNaN(midVal) ? 0 : midVal);
 }
 
-function calculateOvertime(start, end) {
-  const totalMinutes = calculateTotalWorkMinutes(start, end);
-  // 1日の所定労働時間を8時間(480分)とする
-  const standardWorkMinutes = 480;
-  return totalMinutes > standardWorkMinutes ? totalMinutes - standardWorkMinutes : 0;
+/** 補正CDの選択に応じて、登録済みの補正(通)・補正(深)をその行に反映する。 */
+function applyCorrectionMasterToRow(select) {
+  const row = select.closest("tr");
+  if (!row) return;
+  const option = select.options[select.selectedIndex];
+  const usInput = row.querySelector("input[name='correctionUsTime']");
+  const midInput = row.querySelector("input[name='correctionMidTime']");
+
+  if (option && option.value !== "") {
+    if (usInput) usInput.value = option.dataset.us || "00:00";
+    if (midInput) midInput.value = option.dataset.mid || "00:00";
+  }
 }
 
 function updateOvertimePerRow() {
   rows.forEach((row) => {
     const start = row.cells[3].textContent.trim();
     const end = row.cells[4].textContent.trim();
-    const workTimeCell = row.cells[5]; // 実働時間を表示するセル
+    const workTimeCell = row.cells[5]; // 実働時間（補正後）を表示するセル
 
     if (start && end) {
-      const totalMinutes = calculateTotalWorkMinutes(start, end);
+      const correctionMinutes = getRowCorrectionMinutes(row);
+      const totalMinutes = calculateTotalWorkMinutes(start, end, correctionMinutes);
       const hours = Math.floor(totalMinutes / 60);
       const minutes = totalMinutes % 60;
       workTimeCell.textContent =
@@ -167,24 +162,6 @@ function updateOvertimePerRow() {
       workTimeCell.textContent = "";
     }
   });
-}
-
-function updateOvertimeSummary() {
-  let total = 0;
-  const attendanceRecords = collectAttendanceRecords(staffId);
-
-  attendanceRecords.forEach((r) => {
-    if (r.kintaifrom && r.kintaito) {
-      total += calculateOvertime(r.kintaifrom, r.kintaito);
-    }
-  });
-
-  const summaryEl = document.getElementById("overtime-summary");
-  if (summaryEl) {
-    const hours = Math.floor(total / 60);
-    const minutes = total % 60;
-    summaryEl.textContent = "時間外労働: " + hours + "時間" + minutes + "分";
-  }
 }
 
 function updateButtonState() {
@@ -226,7 +203,6 @@ function recordAttendance(type) {
       break;
     }
   }
-  updateOvertimeSummary();
   updateButtonState();
 }
 
@@ -290,8 +266,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const row = cell.parentElement;
       const date = row.dataset.date;
 
-      // Non-editable cells
-      if ([0, 1, 2, 5, 8, 12].includes(cell.cellIndex) || cell.querySelector("select") || cell.classList.contains("toggle-col"))
+      // Non-editable cells (0:選択 1:日 2:曜日 5:時間 6:時間外 9:状態 13:詳細)
+      if ([0, 1, 2, 5, 6, 9, 13].includes(cell.cellIndex) || cell.querySelector("select") || cell.classList.contains("toggle-col"))
         return;
 
       // Switch to input for editable cells
@@ -300,8 +276,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const originalText = cell.textContent;
 
-      // For status dropdown
-      if (cell.cellIndex === 6) {
+      // For status dropdown (勤務区分)
+      if (cell.cellIndex === 7) {
         const record = collectAttendanceRecords(staffId).find((r) => r.kintaidate === date);
         const currentVal = record ? record.abstractId : null; // Use null to be explicit
         renderStatusCell(cell, currentVal || "", date); // Pass empty string if null
@@ -321,7 +297,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const handleBlur = () => {
         cell.textContent = input.value;
-        updateOvertimeSummary();
         updateButtonState();
       };
 
@@ -335,9 +310,23 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     });
+
+    // 補正(通)・補正(深)の入力変更で実働時間・時間外労働を再計算
+    table.addEventListener("input", (e) => {
+      if (e.target.matches("input[name='correctionUsTime'], input[name='correctionMidTime']")) {
+        updateOvertimePerRow();
+      }
+    });
+
+    // 補正CDを選択したら、マスタ登録済みの補正(通)・補正(深)を自動反映
+    table.addEventListener("change", (e) => {
+      if (e.target.matches("select[name='correctionId']")) {
+        applyCorrectionMasterToRow(e.target);
+        updateOvertimePerRow();
+      }
+    });
   }
 
   // Initial state update
   updateButtonState();
-  updateOvertimeSummary();
 });

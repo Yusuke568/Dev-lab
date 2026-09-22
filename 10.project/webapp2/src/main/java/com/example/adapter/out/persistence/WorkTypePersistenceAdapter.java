@@ -3,6 +3,7 @@ package com.example.adapter.out.persistence;
 import com.example.application.port.out.WorkTypePort;
 import com.example.common.MyUtil;
 import com.example.entity.WorkType;
+import com.example.shared.persistence.ConnectionBase;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

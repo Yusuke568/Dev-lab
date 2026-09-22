@@ -247,6 +247,8 @@
 						<c:out value="${attendanceData.totalWorkHours}" />
 					</div>
 				</div>
+				<a href="${pageContext.request.contextPath}/overtimeRequestMenu.do" class="btn btn-secondary">🕐 残業事前申請</a>
+				<a href="${pageContext.request.contextPath}/correctionMasterList.do" class="btn btn-secondary">🔧 補正マスタ設定</a>
 				<a href="${pageContext.request.contextPath}/logout.do" class="btn btn-secondary">ログアウト</a>
 				<a href="${pageContext.request.contextPath}/menu.do" class="btn btn-secondary">メニュー</a>
 			</div>
@@ -260,13 +262,23 @@
 					<table class="law-check-table">
 						<tr>
 							<th>当月時間外</th>
-							<td>0:00</td>
-							<td>〇 原則45H迄</td>
+							<td><c:out value="${attendanceData.totalOvertimeFormatted}" /></td>
+							<td>
+								<c:choose>
+									<c:when test="${attendanceData.monthlyOvertimeWithinLimit}">〇 原則45H迄</c:when>
+									<c:otherwise><span style="color: red; font-weight: bold;">× 原則45H迄</span></c:otherwise>
+								</c:choose>
+							</td>
 						</tr>
 						<tr>
 							<th>年間時間外</th>
-							<td>93:10</td>
-							<td>〇 540H/年迄</td>
+							<td><c:out value="${attendanceData.annualOvertimeFormatted}" /></td>
+							<td>
+								<c:choose>
+									<c:when test="${attendanceData.annualOvertimeWithinLimit}">〇 540H/年迄</c:when>
+									<c:otherwise><span style="color: red; font-weight: bold;">× 540H/年迄</span></c:otherwise>
+								</c:choose>
+							</td>
 						</tr>
 					</table>
 					<div class="law-check-notes">
@@ -293,6 +305,29 @@
 						<h2>ステータス通知</h2>
 						<div class="status-item status-success">✔ 勤怠システム稼働中</div>
 						<div class="status-item status-info">ℹ 提出期限：毎月3営業日以内</div>
+
+						<c:if test="${not empty datesNeedingRequest}">
+							<div class="status-item status-danger">
+								⚠ 残業の事前申請が必要な日があります（<c:out value="${fn:length(datesNeedingRequest)}" />件）：
+								<c:forEach var="d" items="${datesNeedingRequest}" varStatus="loop">
+									<c:url value="/overtimeRequestMenu.do" var="reqUrl"><c:param name="targetDate" value="${d}" /></c:url>
+									<a href="${reqUrl}"><c:out value="${d}" /></a>${!loop.last ? ', ' : ''}
+								</c:forEach>
+								（クリックした日の内容で申請フォームに自動入力されます）
+							</div>
+						</c:if>
+						<c:if test="${pendingRequestCount > 0}">
+							<div class="status-item status-info">
+								ℹ 残業事前申請が承認待ちです（<c:out value="${pendingRequestCount}" />件）
+								<a href="${pageContext.request.contextPath}/overtimeRequestMenu.do">確認する ›</a>
+							</div>
+						</c:if>
+						<c:if test="${rejectedRequestCount > 0}">
+							<div class="status-item status-warning">
+								⚠ 却下された残業事前申請があります（<c:out value="${rejectedRequestCount}" />件）
+								<a href="${pageContext.request.contextPath}/overtimeRequestMenu.do">再申請する ›</a>
+							</div>
+						</c:if>
 					</div>
 				</div>
 			</div>
@@ -305,7 +340,7 @@
 				<button id="clock-out-btn" onclick="recordAttendance('退勤')"
 					class="btn btn-primary">🌙 退勤</button>
 			</div>
-			<div id="overtime-summary"></div>
+			<div id="overtime-summary">時間外労働: <c:out value="${attendanceData.totalOvertimeFormatted}" />（保存済みデータに基づく。未保存の変更は反映されません）</div>
 			<div style="display: flex; gap: 1rem;">
 				<button id="temp-save-btn" onclick="saveAttendance(true)"
 					class="btn btn-secondary">📝 一時保存</button>
@@ -348,6 +383,7 @@
 					<th>出勤</th>
 					<th>退勤</th>
 					<th>時間</th>
+					<th>時間外</th>
 					<th>勤務区分</th>
 					<th class="detail-col">備考</th>
 					<th>状態</th>
@@ -368,6 +404,12 @@
 						<td data-label="出勤" class="editable-time"><c:out value="${daily.startTime}" /></td>
 						<td data-label="退勤" class="editable-time"><c:out value="${daily.endTime}" /></td>
 						<td data-label="時間"><c:out value="${daily.workHours}" /></td>
+						<td data-label="時間外">
+							<c:choose>
+								<c:when test="${daily.overtimeMinutes > 0}"><c:out value="${daily.overtimeMinutesFormatted}" /></c:when>
+								<c:otherwise>ー</c:otherwise>
+							</c:choose>
+						</td>
 						<td data-label="勤務区分"><select name="status" class="form-input">
 								<c:forEach var="opt" items="${workTypes}">
 									<option value="${opt.id}"
@@ -381,18 +423,31 @@
 							<button type="button" class="btn btn-secondary" onclick="insertTemplate(this)" style="padding: 2px 4px; font-size: 0.8rem;">定型</button>
 						</div></td>
 						<td data-label="状態">
+							<c:set var="isPaidLeaveDay" value="false" />
+							<c:forEach var="wt" items="${workTypes}">
+								<c:if test="${wt.id == daily.abstractId && wt.paid}">
+									<c:set var="isPaidLeaveDay" value="true" />
+								</c:if>
+							</c:forEach>
 							<c:choose>
+								<c:when test="${daily.overtimeMinutes == 0 && !isPaidLeaveDay}">ー</c:when>
 								<c:when test="${daily.approvalStatus == 2}"><span style="color: green; font-weight: bold;">承認済</span></c:when>
+								<c:when test="${daily.approvalStatus == 3}"><span style="color: red; font-weight: bold;">却下</span></c:when>
 								<c:when test="${daily.approvalStatus == 1}"><span style="color: orange; font-weight: bold;">申請中</span></c:when>
 								<c:otherwise><span style="color: gray;">未申請</span></c:otherwise>
 							</c:choose>
 						</td>
-						<td data-label="補正CD" class="detail-col"><input type="number" name="correctionId"
-							value="${daily.correctionId}" class="form-input" /></td>
-						<td data-label="補正(通)" class="detail-col"><input type="number" name="correctionUsTime"
-							value="${daily.correctionUsTime}" class="form-input" /></td>
-						<td data-label="補正(深)" class="detail-col"><input type="number" name="correctionMidTime"
-							value="${daily.correctionMidTime}" class="form-input" /></td>
+						<td data-label="補正CD" class="detail-col"><select name="correctionId" class="form-input correction-select">
+								<option value="">なし</option>
+								<c:forEach var="cm" items="${correctionMasters}">
+									<option value="${cm.id}" data-us="${cm.correctionUsTimeFormatted}" data-mid="${cm.correctionMidTimeFormatted}"
+										${cm.id == daily.correctionId ? 'selected' : ''}><c:out value="${cm.name}" /></option>
+								</c:forEach>
+						</select></td>
+						<td data-label="補正(通)" class="detail-col"><input type="time" name="correctionUsTime"
+							value="${daily.correctionUsTimeFormatted}" class="form-input" /></td>
+						<td data-label="補正(深)" class="detail-col"><input type="time" name="correctionMidTime"
+							value="${daily.correctionMidTimeFormatted}" class="form-input" /></td>
 						<td class="toggle-col mobile-only"><button type="button" class="btn btn-secondary" style="padding: 4px 12px; font-size: 0.8rem; width: 100%;" onclick="toggleRowDetails(this)">詳細を開く ∨</button></td>
 					</tr>
 				</c:forEach>

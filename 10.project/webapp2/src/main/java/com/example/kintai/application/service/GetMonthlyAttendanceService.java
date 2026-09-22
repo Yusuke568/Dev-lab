@@ -54,8 +54,17 @@ public class GetMonthlyAttendanceService implements GetMonthlyAttendanceUseCase 
         String totalWorkHours = formatDuration(totalDuration);
         long totalWorkMinutes = totalDuration.toMinutes();
 
+        // 時間外（残業）の合計は、日次一覧に表示する値（record.getOvertimeMinutes()）と必ず一致させる。
+        // 画面上の「時間外」列の合計と、上部サマリー・労働基準法チェックの数値がずれないようにするため。
+        long totalOvertimeMinutes = records.stream()
+                .mapToLong(AttendanceRecord::getOvertimeMinutes)
+                .sum();
+        long annualOvertimeMinutes = loadAttendanceRecordPort.sumOvertimeMinutesByEmployeeAndYear(
+                command.getEmployeeId(), command.getYearMonth().getYear());
+
         // 4. 最終的なDTOを絁E立てて返す
-        return new MonthlyAttendanceDto(command.getYearMonth(), dailyDtos, totalWorkHours, totalWorkMinutes, employee.getName());
+        return new MonthlyAttendanceDto(command.getYearMonth(), dailyDtos, totalWorkHours, totalWorkMinutes,
+                totalOvertimeMinutes, annualOvertimeMinutes, employee.getName());
         }
 
 
@@ -77,7 +86,8 @@ public class GetMonthlyAttendanceService implements GetMonthlyAttendanceUseCase 
                 record.getCorrectionId(),
                 record.getCorrectionUsTime(),
                 record.getCorrectionMidTime(),
-                record.getApprovalStatus()
+                record.getApprovalStatus(),
+                record.getOvertimeMinutes()
         );
     }
 

@@ -1,7 +1,7 @@
 package com.example.auth.adapter.out.persistence;
 
 import com.example.auth.domain.port.out.LoginPort;
-import com.example.adapter.out.persistence.ConnectionBase;
+import com.example.shared.persistence.ConnectionBase;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

@@ -1,0 +1,15 @@
+SELECT
+    w.STAFF_ID,
+    s.NAME AS STAFF_NAME,
+    w.WORK_DATE,
+    w.WORK_WEEK,
+    w.JOB_FROM_TIME,
+    w.JOB_TO_TIME,
+    w.OVERTIME,
+    a.NAME AS ABSTRACT_NAME,
+    w.REMARKS
+FROM work_month_table w
+JOIN STAFF_TABLE s ON w.STAFF_ID = s.id
+LEFT JOIN abstract_master a ON w.ABSTRACT_ID = a.ID
+WHERE w.APPROVAL_STATUS = 1
+ORDER BY w.WORK_DATE ASC, w.STAFF_ID ASC;

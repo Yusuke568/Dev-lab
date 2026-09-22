@@ -4,8 +4,8 @@ import com.example.shain.application.port.in.GetShainByIdUseCase;
 import com.example.shain.domain.model.ShainId;
 import com.example.shain.adapter.in.web.dto.ShainDto;
 import com.example.application.port.in.GetAllClassmastersUseCase;
-import com.example.adapter.in.web.Action;
-import com.example.adapter.in.web.View;
+import com.example.shared.web.Action;
+import com.example.shared.web.View;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;

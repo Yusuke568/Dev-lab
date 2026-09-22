@@ -82,6 +82,15 @@
 			</form>
 		</div>
 
+		<!-- 残業事前申請カード -->
+		<div class="menu-card-wrapper">
+			<div class="menu-card" style="cursor: pointer; height: 100%;" onclick="location.href='${pageContext.request.contextPath}/overtimeRequestMenu.do'">
+				<div class="icon">🕐</div>
+				<h3>残業事前申請</h3>
+				<p>時間外労働の事前申請・承認結果の確認・再申請を行います。</p>
+			</div>
+		</div>
+
 		<c:if test="${sessionScope.loginUserRole != '0'}">
 			<!-- 社員一覧カード -->
 			<div class="menu-card-wrapper">
@@ -98,6 +107,15 @@
 					<div class="icon">🏖️</div>
 					<h3>有給休暇管理</h3>
 					<p>有給休暇の付与や日数の管理を行います。</p>
+				</div>
+			</div>
+
+			<!-- 勤怠承認カード -->
+			<div class="menu-card-wrapper">
+				<div class="menu-card" style="cursor: pointer; height: 100%;" onclick="location.href='${pageContext.request.contextPath}/approvalList.do'">
+					<div class="icon">✅</div>
+					<h3>勤怠承認</h3>
+					<p>申請中の勤怠を確認し、承認・却下を行います。</p>
 				</div>
 			</div>
 		</c:if>

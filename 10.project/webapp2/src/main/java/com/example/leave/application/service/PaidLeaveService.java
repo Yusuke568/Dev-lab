@@ -6,7 +6,7 @@ import com.example.leave.domain.port.out.PaidLeavePort;
 import com.example.shain.domain.port.out.ShainPort;
 import com.example.shain.domain.model.Shain;
 import com.example.shain.domain.model.ShainId;
-import com.example.application.port.out.TransactionManager;
+import com.example.shared.transaction.TransactionManager;
 
 import java.util.List;
 

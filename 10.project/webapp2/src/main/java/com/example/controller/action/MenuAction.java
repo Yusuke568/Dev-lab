@@ -7,13 +7,13 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import com.example.adapter.out.persistence.ConnectionBase;
+import com.example.shared.persistence.ConnectionBase;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-import com.example.adapter.in.web.Action;
-import com.example.adapter.in.web.View;
+import com.example.shared.web.Action;
+import com.example.shared.web.View;
 import com.example.kintai.adapter.in.web.dto.DailyAttendanceDto;
 import com.example.kintai.adapter.in.web.dto.MonthlyAttendanceDto;
 import com.example.kintai.application.port.in.GetMonthlyAttendanceUseCase;

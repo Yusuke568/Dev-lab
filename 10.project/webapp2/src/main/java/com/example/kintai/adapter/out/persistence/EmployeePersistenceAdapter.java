@@ -4,7 +4,7 @@ import com.example.kintai.domain.model.employee.Employee;
 import com.example.kintai.domain.model.employee.EmployeeId;
 import com.example.kintai.domain.port.out.LoadEmployeePort;
 import com.example.kintai.domain.port.out.SaveEmployeePort;
-import com.example.adapter.out.persistence.ConnectionBase;
+import com.example.shared.persistence.ConnectionBase;
 
 import java.io.BufferedReader;
 import java.io.IOException;

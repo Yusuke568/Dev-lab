@@ -3,7 +3,7 @@ package com.example.leave.adapter.out.persistence;
 import com.example.leave.domain.model.LeaveGrantRule;
 import com.example.leave.domain.port.out.PaidLeavePort;
 import com.example.common.MyUtil;
-import com.example.adapter.out.persistence.ConnectionBase;
+import com.example.shared.persistence.ConnectionBase;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

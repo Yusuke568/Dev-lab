@@ -1,9 +1,0 @@
-package com.example.application.port.out;
-
-/**
- * 勤怠惁E��を更新するためのポ�Eト、E
- */
-public interface KintaiUpdatePort {
-    void update(DailyWorkRecord dailyWorkRecord);
-    DailyWorkRecord findByDate(int staffId, java.time.LocalDate date);
-}

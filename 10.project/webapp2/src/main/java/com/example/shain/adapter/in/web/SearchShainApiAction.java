@@ -13,8 +13,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.example.shain.application.port.in.GetShainListUseCase;
 import com.example.shain.adapter.in.web.dto.ShainDto;
-import com.example.adapter.in.web.Action;
-import com.example.adapter.in.web.View;
+import com.example.shared.web.Action;
+import com.example.shared.web.View;
 
 /**
  * 社員を非同期で検索し、結果をJSONで返すAPIアクション。
@@ -36,12 +36,15 @@ public class SearchShainApiAction implements Action {
             if (keyword == null) {
                 keyword = "";
             }
+            String jobClass = request.getParameter("jobClass");
 
             final String finalKeyword = keyword.toLowerCase();
+            final String finalJobClass = (jobClass == null || jobClass.isBlank()) ? null : jobClass;
 
             // Serviceを呼び出して社員を検索し、DTOに変換
             List<ShainDto> shainList = getShainListUseCase.getShainList().stream()
                 .filter(s -> s.getName() != null && s.getName().toLowerCase().contains(finalKeyword))
+                .filter(s -> finalJobClass == null || finalJobClass.equals(s.getJobClass()))
                 .map(ShainDto::new)
                 .collect(Collectors.toList());
 

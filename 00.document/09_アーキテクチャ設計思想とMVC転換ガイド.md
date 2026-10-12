@@ -20,22 +20,22 @@ Web開発の入門では、Servlet/JSPによる **「Model 2 MVC」**（Controll
 
 ```mermaid
 flowchart LR
-    subgraph DrivingAdapters [入力側アダプター]
-        JoyConL[Joy-Con 左 (Web Controller)]
-        ProCon[Proコントローラー (API Action)]
+    subgraph DrivingAdapters ["入力側アダプター"]
+        JoyConL["Joy-Con 左 (Web Controller)"]
+        ProCon["Proコントローラー (API Action)"]
     end
 
-    subgraph Console [Switch本体 (Hexagon: ドメインコア)]
-        Port1[Joy-Con レール (UseCase Port)]
-        GameLogic[ゲームプログラム (純粋な業務ルール)]
-        Port2[USB-C ポート (Repository Port)]
+    subgraph Console ["Switch本体 (Hexagon: ドメインコア)"]
+        Port1["Joy-Con レール (UseCase Port)"]
+        GameLogic["ゲームプログラム (純粋な業務ルール)"]
+        Port2["USB-C ポート (Repository Port)"]
         Port1 --> GameLogic
         GameLogic --> Port2
     end
 
-    subgraph DrivenAdapters [出力側アダプター]
-        TV[テレビ画面 (JSP View)]
-        SDCard[microSDカード (MySQL DB)]
+    subgraph DrivenAdapters ["出力側アダプター"]
+        TV["テレビ画面 (JSP View)"]
+        SDCard["microSDカード (MySQL DB)"]
     end
 
     JoyConL --> Port1

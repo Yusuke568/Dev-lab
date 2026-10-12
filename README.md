@@ -33,24 +33,24 @@
 
 ```mermaid
 flowchart TD
-    subgraph Presentation [1. プレゼンテーション層 (Driving Adapter)]
-        FC[FrontController] --> Act[Action / ApiAction]
-        Act --> View[JSP / JSON]
+    subgraph Presentation ["1. プレゼンテーション層 (Driving Adapter)"]
+        FC["FrontController"] --> Act["Action / ApiAction"]
+        Act --> View["JSP / JSON"]
     end
 
-    subgraph Usecase [2. ユースケース層 (Inbound Port 実装)]
-        Act --> UC[UseCase / Service]
+    subgraph Usecase ["2. ユースケース層 (Inbound Port 実装)"]
+        Act --> UC["UseCase / Service"]
     end
 
-    subgraph Domain [3. ドメイン層 (アプリケーションコア)]
-        UC --> DM[Domain Model / Business Rules]
-        DM --> RepoIF[Repository Interface (Outbound Port)]
+    subgraph Domain ["3. ドメイン層 (アプリケーションコア)"]
+        UC --> DM["Domain Model / Business Rules"]
+        DM --> RepoIF["Repository Interface (Outbound Port)"]
     end
 
-    subgraph Infrastructure [4. インフラストラクチャ層 (Driven Adapter)]
-        RepoImpl[JdbcRepository / DAO] -.->|implements| RepoIF
-        UC --> TM[TransactionManager]
-        RepoImpl --> DB[(MySQL 8.0)]
+    subgraph Infrastructure ["4. インフラストラクチャ層 (Driven Adapter)"]
+        RepoImpl["JdbcRepository / DAO"] -.->|implements| RepoIF
+        UC --> TM["TransactionManager"]
+        RepoImpl --> DB[("MySQL 8.0")]
         TM --> DB
     end
 ```

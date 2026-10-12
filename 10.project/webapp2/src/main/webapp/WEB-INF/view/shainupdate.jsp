@@ -1,79 +1,106 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-	pageEncoding="UTF-8"%>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="java.util.List" %>
+<%@ page import="domain.shain.Shain" %>
+<%@ page import="domain.shain.Classmaster" %>
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<title>社員更新画面</title>
-<link rel="stylesheet"
-	href="${pageContext.request.contextPath}/css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>社員情報更新 - SES勤怠マネージャー</title>
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/css/tailwind.min.css">
+  <style>
+    body {
+      background-color: #0b0f19;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Sans", sans-serif;
+    }
+    .panel {
+      background-color: #131b2e;
+      border: 1px solid #1e293b;
+      border-radius: 0.75rem;
+    }
+  </style>
 </head>
-<body>
-	<div class="card form-card">
-		<div class="text-center page-title-container">
-			<h1>社員情報の更新</h1>
-			<p>
-				<c:out value="${shain.name}" />
-				さんの情報を編集します。
-			</p>
-		</div>
-		<form action="${pageContext.request.contextPath}/shainUpdateExecute.do" method="post">
-			<input type="hidden" name="id"
-				value="<c:out value="${shain.id}"/>">
+<body class="min-h-screen flex items-center justify-center p-4">
+  <%
+    Shain shain = (Shain) request.getAttribute("shain");
+    List<Classmaster> jobList = (List<Classmaster>) request.getAttribute("jobList");
+  %>
 
-			<div class="form-group">
-				<label class="form-label">社員ID</label> <input type="text"
-					class="form-input" value="<c:out value="${shain.id}"/>"
-					readonly>
-			</div>
+  <div class="panel w-full max-w-lg p-6 md:p-8 space-y-6 shadow-2xl">
+    <div class="border-b border-slate-800 pb-3 flex items-center justify-between">
+      <div>
+        <h1 class="text-lg font-bold text-white"><%= shain != null ? shain.getName() : "" %> さんの情報更新</h1>
+        <p class="text-xs text-slate-400">社員属性や役職・有休日数を変更します。</p>
+      </div>
+      <a href="shainList.do" class="text-xs text-slate-400 hover:text-white">‹ 社員一覧へ戻る</a>
+    </div>
 
-			<div class="form-group">
-				<label for="name" class="form-label">名前</label> <input type="text"
-					id="name" name="name" value="<c:out value="${shain.name}"/>"
-					class="form-input" required>
-			</div>
-			
-			<div class="form-group">
-				<label for="namekana" class="form-label">カナ氏名</label> <input type="text"
-					id="namekana" name="namekana" value="<c:out value="${shain.namekana}"/>"
-					class="form-input" required>
-			</div>
+    <form action="shainUpdateExecute.do" method="post" class="space-y-4 text-xs">
+      <input type="hidden" name="id" value="<%= shain != null ? shain.getId() : "" %>" />
 
-			<div class="form-group">
-				<label for="entryyear" class="form-label">入社年</label> <input
-					type="number" id="entryyear" name="entryyear"
-					value="<c:out value="${shain.entryyear}"/>" class="form-input"
-					required>
-			</div>
+      <div>
+        <label class="block text-slate-400 mb-1 font-semibold">社員ID</label>
+        <input type="text" value="<%= shain != null ? shain.getId() : "" %>" readonly
+               class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-white font-mono opacity-80" />
+      </div>
 
-			<div class="form-group">
-				<label for="gender" class="form-label">性別</label> <select id="gender"
-					name="gender" class="form-input" required>
-					<option value="男"
-						<c:if test="${shain.gender == '男'}">selected</c:if>>男</option>
-					<option value="女"
-						<c:if test="${shain.gender == '女'}">selected</c:if>>女</option>
-				</select>
-			</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-slate-300 mb-1 font-semibold">氏名</label>
+          <input type="text" name="name" value="<%= shain != null ? shain.getName() : "" %>" required
+                 class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white" />
+        </div>
+        <div>
+          <label class="block text-slate-300 mb-1 font-semibold">カナ氏名</label>
+          <input type="text" name="namekana" value="<%= shain != null ? shain.getNamekana() : "" %>" required
+                 class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white" />
+        </div>
+      </div>
 
-			<div class="form-group">
-				<label for="jobclass" class="form-label">役職</label> <select
-					id="jobclass" name="jobclass" class="form-input" required>
-					<c:forEach var="job" items="${jobList}">
-						<option value="<c:out value="${job.name}"/>"
-							<c:if test="${shain.jobclass == job.name}">selected</c:if>>
-							<c:out value="${job.name}" />
-						</option>
-					</c:forEach>
-				</select>
-			</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-slate-300 mb-1 font-semibold">性別</label>
+          <select name="gender" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white">
+            <option value="男" <%= (shain != null && "男".equals(shain.getGender())) ? "selected" : "" %>>男</option>
+            <option value="女" <%= (shain != null && "女".equals(shain.getGender())) ? "selected" : "" %>>女</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-slate-300 mb-1 font-semibold">入社年</label>
+          <input type="number" name="entryyear" value="<%= shain != null ? shain.getEntryyear() : 2024 %>" required
+                 class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white font-mono" />
+        </div>
+      </div>
 
-			<div class="form-actions">
-				<a href="${pageContext.request.contextPath}/shainList.do" class="btn btn-secondary">‹ キャンセル</a>
-				<button type="submit" class="btn btn-primary">✓ 更新</button>
-			</div>
-		</form>
-	</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-slate-300 mb-1 font-semibold">役職 / 権限</label>
+          <select name="jobclass" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white font-semibold">
+            <% if (jobList != null) { %>
+              <% for (Classmaster job : jobList) { %>
+                <option value="<%= job.getName() %>" <%= (shain != null && job.getName().equals(shain.getJobclass())) ? "selected" : "" %>>
+                  <%= job.getName() %>
+                </option>
+              <% } %>
+            <% } %>
+          </select>
+        </div>
+        <div>
+          <label class="block text-slate-300 mb-1 font-semibold">有給付与残日数</label>
+          <input type="number" name="paidLeaveDays" value="<%= shain != null ? shain.getPaidLeaveDays() : 20 %>" required min="0" max="60"
+                 class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white font-mono" />
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+        <a href="shainList.do" class="px-4 py-2.5 rounded-lg bg-slate-800 text-slate-300 font-semibold hover:bg-slate-700">キャンセル</a>
+        <button type="submit" class="px-5 py-2.5 rounded-lg bg-sky-600 hover:bg-sky-500 font-bold text-white shadow">
+          保存する
+        </button>
+      </div>
+    </form>
+  </div>
 </body>
 </html>

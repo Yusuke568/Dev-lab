@@ -11,7 +11,6 @@ SET
     TOTAL_DIRECT_WORK_TIME = ?,
     OVERTIME = ?,
     ABSTRACT_ID = ?,
-    REMARKS = ?,
-    APPROVAL_STATUS = ?
+    REMARKS = ?
 WHERE STAFF_ID = ?
 AND WORK_DATE = ?;

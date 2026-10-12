@@ -1,4 +1,5 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%
-    response.sendRedirect(request.getContextPath() + "/login.do");
+    // トップページへのアクセス時に SES勤怠管理画面へ自動リダイレクト
+    response.sendRedirect(request.getContextPath() + "/sesAttendance.do");
 %>

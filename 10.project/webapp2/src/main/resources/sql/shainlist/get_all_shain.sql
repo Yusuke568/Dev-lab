@@ -1,12 +1,10 @@
-SELECT 
-    s.ID
-    ,s.NAME
-    ,s.NAMEKANA
-    ,s.ENTRY_YEAR
-    ,s.GENDER
-    ,s.PAID_LEAVE_DAYS
-    ,c.NAME AS JOBCLASS
-FROM 
-    STAFF_TABLE s
-LEFT JOIN 
-    class_master c ON s.CLASS_ID = c.ID;
+select 
+ID
+,NAME
+,NAMEKANA
+,ENTRY_YEAR
+,GENDER
+,PAID_LEAVE_DAYS
+,(select NAME from class_master where class_master.ID = STAFF_TABLE.CLASS_ID) AS JOBCLASS,
+COALESCE((select ENABLED from login_table where login_table.USERNAME = STAFF_TABLE.ID), 1) AS ENABLED
+from STAFF_TABLE;

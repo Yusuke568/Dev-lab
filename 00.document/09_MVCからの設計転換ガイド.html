@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>09. MVCからの設計転換ガイド - SES勤怠管理システム</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    body {
+      background-color: #0f172a;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      line-height: 1.65;
+    }
+    .card-panel {
+      background-color: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 0.75rem;
+    }
+    .code-box {
+      background-color: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 0.5rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      color: #e6edf3;
+    }
+    .badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 0.25rem;
+    }
+    @media print {
+      body {
+        background-color: #ffffff !important;
+        color: #0f172a !important;
+      }
+      .card-panel {
+        background-color: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #0f172a !important;
+        page-break-inside: avoid;
+        margin-bottom: 1.5rem !important;
+      }
+      .code-box {
+        background-color: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #0f172a !important;
+      }
+      .text-slate-300, .text-slate-400 {
+        color: #334155 !important;
+      }
+      .text-white {
+        color: #0f172a !important;
+      }
+    }
+  </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+  <div class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Header -->
+    <header class="card-panel p-6 md:p-8 border-b-4 border-emerald-500 shadow-xl">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <span class="badge bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">DOC-09 設計転換ガイド</span>
+        <span class="text-xs text-slate-400">対象: クラシックMVC経験者・先輩エンジニア / 読了目安: 7分</span>
+      </div>
+      <h1 class="text-2xl md:text-3xl font-extrabold mt-3 text-white tracking-tight">
+        09. MVCからの設計転換ガイド<br>
+        <span class="text-emerald-400 text-lg md:text-2xl font-semibold">思考の転換・現場の割り切り・実践コード対比</span>
+      </h1>
+      <p class="text-xs md:text-sm text-slate-300 mt-4 leading-relaxed">
+        従来の「Controller → Service → DAO」によるMVCモデルから、なぜ「ドメイン中心の自己防衛アーキテクチャ」へと舵を切ったのか。
+        理論の押し付けではなく、現場の課題解決と開発スピード（テスト容易性）の観点からその勘所を解説します。
+      </p>
+    </header>
+
+    <!-- Section 1: なぜ転換したのか -->
+    <section class="card-panel p-6 shadow">
+      <div class="flex items-center gap-2 border-b border-slate-700 pb-3 mb-4">
+        <span class="badge bg-amber-500/20 text-amber-400 border border-amber-500/30">Section 01</span>
+        <h2 class="text-lg md:text-xl font-bold text-white">なぜ従来のMVCから設計を転換したのか？</h2>
+      </div>
+
+      <div class="space-y-4 text-xs md:text-sm text-slate-300 leading-relaxed">
+        <p>
+          初期の単純なCRUD機能では、従来の「Controller → Service → DAO」が直感的で素早い実装に適していました。
+          しかし、客先精算幅（140h〜180h）、36協定アラート、中抜け休憩、週報多層承認といった<strong>複雑なSES業務ルール</strong>が重なるにつれ、以下の壁に直面しました。
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+          <div class="p-3.5 rounded bg-slate-900 border border-slate-700">
+            <strong class="text-rose-400 block mb-1">1. DB都合の侵入</strong>
+            ServiceがDAOのSQLやテーブル構造に引きずられ、テーブル仕様の都合が業務計算に漏れ出す。
+          </div>
+          <div class="p-3.5 rounded bg-slate-900 border border-slate-700">
+            <strong class="text-rose-400 block mb-1">2. 貧血JavaBeans</strong>
+            Beanがgetter/setterの箱になり、不正データ（実労働と内訳の不一致等）が防げずバグが多発。
+          </div>
+          <div class="p-3.5 rounded bg-slate-900 border border-slate-700">
+            <strong class="text-rose-400 block mb-1">3. テスト不能の悪循環</strong>
+            Serviceの検証にMySQLとTomcat起動が必須となり、単体テストが書かれずデグレの恐怖が増大。
+          </div>
+        </div>
+
+        <div class="p-3 rounded-lg bg-emerald-950/30 border border-emerald-500/40 text-xs">
+          <strong class="text-emerald-300">✨ 転換の果実:</strong>
+          業務ルールを純粋Javaで孤立させたことで、<strong>MySQL・Tomcat起動不要で20件のテストが0.8秒で完了</strong>する強固な基盤が実現しました。
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Switchの例え -->
+    <section class="card-panel p-6 shadow">
+      <div class="flex items-center gap-2 border-b border-slate-700 pb-3 mb-4">
+        <span class="badge bg-sky-500/20 text-sky-400 border border-sky-500/30">Section 02</span>
+        <h2 class="text-lg md:text-xl font-bold text-white">直感で掴む設計思想：任天堂Switchとカセット</h2>
+      </div>
+
+      <div class="space-y-3 text-xs md:text-sm text-slate-300">
+        <p>ヘキサゴナル／クリーンアーキテクチャの本質は、<strong>「ゲーム機本体とカセット」</strong>の関係です。</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+          <div class="p-3 rounded bg-slate-900 border border-slate-700">
+            <strong class="text-sky-300 block mb-1">🎮 Switch本体（コア）</strong>
+            <p>ゲームのルールそのもの（ドメイン/ユースケース）。TVが何であるか、操作機器が何かは知りません。</p>
+          </div>
+          <div class="p-3 rounded bg-slate-900 border border-slate-700">
+            <strong class="text-sky-300 block mb-1">🕹️ Joy-Con（入力アダプター）</strong>
+            <p>ユーザーの操作を受け取り本体に伝える（Web Action / REST API）。入れ替え可能。</p>
+          </div>
+          <div class="p-3 rounded bg-slate-900 border border-slate-700">
+            <strong class="text-sky-300 block mb-1">📺 TV/ドック（出力アダプター）</strong>
+            <p>本体が決めた映像端子の規格に合わせて表示・保存（MySQL / インメモリスタブ）。</p>
+          </div>
+        </div>
+
+        <div class="p-3 rounded bg-slate-900/80 border border-slate-700 text-xs text-slate-400">
+          <strong>💡 依存性の逆転 (DIP):</strong> 依存の矢印は必ず外側から中心へ向かいます。中核の業務ルールはMySQLに依存せず、外側のDAOが中核のインターフェースを実装します。
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: 完全対応マップ -->
+    <section class="card-panel p-6 shadow">
+      <div class="flex items-center gap-2 border-b border-slate-700 pb-3 mb-4">
+        <span class="badge bg-purple-500/20 text-purple-400 border border-purple-500/30">Section 03</span>
+        <h2 class="text-lg md:text-xl font-bold text-white">「MVCのこれ、新アーキテクチャでどこ？」完全対応マップ</h2>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs text-left border-collapse">
+          <thead>
+            <tr class="border-b border-slate-700 text-slate-400">
+              <th class="py-2.5 px-3">従来のMVC要素</th>
+              <th class="py-2.5 px-3 text-emerald-400">新アーキテクチャでの名称</th>
+              <th class="py-2.5 px-3">主な責務・役割</th>
+              <th class="py-2.5 px-3">配置パッケージ</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800 text-slate-300">
+            <tr>
+              <td class="py-2.5 px-3 font-semibold text-white">Action / Controller</td>
+              <td class="py-2.5 px-3 text-emerald-300">Web Adapter (Controller)</td>
+              <td class="py-2.5 px-3">HTTP受付、パラメータ変換、UseCase呼出、画面遷移/JSON</td>
+              <td class="py-2.5 px-3 font-mono text-[11px] text-slate-400">controller/action/, api/</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-semibold text-white">Service (業務手順)</td>
+              <td class="py-2.5 px-3 text-emerald-300">UseCase Service</td>
+              <td class="py-2.5 px-3">ユースケースの進行役。ドメインを操作して保存</td>
+              <td class="py-2.5 px-3 font-mono text-[11px] text-slate-400">usecase/attendance/ 等</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-semibold text-white">Service内の計算・判定</td>
+              <td class="py-2.5 px-3 text-emerald-300 font-bold">Domain Model / Service</td>
+              <td class="py-2.5 px-3">純粋な計算・バリデーション・状態判定（外部依存ゼロ）</td>
+              <td class="py-2.5 px-3 font-mono text-[11px] text-slate-400">domain/contract/, compliance/</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-semibold text-white">JavaBean (受動的データ箱)</td>
+              <td class="py-2.5 px-3 text-emerald-300 font-bold">自己防衛 Entity</td>
+              <td class="py-2.5 px-3">自身の不変条件を自ら検証し、不正な状態を拒絶</td>
+              <td class="py-2.5 px-3 font-mono text-[11px] text-slate-400">domain/attendance/ 等</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-semibold text-white">DAO (DBアクセス)</td>
+              <td class="py-2.5 px-3 text-emerald-300">Repository (Adapter)</td>
+              <td class="py-2.5 px-3">コアのInterfaceをJDBC/SQLで具象実装</td>
+              <td class="py-2.5 px-3 font-mono text-[11px] text-slate-400">infrastructure/persistence/</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Section 4: コード対比 -->
+    <section class="card-panel p-6 shadow">
+      <div class="flex items-center gap-2 border-b border-slate-700 pb-3 mb-4">
+        <span class="badge bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">Section 04</span>
+        <h2 class="text-lg md:text-xl font-bold text-white">コード対比で見る「思考の転換」（Before / After）</h2>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <h3 class="text-xs font-bold text-rose-400 mb-1">【Before】従来のMVC：ロジックがServiceやActionに散乱・テスト困難</h3>
+          <div class="code-box p-3 overflow-x-auto">
+<pre class="text-xs"><code>public class KintaiService {
+    private KintaiDao dao = new KintaiDao(); // DBに直結
+    public void update(KintaiBean bean) throws Exception {
+        int total = calc(bean.getStartTime(), bean.getEndTime());
+        if (total != (bean.getDirect() + bean.getIndirect())) {
+            throw new Exception("内訳不一致"); // 業務ルールがServiceに散乱
+        }
+        dao.update(bean); // DB起動必須
+    }
+}</code></pre>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-xs font-bold text-emerald-400 mb-1">【After】新アーキテクチャ：自己防衛エンティティ ＋ 依存性逆転</h3>
+          <div class="code-box p-3 overflow-x-auto">
+<pre class="text-xs"><code>// 1. ドメイン層：自ら正しさを防衛（DailyAttendance.java）
+public class DailyAttendance {
+    public void fillAttendance(LocalTime start, LocalTime end, int breakMin, List&lt;WorkTimeSegment&gt; segs) {
+        if (this.isLocked) throw new IllegalStateException("月次確定済のため変更不可");
+        this.startTime = start; this.endTime = end;
+        validateSegmentsIntegrity(); // ★ 不正データはメモリ上に1ミリ秒たりとも存在できない！
+    }
+}
+
+// 2. ユースケース層：手順の調停役（FillAttendanceUseCase.java）
+public class FillAttendanceUseCase {
+    private final AttendanceRepository repository; // インターフェースに依存
+    public DailyAttendance execute(FillAttendanceInput input) {
+        DailyAttendance att = repository.findByDate(input.getStaffId(), input.getDate());
+        att.fillAttendance(input.getStart(), input.getEnd(), input.getBreakMin(), input.getSegments());
+        repository.save(att);
+        return att; // そのまま返却
+    }
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 5: 現場の割り切り -->
+    <section class="card-panel p-6 shadow">
+      <div class="flex items-center gap-2 border-b border-slate-700 pb-3 mb-4">
+        <span class="badge bg-amber-500/20 text-amber-400 border border-amber-500/30">Section 05</span>
+        <h2 class="text-lg md:text-xl font-bold text-white">現場での現実的割り切り（教科書通りにやらない勇気）</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-slate-300">
+        <div class="p-3.5 rounded bg-slate-900 border border-slate-700">
+          <strong class="text-amber-300 text-sm block mb-1">💡 割り切り1: Presenterは捨て、戻り値で返す</strong>
+          <p class="leading-relaxed">
+            理論上のクリーンアーキテクチャにある「Output Boundary & Presenter」はWebでは複雑すぎるため、
+            <strong>UseCase Interactor が結果を戻り値として直接返す</strong>形に割り切っています。
+          </p>
+        </div>
+        <div class="p-3.5 rounded bg-slate-900 border border-slate-700">
+          <strong class="text-amber-300 text-sm block mb-1">💡 割り切り2: スタブ先行開発で即時テスト</strong>
+          <p class="leading-relaxed">
+            DB作成やSQL実装を待つ必要はありません。Repositoryのインターフェースに対して「Mapのスタブ」を用意すれば、
+            <strong>DB接続前に業務ロジックのJUnitテストを先行完成</strong>させられます。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 6: FAQ -->
+    <section class="card-panel p-6 shadow">
+      <div class="flex items-center gap-2 border-b border-slate-700 pb-3 mb-4">
+        <span class="badge bg-slate-500/20 text-slate-300 border border-slate-500/30">Section 06</span>
+        <h2 class="text-lg md:text-xl font-bold text-white">よくある疑問とFAQ（先輩エンジニアからの質問集）</h2>
+      </div>
+
+      <div class="space-y-3 text-xs text-slate-300">
+        <div class="p-3 rounded bg-slate-900 border border-slate-700">
+          <strong class="text-slate-200 block mb-1">Q1. クラス数やインターフェースが増えて冗長ではないですか？</strong>
+          <p class="text-slate-400">初見ではファイル数が増えますが、1クラスの責務が極小化されるため、変更時の影響調査コストとバグ調査時間は激減します。</p>
+        </div>
+        <div class="p-3 rounded bg-slate-900 border border-slate-700">
+          <strong class="text-slate-200 block mb-1">Q2. ドメインEntityとDAOのテーブルBeanで似たクラスができるのはなぜ？</strong>
+          <p class="text-slate-400">業務ルールとDBテーブル構造の変更理由（正規化やインデックス都合）は異なるためです。分離によりDB変更が業務に波及しません。</p>
+        </div>
+        <div class="p-3 rounded bg-slate-900 border border-slate-700">
+          <strong class="text-slate-200 block mb-1">Q3. 新機能・改修時はどこから書き始めるべきですか？</strong>
+          <p class="text-slate-400"><strong>Domain（純粋Javaでルール作成＋単体テスト） → UseCase（手順組み立て） → Adapter（Web/JDBC）</strong> の順が鉄則です。</p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</body>
+</html>

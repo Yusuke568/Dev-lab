@@ -1,30 +1,26 @@
 package controller;
 
-import java.io.IOException;
-
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import java.io.IOException;
+
 /**
- * すべてのリクエストを受け付けるフロントコントローラー。
+ * すべてのリクエストを最初に受け取るフロントコントローラー。
+ * リクエストに応じて適切なActionクラスを呼び出し、処理を委譲する。
  */
-@WebServlet("*.do")
 public class FrontController extends HttpServlet {
-    private static final long serialVersionUID = 1L;
 
-    public FrontController() {
-        super();
-    }
-
+    @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         processRequest(request, response);
     }
 
+    @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         processRequest(request, response);
@@ -32,93 +28,69 @@ public class FrontController extends HttpServlet {
 
     private void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
-        // 文字コードを設定
-        request.setCharacterEncoding("UTF-8");
-
-        // リクエストURIからアクションを特定
-        String uri = request.getRequestURI();
-        String contextPath = request.getContextPath();
-        String command = uri.substring(contextPath.length());
-
-        Action action = null;
-        String forwardPath = null;
-
-        // URLに応じて実行するActionを決定
-        // 将来的にはMapやリフレクションを使って動的に解決するのが望ましい
-        if (command.equals("/shain/list.do")) {
-            action = new ShainListAction();
-        } else if (command.equals("/menu.do")) {
-            action = new MenuAction();
-        } else if (command.equals("/shain/insert.do")) {
-            if ("GET".equals(request.getMethod())) {
-                action = new ShainInsertFormAction();
-            } else {
-                action = new ShainInsertExecuteAction();
-            }
-        } else if (command.equals("/shain/update.do")) {
-            if ("GET".equals(request.getMethod())) {
-                action = new ShainUpdateFormAction();
-            } else {
-                action = new ShainUpdateExecuteAction();
-            }
-        } else if (command.equals("/shain/delete.do")) {
-            if ("GET".equals(request.getMethod())) {
-                action = new ShainDeleteFormAction();
-            } else {
-                action = new ShainDeleteExecuteAction();
-            }
-        } else if (command.equals("/api/shain/search.do")) {
-            action = new SearchShainApiAction();
-        } else if (command.equals("/paid_leave/admin.do")) {
-            action = new PaidLeaveAdminAction();
-        } else if (command.equals("/paid_leave/grant_by_year.do")) {
-            if ("POST".equals(request.getMethod())) {
-                action = new GrantLeaveByYearAction();
-            }
-        } else if (command.equals("/paid_leave/update.do")) {
-            if ("POST".equals(request.getMethod())) {
-                action = new UpdateLeaveAction();
-            }
-        } else if (command.equals("/paid_leave/grant_selected.do")) {
-            if ("POST".equals(request.getMethod())) {
-                action = new GrantLeaveSelectedAction();
-            }
-        } else if (command.equals("/kintai/display.do")) {
-            if ("GET".equals(request.getMethod())) {
-                action = new KintaiDisplayAction();
-            }
-        } else if (command.equals("/api/kintai/update.do")) {
-            if ("POST".equals(request.getMethod())) {
-                action = new KintaiUpdateApiAction();
-            }
-        } else {
-            // 対応するアクションが見つからない場合
-            // ここではエラーページに飛ばすなどの処理を実装
-            forwardPath = "/WEB-INF/view/error.jsp";
-            request.setAttribute("errorMessage", "指定されたページは見つかりません。");
-        }
-
         try {
-            if (action != null) {
-                forwardPath = action.execute(request, response);
+            // 1. Actionの特定
+            Action action = getAction(request);
+            if (action == null) {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Action not found.");
+                return;
             }
+
+            // 2. Actionの実行
+            View view = action.execute(request, response);
+
+            // 3. Viewへのディスパッチ
+            if (view != null) {
+                if (view.isRedirect()) {
+                    // リダイレクト
+                    response.sendRedirect(request.getContextPath() + view.getPath());
+                } else {
+                    // フォワード
+                    RequestDispatcher dispatcher = request.getRequestDispatcher(view.getPath());
+                    dispatcher.forward(request, response);
+                }
+            }
+            // viewがnullの場合は、Action内でレスポンスが完了している（APIなど）とみなす
+
         } catch (Exception e) {
-            e.printStackTrace();
-            request.setAttribute("errorMessage", "処理中にエラーが発生しました。");
-            forwardPath = "/WEB-INF/view/error.jsp";
+            throw new ServletException("Request processing failed.", e);
+        }
+    }
+
+    /**
+     * リクエストURIから対応するActionオブジェクトを生成して返す。
+     *
+     * @param request HTTPリクエスト
+     * @return 生成されたActionオブジェクト
+     * @throws Exception Actionの特定またはインスタンス化に失敗した場合
+     */
+    private Action getAction(HttpServletRequest request) throws Exception {
+        // 例: /shainList.do -> shainList
+        String path = request.getServletPath();
+        String actionName = path.substring(1, path.lastIndexOf(".do"));
+
+        // 例: shainList -> ShainList
+        String capitalizedActionName = Character.toUpperCase(actionName.charAt(0)) + actionName.substring(1);
+        
+        // アクション名の末尾に応じてパッケージを決定
+        String packageName;
+        // 'Api'で終わるアクションはapiパッケージから探す
+        if (capitalizedActionName.endsWith("Api")) {
+            packageName = "controller.api.";
+        } else {
+            packageName = "controller.action.";
         }
         
-        // 画面遷移
-        if (forwardPath != null) {
-            // "redirect:" プレフィックスが付いている場合はリダイレクト
-            if (forwardPath.startsWith("redirect:")) {
-                String redirectPath = contextPath + forwardPath.substring("redirect:".length());
-                response.sendRedirect(redirectPath);
-            } else {
-                RequestDispatcher dispatcher = request.getRequestDispatcher(forwardPath);
-                dispatcher.forward(request, response);
-            }
+        // 完全修飾クラス名を組み立て
+        String className = packageName + capitalizedActionName + "Action";
+
+        try {
+            // リフレクションでActionクラスをインスタンス化
+            Class<?> actionClass = Class.forName(className);
+            return (Action) actionClass.getDeclaredConstructor().newInstance();
+        } catch (ClassNotFoundException e) {
+            // クラスが見つからない場合はnullを返す（404エラーにつながる）
+            return null;
         }
     }
 }

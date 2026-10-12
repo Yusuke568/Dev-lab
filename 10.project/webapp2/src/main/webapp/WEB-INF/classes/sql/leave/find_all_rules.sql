@@ -1,0 +1,1 @@
+SELECT id, years_of_service, grant_days FROM leave_grant_rules ORDER BY years_of_service ASC

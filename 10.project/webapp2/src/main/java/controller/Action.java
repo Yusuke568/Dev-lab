@@ -1,26 +1,25 @@
 package controller;
 
-import java.io.IOException;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 /**
  * すべてのアクションクラスが実装するインターフェース。
- * フロントコントローラーから呼び出される処理の規約を定めます。
+ * フロントコントローラーからのリクエストを処理する責務を持つ。
  */
 public interface Action {
 
     /**
-     * アクションに対応するビジネスロジックを実行します。
+     * アクションを実行します。
      *
      * @param request  HTTPリクエスト
      * @param response HTTPレスポンス
-     * @return フォワード先のJSPパス
-     * @throws ServletException
-     * @throws IOException
+     * @return 次の遷移先情報を持つViewオブジェクト
+     * @throws ServletException Servlet例外
+     * @throws IOException      IO例外
      */
-    public String execute(HttpServletRequest request, HttpServletResponse response)
+    View execute(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException;
 }

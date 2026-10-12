@@ -1,116 +1,111 @@
-# Dev-lab: 勤怠管理・勤務報告書システム
+# Dev-lab: SES勤怠管理・勤務報告書システム
 
-本リポジトリは、Java (Jakarta EE / Servlet / JSP) と PostgreSQL による勤怠管理・勤務報告書Webアプリケーションの開発・学習用プロジェクトです。
+本リポジトリは、Java 11 (Servlet 4.0 / JSP / JSTL) と MySQL 8.0 によるSES勤怠管理・勤務報告書Webアプリケーションです。
 
-一般的なMVC（Model 2）の課題を解消するため、**「Front Controller + Command パターン」** および **「4層レイヤードアーキテクチャ」** を採用しています。
-
----
-
-## 📚 ドキュメント一覧
-
-設計の詳細や要件定義書は `00.document/` ディレクトリに格納されています。
-
-- 🌟 **[MVC経験者のためのアーキテクチャ設計解説書](00.document/08_MVC経験者のためのアーキテクチャ設計解説書.md)**（※MVCとの対比・クラス設計・開発フロー）
-- 📄 [00_README（要件定義書インデックス）](00.document/00_README.md)
-- 📄 [01_システム概要書](00.document/01_システム概要書.md)
-- 📄 [02_機能要件定義書](00.document/02_機能要件定義書.md)
-- 📄 [03_非機能要件定義書](00.document/03_非機能要件定義書.md)
-- 📄 [04_画面設計書](00.document/04_画面設計書.md)
-- 📄 [05_データ定義書](00.document/05_データ定義書.md)
-- 📄 [07_新アーキテクチャ設計書](00.document/07_新アーキテクチャ設計書.md)
+肥大化しやすいMVC（Fat Controller / Fat Service）の課題を解消し、**「ヘキサゴナル／クリーンアーキテクチャ（Ports & Adapters）」** および **「Front Controller + Command パターン」** を採用しています。
 
 ---
 
-## 🏛 アーキテクチャの概要（MVCとの違い）
+## 📚 ドキュメント一覧 (`00.document/`)
 
-本プロジェクトは「Controllerが肥大化しやすい（Fat Controller）」「Modelの責務が曖昧になる」といったMVCの課題を解決するため、責務を4つのレイヤーに明確に分離しています。
+| ドキュメント | 概要 |
+| :--- | :--- |
+| [00_README](00.document/00_README.md) | 要件定義書インデックス・全体概要 |
+| [01_システム概要書](00.document/01_システム概要書.md) | システム目的、対象業務、新機能スコープ |
+| [02_機能要件定義書](00.document/02_機能要件定義書.md) | 社員管理、SES勤怠、精算計算、週報、有給管理の機能仕様 |
+| [03_非機能要件定義書](00.document/03_非機能要件定義書.md) | 性能、セキュリティ、MySQL/Tomcat実行環境要件 |
+| [04_画面設計書](00.document/04_画面設計書.md) | Tailwind CSSによるモダンUI・各画面レイアウト仕様 |
+| [05_データ定義書](00.document/05_データ定義書.md) | 全テーブル定義（基本テーブル + SES拡張テーブル） |
+| [06_リファクタリング提案書](06_リファクタリング提案書.md) | MVCからヘキサゴナル移行までの変遷と設計判断 |
+| [07_新アーキテクチャ設計書](00.document/07_新アーキテクチャ設計書.md) | 4層クリーン構造、自己防衛ドメイン、トランザクション設計 |
+| [08_オンボーディングガイド](00.document/08_オンボーディングガイド.md) | 3ステップ環境構築、動作確認、初期アカウント一覧 |
+| [09_MVCからの設計転換ガイド](00.document/09_MVCからの設計転換ガイド.md) | MVC経験者向け設計転換、Before/Afterコード |
+| [10_アーキテクチャ設計思想と開発の考え方](00.document/10_アーキテクチャ設計思想と開発の考え方.md) | レイヤー依存則、ドメイン自己完結、実装判断フロー |
+| [11_SESドメイン業務ルール解説書](00.document/11_SESドメイン業務ルール解説書.md) | 精算幅、36協定判定、中抜け休憩、週報承認フロー |
+
+---
+
+## 🏛 アーキテクチャ概要
+
+ドメインモデルを中心に配置し、UIやデータベースなどの外部技術を交換可能なアダプターとして扱う構成です。
 
 ```mermaid
-graph TD
-    subgraph Presentation [1. プレゼンテーション層]
+flowchart TD
+    subgraph Presentation [1. プレゼンテーション層 (Driving Adapter)]
         FC[FrontController] --> Act[Action / ApiAction]
-        Act --> JSP[JSP / JSON]
+        Act --> View[JSP / JSON]
     end
 
-    subgraph Application [2. アプリケーション層]
-        Act --> Svc[Service]
-        Svc --> TM[TransactionManager]
+    subgraph Usecase [2. ユースケース層 (Inbound Port 実装)]
+        Act --> UC[UseCase / Service]
     end
 
-    subgraph Domain [3. ドメイン層]
-        Entity[Entity (POJO)]
+    subgraph Domain [3. ドメイン層 (アプリケーションコア)]
+        UC --> DM[Domain Model / Business Rules]
+        DM --> RepoIF[Repository Interface (Outbound Port)]
     end
 
-    subgraph Infrastructure [4. インフラストラクチャ層]
-        Svc --> DAO[DAO]
-        DAO --> SQL[外部SQLファイル]
-        DAO --> DB[(PostgreSQL)]
+    subgraph Infrastructure [4. インフラストラクチャ層 (Driven Adapter)]
+        RepoImpl[JdbcRepository / DAO] -.->|implements| RepoIF
+        UC --> TM[TransactionManager]
+        RepoImpl --> DB[(MySQL 8.0)]
         TM --> DB
     end
-
-    Act -.-> Entity
-    Svc -.-> Entity
-    DAO -.-> Entity
 ```
 
-### MVCとの対応比較表
+### レイヤー対応表
 
-| MVCの要素 | 本プロジェクトの実装 | 主な役割 |
+| レイヤー | パッケージ | 主な役割 |
 | :--- | :--- | :--- |
-| **Controller** | **FrontController** + **Action** | `FrontController` が全 `*.do` リクエストを受け付け、URLに対応する個別 `Action`（Commandパターン）を呼び出します。 |
-| **View** | **JSP**（または **JSON API**） | 画面描画に専念。スクリプトレット（`<% %>`）は原則廃止し、JSTL/EL式を使用します。 |
-| **Model**<br>*(3分割)* | **Service**（アプリケーション層） | ビジネスロジックの実行、および `TransactionManager` によるトランザクション管理（コミット/ロールバック）。 |
-| | **Entity**（ドメイン層） | データを表現する純粋なJavaオブジェクト（POJO）。 |
-| | **DAO**（インフラ層） | DBアクセス（CRUD）専門クラス。SQLは外部ファイル（`.sql`）で管理。 |
+| **プレゼンテーション** | `controller` | `FrontController` で全 `*.do` リクエストを受け、各 `Action` にルーティング。JSP描画またはJSON返却。 |
+| **ユースケース** | `usecase` | 業務ユースケースの手順制御、トランザクション境界の管理。 |
+| **ドメイン** | `domain` | 契約精算ルール、36協定・有給コンプライアンス、勤怠計算などの純粋な業務ルール（POJO）。 |
+| **インフラ** | `infrastructure` | DBアクセス（JDBC / DAO / SQL）、トランザクション制御（`TransactionManager`）。 |
 
 ---
 
 ## 📁 ディレクトリ構成
 
-プロジェクト全体のディレクトリ構成および各パッケージの責務は以下の通りです。
-
 ```text
 Dev-lab/
-├── 00.document/                  # 設計書・要件定義書・アーキテクチャドキュメント群
-├── 10.project/                   # Webアプリケーション本体 (Mavenプロジェクト)
-│   ├── Servers/                  # Eclipse/Tomcat サーバー設定
-│   └── webapp2/                  # Java Webアプリケーション
-│       ├── pom.xml               # Mavenビルド・依存ライブラリ設定
+├── 00.document/                  # 設計書・技術解説書群 (00〜11)
+├── 10.project/                   # Webアプリケーション本体
+│   └── webapp2/
+│       ├── pom.xml               # Mavenビルド定義 (Java 11 / Tomcat 9)
 │       └── src/
 │           ├── main/
 │           │   ├── java/
-│           │   │   ├── com/example/
-│           │   │   │   ├── common/           # 共通ユーティリティ（文字列・日付・JSON変換等）
-│           │   │   │   ├── controller/       # [プレゼンテーション層]
-│           │   │   │   │   ├── FrontController.java # 一元受付けサーブレット
-│           │   │   │   │   ├── Action.java   # コマンドインターフェース
-│           │   │   │   │   ├── View.java     # 遷移先情報保持クラス
-│           │   │   │   │   ├── action/       # 画面遷移系Action（例: ShainListAction）
-│           │   │   │   │   └── api/          # 非同期JSON通信Action（例: KintaiUpdateApiAction）
-│           │   │   │   ├── entity/           # [ドメイン層] データエンティティ（Shain, Kintai等）
-│           │   │   │   ├── infra/            # [インフラ層] DB接続基盤（ConnectionBase）
-│           │   │   │   └── service/          # [アプリケーション層] ビジネスロジック・ユースケース
-│           │   │   │       ├── ShainService.java
-│           │   │   │       ├── KintaiService.java
-│           │   │   │       ├── LeaveService.java
-│           │   │   │       └── transaction/  # トランザクション管理（TransactionManager）
-│           │   │   └── dao/                  # [インフラ層] データアクセス（ShainDao, KintaiDao等）
-│           │   ├── resources/
-│           │   │   └── sql/                  # 外部化されたSQLファイル
-│           │   │       ├── shainlist/        # 社員操作SQL
-│           │   │       ├── kintai/           # 勤怠操作SQL
-│           │   │       └── classmaster/      # 区分マスタSQL
-│           │   └── webapp/                   # Webリソース
-│           │       ├── WEB-INF/
-│           │       │   ├── view/             # 画面JSPファイル（セキュリティのためWEB-INF配下）
-│           │       │   └── web.xml           # URLルーティング設定 (*.do -> FrontController)
-│           │       ├── css/                  # スタイルシート
-│           │       └── js/                   # クライアントサイドJavaScript
-│           └── test/                         # 単体テストコード (JUnit 5)
-├── 20.db/                        # データベース構築用DDL・初期データ
-│   ├── createtb/                 # テーブル・ビュー作成スクリプト (all_createtables.sql等)
-│   └── sampleinsert/             # サンプルデータ投入スクリプト
-├── CONTRIBUTING.md               # 開発ガイドライン・コーディング規約
+│           │   │   ├── common/           # ユーティリティ (MyUtil)
+│           │   │   ├── controller/       # プレゼンテーション層
+│           │   │   │   ├── FrontController.java
+│           │   │   │   ├── Action.java / View.java
+│           │   │   │   ├── action/       # 画面遷移Action (ShainList, SesAttendance等)
+│           │   │   │   └── api/          # 非同期JSON Action (SesAttendanceApiAction)
+│           │   │   ├── domain/           # ドメイン層
+│           │   │   │   ├── attendance/   # 勤怠集計・勤務区分
+│           │   │   │   ├── auth/         # ユーザー認証・ロール
+│           │   │   │   ├── compliance/   # 36協定・有給義務判定
+│           │   │   │   ├── contract/     # SES案件契約・精算計算
+│           │   │   │   ├── shain/        # 社員・有給付与ルール
+│           │   │   │   └── weeklyreport/ # 週報・レビューコメント
+│           │   │   ├── usecase/          # ユースケース層
+│           │   │   │   ├── attendance/   # テンプレート適用・一括反映
+│           │   │   │   ├── contract/     # 精算金額算出
+│           │   │   │   ├── shain/        # 社員・有給サービス
+│           │   │   │   └── weeklyreport/ # 週報提出・承認
+│           │   │   └── infrastructure/   # インフラ層
+│           │   │       ├── db/           # TransactionManager / ConnectionBase
+│           │   │       └── persistence/  # JdbcRepository / DAO
+│           │   ├── resources/sql/        # 外部SQLファイル群
+│           │   └── webapp/
+│           │       ├── css/              # tailwind.min.css / style.css
+│           │       ├── js/               # フロントエンドJavaScript
+│           │       └── WEB-INF/view/     # JSP画面群 (ses_attendance, shainlist等)
+│           └── test/                     # ドメイン単体テスト (JUnit 5)
+├── 20.db/                        # DDL・初期データ (MySQL 8.0)
+│   ├── createtb/                 # all_createtables.sql, ses_tables.sql
+│   └── sampleinsert/             # サンプルデータ投入SQL
+├── CONTRIBUTING.md               # 開発ガイドライン
 └── README.md                     # 本ドキュメント
 ```
 
@@ -120,34 +115,26 @@ Dev-lab/
 
 | 分類 | 技術・ツール | 補足 |
 | :--- | :--- | :--- |
-| **言語** | Java 11+ | |
-| **仕様** | Jakarta EE (Servlet 4.0, JSP 2.3, JSTL 2.0) | |
+| **言語** | Java 11 | |
+| **Web仕様** | Java EE 8 / Servlet 4.0, JSP 2.3, JSTL 1.2 | Tomcat 9.0準拠 |
 | **サーバー** | Apache Tomcat 9.0 | |
-| **データベース** | PostgreSQL 42.7+ | |
+| **データベース** | MySQL 8.0 (InnoDB, utf8mb4) | `META-INF/context.xml` にてJNDI DataSource接続 |
 | **ビルド** | Apache Maven | `war` パッケージング |
-| **JSON処理** | Jackson Databind 2.15+ | API用ActionでのJSON変換 |
-| **テスト** | JUnit 5 | |
-| **フロントエンド** | HTML5, CSS3 (Modern/Responsive), Vanilla JavaScript | |
+| **JSON処理** | Jackson Databind 2.15+ | |
+| **CSS** | Tailwind CSS | モダンレスポンシブUI |
+| **テスト** | JUnit 5 | ドメイン層の高速な単体テスト |
 
 ---
 
 ## 🚀 環境構築・実行手順
 
-### 1. データベースの準備
-PostgreSQL に接続し、データベース・テーブル・初期データを投入します。
-
+### 1. データベース構築 (MySQL 8.0)
 ```bash
-# データベース作成
-createdb devlab_db
-
-# テーブルおよびビューの作成
-psql -d devlab_db -f 20.db/createtb/all_createtables.sql
-psql -d devlab_db -f 20.db/createtb/all_createviews.sql
-
-# 初期データの投入
-for f in 20.db/sampleinsert/*.sql; do
-    psql -d devlab_db -f "$f"
-done
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS kintai DEFAULT CHARACTER SET utf8mb4;"
+mysql -u root -p kintai < 20.db/createtb/all_createtables.sql
+mysql -u root -p kintai < 20.db/createtb/all_createviews.sql
+mysql -u root -p kintai < 20.db/createtb/ses_tables.sql
+for f in 20.db/sampleinsert/*.sql; do mysql -u root -p kintai < "$f"; done
 ```
 
 ### 2. アプリケーションのビルド
@@ -156,23 +143,8 @@ cd 10.project/webapp2
 mvn clean package
 ```
 
-### 3. Tomcatへのデプロイ
-生成された `target/webapp2.war` を Tomcat の `webapps/` に配置するか、Eclipse / VSCode のサーバー連携機能で `10.project/webapp2` を起動します。
-
-### 4. ブラウザでアクセス
-```text
-http://localhost:8080/webapp2/shainList.do
-```
-
----
-
-## 💡 新機能実装の流れ（クイックガイド）
-
-新機能を追加する際は、以下の順番で下位レイヤーから作成します：
-
-1. **SQLファイル**: `src/main/resources/sql/機能名/*.sql` を作成
-2. **Entity**: `com.example.entity` にデータ保持用クラスを作成
-3. **DAO**: `dao` に `Connection` を受け取ってSQLを実行するメソッドを作成
-4. **Service**: `com.example.service` に `TransactionManager.execute(...)` を使ってビジネスロジックを実装
-5. **Action**: `com.example.controller.action`（または `api`）に `Action` インターフェースを実装したクラスを作成（クラス名は `URL名Action` とする）
-6. **JSP / View**: `src/main/webapp/WEB-INF/view/` にJSPを作成
+### 3. アクセスURL
+- ログイン画面: `http://localhost:8080/webapp2/login.do`
+- SES勤怠管理画面: `http://localhost:8080/webapp2/sesAttendance.do`
+- 社員一覧画面: `http://localhost:8080/webapp2/shainList.do`
+- 有給休暇管理画面: `http://localhost:8080/webapp2/paidLeaveAdmin.do`

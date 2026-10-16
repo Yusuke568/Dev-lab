@@ -51,9 +51,21 @@ public class WorkReportImportAction implements Action {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            session.setAttribute("kintaiErrorMessage", "作業報告書の取り込みに失敗しました: " + e.getMessage());
+            session.setAttribute("kintaiErrorMessage", "作業報告書の取り込みに失敗しました: " + rootMessage(e));
         }
 
         return new View(redirectPath, true);
+    }
+
+    /** TransactionManagerImpl等による汎用ラップメッセージではなく、根本原因のメッセージを拾う。 */
+    private String rootMessage(Throwable e) {
+        Throwable current = e;
+        while (current.getCause() != null && current.getCause() != current) {
+            current = current.getCause();
+        }
+        String message = current.getMessage();
+        return (message == null || message.isBlank())
+                ? current.getClass().getSimpleName()
+                : message;
     }
 }

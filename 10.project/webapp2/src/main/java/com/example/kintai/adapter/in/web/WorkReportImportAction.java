@@ -1,6 +1,7 @@
 package com.example.kintai.adapter.in.web;
 
 import com.example.kintai.application.port.in.ImportWorkReportUseCase;
+import com.example.kintai.application.port.in.ImportWorkReportUseCase.ImportResult;
 import com.example.kintai.domain.model.employee.EmployeeId;
 import com.example.shared.web.Action;
 import com.example.shared.web.View;
@@ -13,6 +14,8 @@ import javax.servlet.http.Part;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.YearMonth;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 社内所定の「作業報告書」Excel（.xlsm）をアップロードし、勤怠データ・週次作業報告を一括登録するアクション。
@@ -46,8 +49,11 @@ public class WorkReportImportAction implements Action {
             }
 
             try (InputStream in = filePart.getInputStream()) {
-                int importedMonths = importWorkReportUseCase.importFile(new EmployeeId(employeeId), in);
-                session.setAttribute("kintaiSuccessMessage", importedMonths + "ヶ月分のデータを取り込みました。");
+                ImportResult result = importWorkReportUseCase.importFile(new EmployeeId(employeeId), in);
+                session.setAttribute("kintaiSuccessMessage", buildSuccessMessage(result));
+                if (!result.getSkipped().isEmpty()) {
+                    session.setAttribute("kintaiErrorMessage", buildSkippedMessage(result.getSkipped()));
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -55,6 +61,17 @@ public class WorkReportImportAction implements Action {
         }
 
         return new View(redirectPath, true);
+    }
+
+    private String buildSuccessMessage(ImportResult result) {
+        return result.getImportedMonthCount() + "ヶ月分のデータを取り込みました。";
+    }
+
+    private String buildSkippedMessage(List<String> skipped) {
+        String detail = skipped.stream().limit(10).collect(Collectors.joining(" / "));
+        String suffix = skipped.size() > 10 ? " 他" + (skipped.size() - 10) + "件" : "";
+        return skipped.size() + "件をスキップしました（" + detail + suffix + "）。日またぎの退勤時刻など、"
+                + "様式側の入力をご確認のうえ、必要であれば画面から手動で補ってください。";
     }
 
     /** TransactionManagerImpl等による汎用ラップメッセージではなく、根本原因のメッセージを拾う。 */

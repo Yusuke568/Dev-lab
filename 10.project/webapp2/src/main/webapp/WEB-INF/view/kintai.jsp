@@ -592,35 +592,40 @@
 		<p style="font-size: 0.85rem; color: #666; margin-top: -0.5rem;">
 			※リーダー所見欄はExcel出力後に手入力してください。
 		</p>
+		<div style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1rem;">
+			<button type="button" class="btn btn-secondary" id="wwr-prev-btn" onclick="moveWeeklyReportCard(-1)">◀ 前の週</button>
+			<span id="wwr-page-indicator" style="font-weight: 700; min-width: 8em; text-align: center;"></span>
+			<button type="button" class="btn btn-secondary" id="wwr-next-btn" onclick="moveWeeklyReportCard(1)">次の週 ▶</button>
+		</div>
 		<c:forEach var="week" items="${weeklyWorkReports}" varStatus="loop">
 			<div class="card weekly-report-block" style="background: #f8fafc; margin-bottom: 1rem;"
 				data-week-end="${week.weekEndDate}">
 				<h4 style="margin-top: 0;"><c:out value="${week.weekLabel}" /></h4>
 				<div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-					<div class="form-group" style="flex: 1; min-width: 150px;">
+					<div class="form-group">
 						<label class="form-label">客先名（20文字まで）</label>
-						<input type="text" class="form-input wwr-client" maxlength="20" value="${week.clientName}">
+						<input type="text" class="form-input wwr-client" maxlength="20" value="${week.clientName}" style="width: 220px;">
 					</div>
-					<div class="form-group" style="flex: 1; min-width: 150px;">
-						<label class="form-label">PJ名（18文字まで）</label>
-						<input type="text" class="form-input wwr-project" maxlength="18" value="${week.projectName}">
-					</div>
-					<div class="form-group" style="flex: 1; min-width: 150px;">
-						<label class="form-label">工程名・作業名等（18文字まで）</label>
-						<input type="text" class="form-input wwr-process" maxlength="18" value="${week.processName}">
-					</div>
-					<div class="form-group" style="flex: 1; min-width: 150px;">
+					<div class="form-group">
 						<label class="form-label">作業進捗（オンスケ／〇日遅れ等・10文字まで）</label>
-						<input type="text" class="form-input wwr-status" maxlength="10" value="${week.progressStatus}">
+						<input type="text" class="form-input wwr-status" maxlength="10" value="${week.progressStatus}" style="width: 95px;">
 					</div>
+				</div>
+				<div class="form-group">
+					<label class="form-label">PJ名（18文字まで）</label>
+					<input type="text" class="form-input wwr-project" maxlength="18" value="${week.projectName}" style="width: 220px;">
+				</div>
+				<div class="form-group">
+					<label class="form-label">工程名・作業名等（18文字まで）</label>
+					<input type="text" class="form-input wwr-process" maxlength="18" value="${week.processName}" style="width: 220px;">
 				</div>
 				<div class="form-group">
 					<label class="form-label">作業進捗、作業内容と状況（改行区切りで最大6行、1行20文字まで）</label>
-					<textarea class="form-input wwr-detail" rows="3" maxlength="150"><c:out value="${week.progressDetail}" /></textarea>
+					<textarea class="form-input wwr-detail" maxlength="150" style="width: 95px; height: 84px; resize: both;"><c:out value="${week.progressDetail}" /></textarea>
 				</div>
 				<div class="form-group">
 					<label class="form-label">本人所感（改行区切りで最大10行、1行20文字まで）</label>
-					<textarea class="form-input wwr-note" rows="3" maxlength="250"><c:out value="${week.personalNote}" /></textarea>
+					<textarea class="form-input wwr-note" maxlength="250" style="width: 220px; height: 140px; resize: both;"><c:out value="${week.personalNote}" /></textarea>
 				</div>
 			</div>
 		</c:forEach>
@@ -680,6 +685,37 @@
 	        }
 	    });
 	}
+
+	// ---- 週次作業報告：カード形式（1週ずつ表示）＋左右ナビゲーション ----
+	let wwrCurrentIndex = 0;
+
+	function renderWeeklyReportCard() {
+	    const blocks = document.querySelectorAll(".weekly-report-block");
+	    if (blocks.length === 0) return;
+
+	    blocks.forEach((block, i) => {
+	        block.style.display = (i === wwrCurrentIndex) ? "" : "none";
+	    });
+
+	    const indicator = document.getElementById("wwr-page-indicator");
+	    if (indicator) {
+	        indicator.textContent = (wwrCurrentIndex + 1) + " / " + blocks.length;
+	    }
+	    const prevBtn = document.getElementById("wwr-prev-btn");
+	    const nextBtn = document.getElementById("wwr-next-btn");
+	    if (prevBtn) prevBtn.disabled = (wwrCurrentIndex === 0);
+	    if (nextBtn) nextBtn.disabled = (wwrCurrentIndex === blocks.length - 1);
+	}
+
+	function moveWeeklyReportCard(delta) {
+	    const blocks = document.querySelectorAll(".weekly-report-block");
+	    const newIndex = wwrCurrentIndex + delta;
+	    if (newIndex < 0 || newIndex >= blocks.length) return;
+	    wwrCurrentIndex = newIndex;
+	    renderWeeklyReportCard();
+	}
+
+	document.addEventListener("DOMContentLoaded", renderWeeklyReportCard);
 	</script>
 </body>
 </html>

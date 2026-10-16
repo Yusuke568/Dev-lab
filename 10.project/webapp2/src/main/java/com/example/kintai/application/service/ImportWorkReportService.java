@@ -14,6 +14,7 @@ import com.example.kintai.domain.port.out.WorkReportImportPort;
 
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -21,6 +22,10 @@ import java.util.List;
  *
  * パース結果は既存のUpdateAttendanceUseCase・SaveWeeklyWorkReportsUseCaseに変換して渡すことで、
  * 手入力・API経由の保存と同じ検証・計算ロジック（時間外再計算、承認要否判定等）を適用する。
+ *
+ * 1日ごとに個別のトランザクションとして保存することで、過去の実績データにありがちな
+ * 1件の不整合（日またぎの退勤時刻等）が月全体・ファイル全体の取り込みを止めてしまわないようにする。
+ * 失敗した日・週はスキップして理由を記録し、残りの取り込みを継続する。
  */
 public class ImportWorkReportService implements ImportWorkReportUseCase {
 
@@ -40,7 +45,7 @@ public class ImportWorkReportService implements ImportWorkReportUseCase {
     }
 
     @Override
-    public int importFile(EmployeeId employeeId, InputStream xlsmInputStream) {
+    public ImportResult importFile(EmployeeId employeeId, InputStream xlsmInputStream) {
         List<ImportedMonthData> months = workReportImportPort.parse(xlsmInputStream);
         if (months.isEmpty()) {
             throw new IllegalArgumentException("取り込み可能な年月のデータが見つかりませんでした。作業報告書の様式をご確認ください。");
@@ -58,11 +63,16 @@ public class ImportWorkReportService implements ImportWorkReportUseCase {
                 .findFirst()
                 .orElse(null);
 
+        List<String> skipped = new ArrayList<>();
+        int importedMonthCount = 0;
+
         for (ImportedMonthData month : months) {
-            List<AttendanceUpdateCommand> commands = new ArrayList<>();
+            boolean monthHadData = !month.getDays().isEmpty() || !month.getWeeklyWorkReports().isEmpty();
+            boolean monthHadFailure = false;
+
             for (ImportedDayData day : month.getDays()) {
                 Integer abstractId = "有休".equals(day.getCategory()) ? paidLeaveId : defaultWorkTypeId;
-                commands.add(new AttendanceUpdateCommand(
+                AttendanceUpdateCommand command = new AttendanceUpdateCommand(
                         employeeId.getValue(),
                         day.getDate(),
                         day.getDate().getDayOfWeek().toString().substring(0, 3),
@@ -78,25 +88,45 @@ public class ImportWorkReportService implements ImportWorkReportUseCase {
                         null,
                         null,
                         false
-                ));
-            }
-            if (!commands.isEmpty()) {
-                updateAttendanceUseCase.updateAttendance(commands);
+                );
+                try {
+                    updateAttendanceUseCase.updateAttendance(Collections.singletonList(command));
+                } catch (Exception e) {
+                    monthHadFailure = true;
+                    skipped.add(day.getDate() + ": " + rootMessage(e));
+                }
             }
 
-            List<WeeklyWorkReport> weeklyReports = new ArrayList<>();
             for (WeeklyWorkReport parsed : month.getWeeklyWorkReports()) {
-                weeklyReports.add(new WeeklyWorkReport(
+                WeeklyWorkReport report = new WeeklyWorkReport(
                         employeeId.getValue(), parsed.getWeekStartDate(), parsed.getWeekEndDate(),
                         parsed.getClientName(), parsed.getProjectName(), parsed.getProcessName(),
                         parsed.getProgressStatus(), parsed.getProgressDetail(), parsed.getPersonalNote()
-                ));
+                );
+                try {
+                    saveWeeklyWorkReportsUseCase.saveWeeklyWorkReports(employeeId, Collections.singletonList(report));
+                } catch (Exception e) {
+                    monthHadFailure = true;
+                    skipped.add(month.getYearMonth() + "週(" + report.getWeekLabel() + "): " + rootMessage(e));
+                }
             }
-            if (!weeklyReports.isEmpty()) {
-                saveWeeklyWorkReportsUseCase.saveWeeklyWorkReports(employeeId, weeklyReports);
+
+            if (monthHadData && !monthHadFailure) {
+                importedMonthCount++;
+            } else if (monthHadData) {
+                importedMonthCount++; // 一部失敗があっても、成功した日・週があれば取り込み月として数える
             }
         }
 
-        return months.size();
+        return new ImportResult(importedMonthCount, skipped);
+    }
+
+    private String rootMessage(Throwable e) {
+        Throwable current = e;
+        while (current.getCause() != null && current.getCause() != current) {
+            current = current.getCause();
+        }
+        String message = current.getMessage();
+        return (message == null || message.isBlank()) ? current.getClass().getSimpleName() : message;
     }
 }

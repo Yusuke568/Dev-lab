@@ -200,6 +200,106 @@
 .status-wide {
     grid-column: 1 / 4;
 }
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* --- スマートフォン対応 --- */
+@media (max-width: 768px) {
+    body {
+        padding: 12px;
+    }
+    .card {
+        padding: 15px;
+    }
+    .kintai-header {
+        align-items: stretch;
+    }
+    .header-actions {
+        justify-content: flex-start;
+    }
+    .header-actions .btn {
+        flex: 1 1 auto;
+        margin: 2px;
+    }
+    .actions-card {
+        flex-wrap: wrap;
+    }
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+    .status-card {
+        position: static;
+        max-height: none;
+    }
+    .month-nav .btn {
+        padding: 8px 14px;
+    }
+
+    /* 勤務情報テーブルをカード形式に変換 */
+    .table-responsive {
+        overflow-x: visible;
+        border: none;
+    }
+    .table-kintai thead {
+        display: none;
+    }
+    .table-kintai, .table-kintai tbody, .table-kintai tr, .table-kintai td {
+        display: block;
+        width: 100%;
+    }
+    .table-kintai tr {
+        margin-bottom: 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 6px 0;
+        background: #ffffff;
+    }
+    .table-kintai td {
+        border: none;
+        border-bottom: 1px solid #f0f2f5;
+        text-align: right;
+        padding: 8px 12px 8px 42%;
+        position: relative;
+        min-height: 1.4em;
+    }
+    .table-kintai td:last-child {
+        border-bottom: none;
+    }
+    .table-kintai td[data-label]::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 12px;
+        width: 38%;
+        text-align: left;
+        font-weight: 700;
+        color: #4a5568;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .table-kintai td.detail-col {
+        display: none;
+    }
+    .table-kintai tr.expanded td.detail-col {
+        display: block;
+    }
+    .table-kintai td.toggle-col {
+        text-align: center;
+        padding: 10px 12px;
+    }
+    .mobile-only {
+        display: block;
+    }
+    .table-kintai .form-input {
+        width: 60%;
+        display: inline-block;
+    }
+}
 </style>
 </head>
 <body data-context-path="${pageContext.request.contextPath}">
@@ -214,6 +314,18 @@
 		    <div class="status-banner status-warning">
 		        <span class="icon">⚠️</span>
 		        <span class="msg">36協定：時間外労働が上限に近づいています（目安160H超）</span>
+		    </div>
+	    </c:if>
+	    <c:if test="${not empty kintaiSuccessMessage}">
+		    <div class="status-banner status-success" style="background-color:#e8f8e8;color:#1a7f1a;">
+		        <span class="icon">✔️</span>
+		        <span class="msg"><c:out value="${kintaiSuccessMessage}" /></span>
+		    </div>
+	    </c:if>
+	    <c:if test="${not empty kintaiErrorMessage}">
+		    <div class="status-banner status-danger">
+		        <span class="icon">⚠️</span>
+		        <span class="msg"><c:out value="${kintaiErrorMessage}" /></span>
 		    </div>
 	    </c:if>
 	</div>
@@ -234,13 +346,20 @@
 					<c:out value="${attendanceData.yearMonth.monthValue}" />
 					月
 				</p>
-				
+
+				<div class="month-nav" style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem;">
+					<a class="btn btn-secondary" style="padding: 4px 12px;"
+						href="${pageContext.request.contextPath}/kintaiDisplay.do?id=${staffId}&year=${prevYear}&month=${prevMonth}">◀ 前月</a>
+					<a class="btn btn-secondary" style="padding: 4px 12px;"
+						href="${pageContext.request.contextPath}/kintaiDisplay.do?id=${staffId}&year=${nextYear}&month=${nextMonth}">次月 ▶</a>
+				</div>
+
 				<div class="info-toggle" onclick="toggleInfo()">
 				    <span id="info-arrow">▼</span> 勤務情報一覧
 				</div>
 			</div>
 			
-			<div style="display: flex; gap: 1rem; align-items: center;">
+			<div class="header-actions">
 				<div class="stat-card">
 					<div class="label">合計勤務時間</div>
 					<div class="value">
@@ -249,6 +368,18 @@
 				</div>
 				<a href="${pageContext.request.contextPath}/overtimeRequestMenu.do" class="btn btn-secondary">🕐 残業事前申請</a>
 				<a href="${pageContext.request.contextPath}/correctionMasterList.do" class="btn btn-secondary">🔧 補正マスタ設定</a>
+				<c:url value="/workReportExport.do" var="workReportExportUrl">
+					<c:param name="year" value="${attendanceData.yearMonth.year}" />
+					<c:param name="month" value="${attendanceData.yearMonth.monthValue}" />
+				</c:url>
+				<a href="${workReportExportUrl}" class="btn btn-secondary">📊 作業報告書(Excel)出力</a>
+				<form id="work-report-import-form" action="${pageContext.request.contextPath}/workReportImport.do"
+					method="post" enctype="multipart/form-data" style="display: inline;">
+					<input type="file" id="work-report-import-file" name="workReportFile" accept=".xlsm"
+						style="display: none;" onchange="document.getElementById('work-report-import-form').submit();">
+					<button type="button" class="btn btn-secondary"
+						onclick="document.getElementById('work-report-import-file').click();">📥 作業報告書(Excel)取込</button>
+				</form>
 				<a href="${pageContext.request.contextPath}/logout.do" class="btn btn-secondary">ログアウト</a>
 				<a href="${pageContext.request.contextPath}/menu.do" class="btn btn-secondary">メニュー</a>
 			</div>
@@ -456,6 +587,46 @@
 		</div>
 	</div>
 
+	<div class="card" id="weekly-report-card">
+		<h4>週次作業報告（木～翌水、作業報告書Excel出力に反映されます）</h4>
+		<p style="font-size: 0.85rem; color: #666; margin-top: -0.5rem;">
+			※リーダー所見欄はExcel出力後に手入力してください。
+		</p>
+		<c:forEach var="week" items="${weeklyWorkReports}" varStatus="loop">
+			<div class="card weekly-report-block" style="background: #f8fafc; margin-bottom: 1rem;"
+				data-week-end="${week.weekEndDate}">
+				<h4 style="margin-top: 0;"><c:out value="${week.weekLabel}" /></h4>
+				<div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+					<div class="form-group" style="flex: 1; min-width: 150px;">
+						<label class="form-label">客先名（20文字まで）</label>
+						<input type="text" class="form-input wwr-client" maxlength="20" value="${week.clientName}">
+					</div>
+					<div class="form-group" style="flex: 1; min-width: 150px;">
+						<label class="form-label">PJ名（18文字まで）</label>
+						<input type="text" class="form-input wwr-project" maxlength="18" value="${week.projectName}">
+					</div>
+					<div class="form-group" style="flex: 1; min-width: 150px;">
+						<label class="form-label">工程名・作業名等（18文字まで）</label>
+						<input type="text" class="form-input wwr-process" maxlength="18" value="${week.processName}">
+					</div>
+					<div class="form-group" style="flex: 1; min-width: 150px;">
+						<label class="form-label">作業進捗（オンスケ／〇日遅れ等・10文字まで）</label>
+						<input type="text" class="form-input wwr-status" maxlength="10" value="${week.progressStatus}">
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="form-label">作業進捗、作業内容と状況（改行区切りで最大6行、1行20文字まで）</label>
+					<textarea class="form-input wwr-detail" rows="3" maxlength="150"><c:out value="${week.progressDetail}" /></textarea>
+				</div>
+				<div class="form-group">
+					<label class="form-label">本人所感（改行区切りで最大10行、1行20文字まで）</label>
+					<textarea class="form-input wwr-note" rows="3" maxlength="250"><c:out value="${week.personalNote}" /></textarea>
+				</div>
+			</div>
+		</c:forEach>
+		<button type="button" class="btn btn-primary" onclick="saveWeeklyWorkReports()">週次報告を保存</button>
+	</div>
+
 	<!-- Status dropdown template for JS -->
 	<select id="status-template" style="display: none;">
 		<c:forEach var="opt" items="${workTypes}">
@@ -474,7 +645,7 @@
 	function toggleInfo() {
 	    const section = document.getElementById("info-section");
 	    const arrow = document.getElementById("info-arrow");
-	
+
 	    if (section.style.display === "none" || section.style.display === "") {
 	        section.style.display = "block";
 	        arrow.textContent = "▲";
@@ -482,6 +653,32 @@
 	        section.style.display = "none";
 	        arrow.textContent = "▼";
 	    }
+	}
+
+	function saveWeeklyWorkReports() {
+	    const contextPath = document.body.dataset.contextPath || "";
+	    const blocks = document.querySelectorAll(".weekly-report-block");
+	    const reports = Array.from(blocks).map((block) => ({
+	        weekEndDate: block.dataset.weekEnd,
+	        clientName: block.querySelector(".wwr-client").value,
+	        projectName: block.querySelector(".wwr-project").value,
+	        processName: block.querySelector(".wwr-process").value,
+	        progressStatus: block.querySelector(".wwr-status").value,
+	        progressDetail: block.querySelector(".wwr-detail").value,
+	        personalNote: block.querySelector(".wwr-note").value
+	    }));
+
+	    fetch(contextPath + "/weeklyWorkReportSave.do", {
+	        method: "POST",
+	        headers: { "Content-Type": "application/json" },
+	        body: JSON.stringify(reports)
+	    }).then((res) => {
+	        if (res.ok) {
+	            alert("週次作業報告を保存しました！");
+	        } else {
+	            alert("週次作業報告の保存に失敗しました…");
+	        }
+	    });
 	}
 	</script>
 </body>

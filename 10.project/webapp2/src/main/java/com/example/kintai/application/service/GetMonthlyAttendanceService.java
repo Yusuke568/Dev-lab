@@ -86,6 +86,7 @@ public class GetMonthlyAttendanceService implements GetMonthlyAttendanceUseCase 
                 record.getCorrectionId(),
                 record.getCorrectionUsTime(),
                 record.getCorrectionMidTime(),
+                record.getIndirectTime(),
                 record.getApprovalStatus(),
                 record.getOvertimeMinutes()
         );

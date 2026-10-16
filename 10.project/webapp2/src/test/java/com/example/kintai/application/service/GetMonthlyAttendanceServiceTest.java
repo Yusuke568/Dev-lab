@@ -1,18 +1,18 @@
 package com.example.kintai.application.service;
 
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import com.example.kintai.adapter.in.web.dto.MonthlyAttendanceDto;
 import com.example.kintai.application.port.in.GetMonthlyAttendanceUseCase;
 import com.example.kintai.domain.model.attendance.AttendanceRecord;
 import com.example.kintai.domain.model.employee.Employee;
 import com.example.kintai.domain.model.employee.EmployeeId;
 import com.example.kintai.domain.port.out.LoadAttendanceRecordPort;
 import com.example.kintai.domain.port.out.LoadEmployeePort;
-import com.example.kintai.adapter.in.web.dto.MonthlyAttendanceDto;
-
-import java.time.LocalDate;
-import java.time.YearMonth;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 public class GetMonthlyAttendanceServiceTest {
 
@@ -54,6 +54,12 @@ public class GetMonthlyAttendanceServiceTest {
             public Optional<AttendanceRecord> loadByEmployeeAndDate(EmployeeId id, LocalDate date) {
                 return Optional.empty();
             }
+
+			@Override
+			public long sumOvertimeMinutesByEmployeeAndYear(EmployeeId employeeId, int year) {
+				// TODO 自動生成されたメソッド・スタブ
+				return 0;
+			}
         };
 
         GetMonthlyAttendanceService service = new GetMonthlyAttendanceService(
@@ -100,6 +106,11 @@ public class GetMonthlyAttendanceServiceTest {
             public Optional<AttendanceRecord> loadByEmployeeAndDate(EmployeeId id, LocalDate date) {
                 return Optional.empty();
             }
+			@Override
+			public long sumOvertimeMinutesByEmployeeAndYear(EmployeeId employeeId, int year) {
+				// TODO 自動生成されたメソッド・スタブ
+				return 0;
+			}
         };
 
         GetMonthlyAttendanceService service = new GetMonthlyAttendanceService(

@@ -31,11 +31,18 @@ import com.example.kintai.adapter.in.web.KintaiUpdateApiAction;
 import com.example.kintai.adapter.in.web.OvertimeRequestExecuteAction;
 import com.example.kintai.adapter.in.web.OvertimeRequestMenuAction;
 import com.example.kintai.adapter.in.web.OvertimeRequestSubmitAction;
+import com.example.kintai.adapter.in.web.WorkReportExportAction;
+import com.example.kintai.adapter.in.web.WeeklyWorkReportSaveAction;
+import com.example.kintai.adapter.out.export.WorkReportXlsmExportAdapter;
 import com.example.kintai.adapter.out.persistence.ApprovalHistoryPersistenceAdapter;
 import com.example.kintai.adapter.out.persistence.CorrectionMasterPersistenceAdapter;
 import com.example.kintai.adapter.out.persistence.OvertimeRequestPersistenceAdapter;
+import com.example.kintai.adapter.out.persistence.WeeklyWorkReportPersistenceAdapter;
 import com.example.kintai.application.port.in.ApproveAttendanceUseCase;
 import com.example.kintai.application.port.in.DecideOvertimeRequestUseCase;
+import com.example.kintai.application.port.in.ExportWorkReportUseCase;
+import com.example.kintai.application.port.in.GetWeeklyWorkReportsUseCase;
+import com.example.kintai.application.port.in.SaveWeeklyWorkReportsUseCase;
 import com.example.kintai.application.port.in.GetApprovalHistoryUseCase;
 import com.example.kintai.application.port.in.GetCorrectionMastersUseCase;
 import com.example.kintai.application.port.in.GetMonthlyAttendanceUseCase;
@@ -47,9 +54,13 @@ import com.example.kintai.application.port.in.SubmitOvertimeRequestUseCase;
 import com.example.kintai.application.port.in.UpdateAttendanceUseCase;
 import com.example.kintai.application.service.AttendanceApprovalService;
 import com.example.kintai.application.service.CorrectionMasterService;
+import com.example.kintai.application.service.ExportWorkReportService;
 import com.example.kintai.application.service.GetMonthlyAttendanceService;
 import com.example.kintai.application.service.OvertimeRequestService;
 import com.example.kintai.application.service.UpdateAttendanceService;
+import com.example.kintai.application.service.WeeklyWorkReportService;
+import com.example.kintai.domain.port.out.WeeklyWorkReportPort;
+import com.example.kintai.domain.port.out.WorkReportExportPort;
 import com.example.shain.application.port.in.*;
 import com.example.shain.application.service.ShainService;
 
@@ -73,6 +84,9 @@ public class DependencyFactory {
     private final ApprovalHistoryPersistenceAdapter approvalHistoryPersistenceAdapter;
     private final CorrectionMasterPersistenceAdapter correctionMasterPersistenceAdapter;
     private final OvertimeRequestPersistenceAdapter overtimeRequestPersistenceAdapter;
+    private final WorkReportExportPort workReportExportPort;
+    private final com.example.kintai.domain.port.out.WorkReportImportPort workReportImportPort;
+    private final WeeklyWorkReportPort weeklyWorkReportPort;
 
     // --- Use Cases ---
     private final AuthenticateUseCase authenticateUseCase;
@@ -98,6 +112,10 @@ public class DependencyFactory {
     private final GetMyOvertimeRequestsUseCase getMyOvertimeRequestsUseCase;
     private final GetPendingOvertimeRequestsUseCase getPendingOvertimeRequestsUseCase;
     private final DecideOvertimeRequestUseCase decideOvertimeRequestUseCase;
+    private final ExportWorkReportUseCase exportWorkReportUseCase;
+    private final GetWeeklyWorkReportsUseCase getWeeklyWorkReportsUseCase;
+    private final SaveWeeklyWorkReportsUseCase saveWeeklyWorkReportsUseCase;
+    private final com.example.kintai.application.port.in.ImportWorkReportUseCase importWorkReportUseCase;
 
     // --- Actions ---
     private final Map<String, Action> actionMap = new ConcurrentHashMap<>();
@@ -114,6 +132,9 @@ public class DependencyFactory {
         this.approvalHistoryPersistenceAdapter = new ApprovalHistoryPersistenceAdapter();
         this.correctionMasterPersistenceAdapter = new CorrectionMasterPersistenceAdapter();
         this.overtimeRequestPersistenceAdapter = new OvertimeRequestPersistenceAdapter();
+        this.workReportExportPort = new WorkReportXlsmExportAdapter();
+        this.workReportImportPort = new com.example.kintai.adapter.out.export.WorkReportXlsmImportAdapter();
+        this.weeklyWorkReportPort = new WeeklyWorkReportPersistenceAdapter();
         com.example.auth.domain.port.out.LoginPort loginPort = new LoginPersistenceAdapter();
 
         // --- Service (Use Cases) を生成し、Adapter(Port)をコンストラクタで注入 ---
@@ -138,6 +159,15 @@ public class DependencyFactory {
 
         this.getAllClassmastersUseCase = new GetAllClassmastersService(this.classmasterPort);
         this.getWorkTypesUseCase = new GetWorkTypesService(this.workTypePort);
+        WeeklyWorkReportService weeklyWorkReportService = new WeeklyWorkReportService(this.weeklyWorkReportPort);
+        this.getWeeklyWorkReportsUseCase = weeklyWorkReportService;
+        this.saveWeeklyWorkReportsUseCase = weeklyWorkReportService;
+        this.exportWorkReportUseCase = new ExportWorkReportService(
+                this.getMonthlyAttendanceUseCase,
+                this.getWorkTypesUseCase,
+                this.getWeeklyWorkReportsUseCase,
+                this.workReportExportPort
+        );
         this.updateAttendanceUseCase = new UpdateAttendanceService(
                 this.attendancePersistenceAdapter,
                 this.attendancePersistenceAdapter,
@@ -145,6 +175,12 @@ public class DependencyFactory {
                 this.transactionManager,
                 this.workTypePort,
                 this.overtimeRequestPersistenceAdapter
+        );
+        this.importWorkReportUseCase = new com.example.kintai.application.service.ImportWorkReportService(
+                this.workReportImportPort,
+                this.updateAttendanceUseCase,
+                this.saveWeeklyWorkReportsUseCase,
+                this.getWorkTypesUseCase
         );
 
         AttendanceApprovalService attendanceApprovalService = new AttendanceApprovalService(
@@ -179,7 +215,7 @@ public class DependencyFactory {
         actionMap.put("Logout", new com.example.auth.adapter.in.web.LogoutAction());
 
         // KintaiDisplayAction
-        actionMap.put("KintaiDisplay", new KintaiDisplayAction(this.getMonthlyAttendanceUseCase, this.getWorkTypesUseCase, this.getCorrectionMastersUseCase, this.getMyOvertimeRequestsUseCase));
+        actionMap.put("KintaiDisplay", new KintaiDisplayAction(this.getMonthlyAttendanceUseCase, this.getWorkTypesUseCase, this.getCorrectionMastersUseCase, this.getMyOvertimeRequestsUseCase, this.getWeeklyWorkReportsUseCase));
 
         // Shain Actions (New Context)
         actionMap.put("ShainList", new com.example.shain.adapter.in.web.ShainListAction(this.getShainListUseCase, this.getAllClassmastersUseCase));
@@ -210,6 +246,9 @@ public class DependencyFactory {
 
         // Overtime Request Actions
         actionMap.put("OvertimeRequestMenu", new OvertimeRequestMenuAction(this.getMyOvertimeRequestsUseCase, this.getMonthlyAttendanceUseCase));
+        actionMap.put("WorkReportExport", new WorkReportExportAction(this.exportWorkReportUseCase));
+        actionMap.put("WorkReportImport", new com.example.kintai.adapter.in.web.WorkReportImportAction(this.importWorkReportUseCase));
+        actionMap.put("WeeklyWorkReportSave", new WeeklyWorkReportSaveAction(this.saveWeeklyWorkReportsUseCase));
         actionMap.put("OvertimeRequestSubmit", new OvertimeRequestSubmitAction(this.submitOvertimeRequestUseCase));
         actionMap.put("OvertimeRequestExecute", new OvertimeRequestExecuteAction(this.decideOvertimeRequestUseCase));
 

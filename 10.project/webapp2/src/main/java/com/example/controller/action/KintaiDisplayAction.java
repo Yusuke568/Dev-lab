@@ -5,11 +5,13 @@ import com.example.kintai.adapter.in.web.dto.MonthlyAttendanceDto;
 import com.example.kintai.application.port.in.GetCorrectionMastersUseCase;
 import com.example.kintai.application.port.in.GetMonthlyAttendanceUseCase;
 import com.example.kintai.application.port.in.GetMyOvertimeRequestsUseCase;
+import com.example.kintai.application.port.in.GetWeeklyWorkReportsUseCase;
 import com.example.application.port.in.GetWorkTypesUseCase;
 import com.example.shared.web.Action;
 import com.example.shared.web.View;
 import com.example.kintai.domain.model.attendance.CorrectionMaster;
 import com.example.kintai.domain.model.attendance.OvertimeRequest;
+import com.example.kintai.domain.model.attendance.WeeklyWorkReport;
 import com.example.kintai.domain.model.employee.EmployeeId;
 import com.example.entity.WorkType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -34,6 +37,7 @@ public class KintaiDisplayAction implements Action {
     private final GetWorkTypesUseCase getWorkTypesUseCase;
     private final GetCorrectionMastersUseCase getCorrectionMastersUseCase;
     private final GetMyOvertimeRequestsUseCase getMyOvertimeRequestsUseCase;
+    private final GetWeeklyWorkReportsUseCase getWeeklyWorkReportsUseCase;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
@@ -41,11 +45,13 @@ public class KintaiDisplayAction implements Action {
      * 依存性は外部のファクトリ�E�EIコンチE���E�から注入されます、E
      */
     public KintaiDisplayAction(GetMonthlyAttendanceUseCase getMonthlyAttendanceUseCase, GetWorkTypesUseCase getWorkTypesUseCase,
-                                GetCorrectionMastersUseCase getCorrectionMastersUseCase, GetMyOvertimeRequestsUseCase getMyOvertimeRequestsUseCase) {
+                                GetCorrectionMastersUseCase getCorrectionMastersUseCase, GetMyOvertimeRequestsUseCase getMyOvertimeRequestsUseCase,
+                                GetWeeklyWorkReportsUseCase getWeeklyWorkReportsUseCase) {
         this.getMonthlyAttendanceUseCase = getMonthlyAttendanceUseCase;
         this.getWorkTypesUseCase = getWorkTypesUseCase;
         this.getCorrectionMastersUseCase = getCorrectionMastersUseCase;
         this.getMyOvertimeRequestsUseCase = getMyOvertimeRequestsUseCase;
+        this.getWeeklyWorkReportsUseCase = getWeeklyWorkReportsUseCase;
     }
 
     @Override
@@ -91,7 +97,34 @@ public class KintaiDisplayAction implements Action {
             request.setAttribute("pendingRequestCount", pendingRequestCount);
             request.setAttribute("rejectedRequestCount", rejectedRequestCount);
             request.setAttribute("staffId", idParam);
-            
+
+            // 月遷移（前月・次月）リンク用
+            YearMonth prevMonth = yearMonth.minusMonths(1);
+            YearMonth nextMonth = yearMonth.plusMonths(1);
+            request.setAttribute("prevYear", prevMonth.getYear());
+            request.setAttribute("prevMonth", prevMonth.getMonthValue());
+            request.setAttribute("nextYear", nextMonth.getYear());
+            request.setAttribute("nextMonth", nextMonth.getMonthValue());
+
+            // 週次作業報告（作業報告書Excel出力の「作業件名」「作業進捗」「本人所感」欄に対応）
+            List<WeeklyWorkReport> weeklyWorkReports = getWeeklyWorkReportsUseCase.getWeeklyWorkReports(employeeId, yearMonth);
+            request.setAttribute("weeklyWorkReports", weeklyWorkReports);
+
+            // 作業報告書Excelインポート等、他アクションからのセッション経由メッセージ
+            HttpSession messageSession = request.getSession(false);
+            if (messageSession != null) {
+                Object successMessage = messageSession.getAttribute("kintaiSuccessMessage");
+                if (successMessage != null) {
+                    request.setAttribute("kintaiSuccessMessage", successMessage);
+                    messageSession.removeAttribute("kintaiSuccessMessage");
+                }
+                Object importErrorMessage = messageSession.getAttribute("kintaiErrorMessage");
+                if (importErrorMessage != null) {
+                    request.setAttribute("kintaiErrorMessage", importErrorMessage);
+                    messageSession.removeAttribute("kintaiErrorMessage");
+                }
+            }
+
             // 4. ビューにフォワーチE
             return new View("/WEB-INF/view/kintai.jsp");
 

@@ -17,10 +17,11 @@ public class DailyAttendanceDto {
     private final Integer correctionId;
     private final Integer correctionUsTime;
     private final Integer correctionMidTime;
+    private final Integer indirectTime;
     private final int approvalStatus;
     private final int overtimeMinutes;
 
-    public DailyAttendanceDto(LocalDate date, String startTime, String endTime, String workHours, String workDescription, Integer abstractId, Integer correctionId, Integer correctionUsTime, Integer correctionMidTime, int approvalStatus, int overtimeMinutes) {
+    public DailyAttendanceDto(LocalDate date, String startTime, String endTime, String workHours, String workDescription, Integer abstractId, Integer correctionId, Integer correctionUsTime, Integer correctionMidTime, Integer indirectTime, int approvalStatus, int overtimeMinutes) {
         this.date = date;
         this.startTime = startTime;
         this.endTime = endTime;
@@ -30,6 +31,7 @@ public class DailyAttendanceDto {
         this.correctionId = correctionId;
         this.correctionUsTime = correctionUsTime;
         this.correctionMidTime = correctionMidTime;
+        this.indirectTime = indirectTime;
         this.approvalStatus = approvalStatus;
         this.overtimeMinutes = overtimeMinutes;
     }
@@ -58,6 +60,7 @@ public class DailyAttendanceDto {
     public Integer getCorrectionId() { return correctionId; }
     public Integer getCorrectionUsTime() { return correctionUsTime; }
     public Integer getCorrectionMidTime() { return correctionMidTime; }
+    public Integer getIndirectTime() { return indirectTime; }
     public int getApprovalStatus() { return approvalStatus; }
     public int getOvertimeMinutes() { return overtimeMinutes; }
 

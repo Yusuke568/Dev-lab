@@ -36,7 +36,8 @@ function saveAttendance(isTemporary = false) {
   // add isTemporary to records
   records = records.map(r => Object.assign({}, r, { isTemporary: isTemporary }));
 
-  fetch("/webapp2/kintaiUpdateApi.do", {
+  const contextPath = document.body.dataset.contextPath || "";
+  fetch(contextPath + "/kintaiUpdateApi.do", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

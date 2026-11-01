@@ -604,28 +604,28 @@
 				<div style="display: flex; gap: 1rem; flex-wrap: wrap;">
 					<div class="form-group">
 						<label class="form-label">客先名（20文字まで）</label>
-						<input type="text" class="form-input wwr-client" maxlength="20" value="${week.clientName}" style="width: 220px;">
+						<input type="text" class="form-input wwr-client" maxlength="20" value="${week.clientName}" style="width: 240px;">
 					</div>
 					<div class="form-group">
 						<label class="form-label">作業進捗（オンスケ／〇日遅れ等・10文字まで）</label>
-						<input type="text" class="form-input wwr-status" maxlength="10" value="${week.progressStatus}" style="width: 95px;">
+						<input type="text" class="form-input wwr-status" maxlength="10" value="${week.progressStatus}" style="width: 130px;">
 					</div>
 				</div>
 				<div class="form-group">
 					<label class="form-label">PJ名（18文字まで）</label>
-					<input type="text" class="form-input wwr-project" maxlength="18" value="${week.projectName}" style="width: 220px;">
+					<input type="text" class="form-input wwr-project" maxlength="18" value="${week.projectName}" style="width: 320px;">
 				</div>
 				<div class="form-group">
 					<label class="form-label">工程名・作業名等（18文字まで）</label>
-					<input type="text" class="form-input wwr-process" maxlength="18" value="${week.processName}" style="width: 220px;">
+					<input type="text" class="form-input wwr-process" maxlength="18" value="${week.processName}" style="width: 320px;">
 				</div>
 				<div class="form-group">
 					<label class="form-label">作業進捗、作業内容と状況（改行区切りで最大6行、1行20文字まで）</label>
-					<textarea class="form-input wwr-detail" maxlength="150" style="width: 95px; height: 84px; resize: both;"><c:out value="${week.progressDetail}" /></textarea>
+					<textarea class="form-input wwr-detail" maxlength="150" style="width: 160px; height: 150px; resize: both;"><c:out value="${week.progressDetail}" /></textarea>
 				</div>
 				<div class="form-group">
 					<label class="form-label">本人所感（改行区切りで最大10行、1行20文字まで）</label>
-					<textarea class="form-input wwr-note" maxlength="250" style="width: 220px; height: 140px; resize: both;"><c:out value="${week.personalNote}" /></textarea>
+					<textarea class="form-input wwr-note" maxlength="250" style="width: 320px; height: 240px; resize: both;"><c:out value="${week.personalNote}" /></textarea>
 				</div>
 			</div>
 		</c:forEach>

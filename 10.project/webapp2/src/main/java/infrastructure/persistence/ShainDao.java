@@ -11,9 +11,14 @@ import java.util.List;
 
 import common.MyUtil;
 
+import domain.auth.PasswordHasher;
 import domain.shain.Shain;
 
 public class ShainDao {
+
+    /** 社員登録時に作成するログインアカウントの初期パスワード */
+    private static final String INITIAL_PASSWORD = "password";
+    private static final PasswordHasher PASSWORD_HASHER = new PasswordHasher();
 
     /**
      * 全社員の情報を取得します。
@@ -86,11 +91,12 @@ public class ShainDao {
             pstmt.executeUpdate();
         }
 
-        // ログインアカウントも作成（初期パスワード: password, 有効）
-        String loginSql = "INSERT INTO login_table (USERNAME, PASSWORD, ENABLED) VALUES (?, 'password', 1) " +
+        // ログインアカウントも作成（初期パスワード: password をハッシュ化して保存, 有効）
+        String loginSql = "INSERT INTO login_table (USERNAME, PASSWORD, ENABLED) VALUES (?, ?, 1) " +
                           "ON DUPLICATE KEY UPDATE ENABLED = 1";
         try (PreparedStatement loginStmt = con.prepareStatement(loginSql)) {
             loginStmt.setInt(1, shain.getId());
+            loginStmt.setString(2, PASSWORD_HASHER.hash(INITIAL_PASSWORD.toCharArray()));
             loginStmt.executeUpdate();
         }
     }

@@ -93,9 +93,10 @@ public class ShainDao {
 
         // ログインアカウントも作成（初期パスワード: password をハッシュ化して保存, 有効）
         String loginSql = "INSERT INTO login_table (USERNAME, PASSWORD, ENABLED) VALUES (?, ?, 1) " +
-                          "ON DUPLICATE KEY UPDATE ENABLED = 1";
+                          "ON CONFLICT (USERNAME) DO UPDATE SET ENABLED = 1";
         try (PreparedStatement loginStmt = con.prepareStatement(loginSql)) {
-            loginStmt.setInt(1, shain.getId());
+            // login_table.USERNAME は varchar のため社員IDを文字列で渡す
+            loginStmt.setString(1, String.valueOf(shain.getId()));
             loginStmt.setString(2, PASSWORD_HASHER.hash(INITIAL_PASSWORD.toCharArray()));
             loginStmt.executeUpdate();
         }
@@ -176,7 +177,7 @@ public class ShainDao {
         // ログインを無効化（論理退職）
         String disableLoginSql = "UPDATE login_table SET ENABLED = 0 WHERE USERNAME = ?";
         try (PreparedStatement ps = con.prepareStatement(disableLoginSql)) {
-            ps.setInt(1, id);
+            ps.setString(1, String.valueOf(id));
             ps.executeUpdate();
         }
 

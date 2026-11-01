@@ -34,14 +34,15 @@ pbkdf2_sha256$210000$3q2+7w0MXl...==$Wm9vYmFy...=
 
 ## 2. DB に登録する
 
-出力されたハッシュを、**シングルクォートで囲んで**そのまま SQL に入れます。
-`USERNAME` は `staff_table.ID`（社員ID）です。
+DB は PostgreSQL です。出力されたハッシュを、**シングルクォートで囲んで**そのまま SQL に入れます。
+`$` が含まれますが、シングルクォートの中なら PostgreSQL ではそのまま文字として扱われます。
+`USERNAME` は `staff_table.id`（社員ID）を文字列にした値です（`login_table.username` は varchar）。
 
 ### ログインアカウントを登録する
 
 ```sql
 INSERT INTO login_table (USERNAME, PASSWORD, ENABLED)
-VALUES (1001, 'pbkdf2_sha256$210000$<ソルト>$<ハッシュ>', 1);
+VALUES ('1001', 'pbkdf2_sha256$210000$<ソルト>$<ハッシュ>', 1);
 ```
 
 ### パスワードを変更する
@@ -49,35 +50,36 @@ VALUES (1001, 'pbkdf2_sha256$210000$<ソルト>$<ハッシュ>', 1);
 ```sql
 UPDATE login_table
 SET PASSWORD = 'pbkdf2_sha256$210000$<ソルト>$<ハッシュ>'
-WHERE USERNAME = 1001;
+WHERE USERNAME = '1001';
 ```
 
 ### ログインを止める / 再開する
 
 ```sql
-UPDATE login_table SET ENABLED = 0 WHERE USERNAME = 1001;  -- 停止
-UPDATE login_table SET ENABLED = 1 WHERE USERNAME = 1001;  -- 再開
+UPDATE login_table SET ENABLED = 0 WHERE USERNAME = '1001';  -- 停止
+UPDATE login_table SET ENABLED = 1 WHERE USERNAME = '1001';  -- 再開
 ```
 
 `ENABLED = 1` のユーザーだけがログインできます。
 
 ## 3. 平文パスワードからの移行（初回のみ）
 
+DB を新しく作る場合は `src/main/resources/schema/postgresql_schema.sql` と `postgresql_sample_data.sql` を実行すれば、
+最初からハッシュで登録されます（サンプルの社員は全員パスワード `password`）。以下は既存の DB を移行する場合の手順です。
+
 このハッシュ対応版をデプロイすると、平文のまま保存されているユーザーはログインできなくなります。
 平文での照合は残していません。次の順で移行します。
 
-`PASSWORD` 列はすでに `VARCHAR(500)` なので、列の変更は不要です。
-
-1. 既存ユーザーごとに手順 1 でハッシュを作り、手順 2 の UPDATE で置き換える
-2. 平文が残っていないことを確認する（0 件になれば完了）
+1. `src/main/resources/schema/migrations/20261101_widen_login_password.sql` を実行して、`password` 列を `varchar(255)` に広げる（varchar(50) ではハッシュが入らない）
+2. 既存ユーザーごとに手順 1 でハッシュを作り、手順 2 の UPDATE で置き換える
+3. 平文が残っていないことを確認する（0 件になれば完了）
 
    ```sql
    SELECT USERNAME FROM login_table WHERE PASSWORD NOT LIKE 'pbkdf2_sha256$%' OR PASSWORD IS NULL;
    ```
 
-3. 新しい WAR をデプロイする
+4. 新しい WAR をデプロイする
 
 ユーザーに今のパスワードを使い続けてもらう場合は、平文の値を手順 1 で入力すればハッシュになります。
 作業後は、平文のパスワードを書いたメモやファイルを残さないようにしてください。
 
-サンプルデータ `20.db/sampleinsert/add_existing_users_login.sql` は、パスワード `password` のハッシュで登録するようにしてあります。

@@ -4,6 +4,7 @@ SET planned_overtime_minutes = ?,
     planned_end_time = ?,
     reason = ?,
     status = 'PENDING',
+    current_level = 1,
     decided_by = NULL,
     decided_at = NULL,
     created_at = NOW()

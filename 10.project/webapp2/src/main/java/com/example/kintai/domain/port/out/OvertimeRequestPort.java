@@ -16,11 +16,19 @@ public interface OvertimeRequestPort {
 
     List<OvertimeRequest> findByEmployee(EmployeeId employeeId);
 
-    List<OvertimeRequest> findPending();
+    Optional<OvertimeRequest> findById(int requestId);
 
-    void insert(EmployeeId employeeId, LocalDate date, int plannedOvertimeMinutes, String plannedStartTime, String plannedEndTime, String reason);
+    /** 指定した承認者の、いまの段で処理待ちになっている申請。 */
+    List<OvertimeRequest> findPendingForApprover(String approverId);
+
+    /** 新規申請を保存し、採番された ID を返す。 */
+    int insert(EmployeeId employeeId, LocalDate date, int plannedOvertimeMinutes, String plannedStartTime, String plannedEndTime, String reason);
 
     void resubmit(int requestId, int plannedOvertimeMinutes, String plannedStartTime, String plannedEndTime, String reason);
 
+    /** 最終的な承認・却下を記録する。 */
     void decide(int requestId, boolean approve, String decidedBy);
+
+    /** 次の段の承認待ちに進める。 */
+    void advanceLevel(int requestId);
 }

@@ -1,5 +1,7 @@
 package com.example.shared.bootstrap;
 
+import com.example.permission.domain.model.Feature;
+
 import com.example.auth.application.port.in.AuthenticateUseCase;
 import com.example.auth.application.service.AuthenticateService;
 import com.example.auth.adapter.out.persistence.LoginPersistenceAdapter;
@@ -116,9 +118,15 @@ public class DependencyFactory {
     private final GetWeeklyWorkReportsUseCase getWeeklyWorkReportsUseCase;
     private final SaveWeeklyWorkReportsUseCase saveWeeklyWorkReportsUseCase;
     private final com.example.kintai.application.port.in.ImportWorkReportUseCase importWorkReportUseCase;
+    private final com.example.approval.application.service.ApprovalWorkflowService approvalWorkflowService;
+    private final com.example.master.application.port.in.MasterMaintenanceUseCase masterMaintenanceUseCase;
+    private final com.example.permission.application.port.in.GetUserFeaturesUseCase getUserFeaturesUseCase;
+    private final com.example.leave.application.port.in.LeaveRequestUseCase leaveRequestUseCase;
 
     // --- Actions ---
     private final Map<String, Action> actionMap = new ConcurrentHashMap<>();
+    private final Map<String, Feature> featureMap = new ConcurrentHashMap<>();
+    private static final java.util.Set<String> PUBLIC_ACTIONS = java.util.Set.of("Login", "LoginExecute", "Logout");
 
     public DependencyFactory() {
         // --- 依存関係の最下層 (Adapters) からインスタンスを生成 ---
@@ -136,6 +144,19 @@ public class DependencyFactory {
         this.workReportImportPort = new com.example.kintai.adapter.out.export.WorkReportXlsmImportAdapter();
         this.weeklyWorkReportPort = new WeeklyWorkReportPersistenceAdapter();
         com.example.auth.domain.port.out.LoginPort loginPort = new LoginPersistenceAdapter();
+        com.example.master.adapter.out.persistence.MasterPersistenceAdapter masterPersistenceAdapter =
+                new com.example.master.adapter.out.persistence.MasterPersistenceAdapter();
+
+        // --- 権限・組織図・承認ルート ---
+        this.approvalWorkflowService = new com.example.approval.application.service.ApprovalWorkflowService(
+                new com.example.approval.adapter.out.persistence.ApprovalStepPersistenceAdapter(),
+                masterPersistenceAdapter);
+        this.masterMaintenanceUseCase = new com.example.master.application.service.MasterMaintenanceService(masterPersistenceAdapter);
+        this.getUserFeaturesUseCase = new com.example.permission.application.service.GetUserFeaturesService(
+                new com.example.permission.adapter.out.persistence.PermissionPersistenceAdapter());
+        this.leaveRequestUseCase = new com.example.leave.application.service.LeaveRequestService(
+                new com.example.leave.adapter.out.persistence.LeaveRequestPersistenceAdapter(),
+                this.approvalWorkflowService);
 
         // --- Service (Use Cases) を生成し、Adapter(Port)をコンストラクタで注入 ---
         this.authenticateUseCase = new AuthenticateService(loginPort, new com.example.auth.domain.service.PasswordHasher());
@@ -198,7 +219,7 @@ public class DependencyFactory {
         this.getCorrectionMastersUseCase = correctionMasterService;
         this.registerCorrectionMasterUseCase = correctionMasterService;
 
-        OvertimeRequestService overtimeRequestService = new OvertimeRequestService(this.overtimeRequestPersistenceAdapter);
+        OvertimeRequestService overtimeRequestService = new OvertimeRequestService(this.overtimeRequestPersistenceAdapter, this.approvalWorkflowService);
         this.submitOvertimeRequestUseCase = overtimeRequestService;
         this.getMyOvertimeRequestsUseCase = overtimeRequestService;
         this.getPendingOvertimeRequestsUseCase = overtimeRequestService;
@@ -211,7 +232,7 @@ public class DependencyFactory {
     private void initializeActions() {
         // Auth Actions
         actionMap.put("Login", new com.example.auth.adapter.in.web.LoginAction());
-        actionMap.put("LoginExecute", new com.example.auth.adapter.in.web.LoginExecuteAction(this.authenticateUseCase, this.getShainByIdUseCase));
+        actionMap.put("LoginExecute", new com.example.auth.adapter.in.web.LoginExecuteAction(this.authenticateUseCase, this.getShainByIdUseCase, this.getUserFeaturesUseCase));
         actionMap.put("Logout", new com.example.auth.adapter.in.web.LogoutAction());
 
         // KintaiDisplayAction
@@ -219,10 +240,10 @@ public class DependencyFactory {
 
         // Shain Actions (New Context)
         actionMap.put("ShainList", new com.example.shain.adapter.in.web.ShainListAction(this.getShainListUseCase, this.getAllClassmastersUseCase));
-        actionMap.put("ShainUpdateForm", new com.example.shain.adapter.in.web.ShainUpdateFormAction(this.getShainByIdUseCase, this.getAllClassmastersUseCase));
-        actionMap.put("ShainUpdateExecute", new com.example.shain.adapter.in.web.ShainUpdateExecuteAction(this.updateShainUseCase));
-        actionMap.put("ShainInsertForm", new com.example.shain.adapter.in.web.ShainInsertFormAction(this.getAllClassmastersUseCase, this.getNextShainIdUseCase));
-        actionMap.put("ShainInsertExecute", new com.example.shain.adapter.in.web.ShainInsertExecuteAction(this.registerShainUseCase));
+        actionMap.put("ShainUpdateForm", new com.example.shain.adapter.in.web.ShainUpdateFormAction(this.getShainByIdUseCase, this.getAllClassmastersUseCase, this.masterMaintenanceUseCase));
+        actionMap.put("ShainUpdateExecute", new com.example.shain.adapter.in.web.ShainUpdateExecuteAction(this.updateShainUseCase, this.masterMaintenanceUseCase));
+        actionMap.put("ShainInsertForm", new com.example.shain.adapter.in.web.ShainInsertFormAction(this.getAllClassmastersUseCase, this.getNextShainIdUseCase, this.masterMaintenanceUseCase));
+        actionMap.put("ShainInsertExecute", new com.example.shain.adapter.in.web.ShainInsertExecuteAction(this.registerShainUseCase, this.getNextShainIdUseCase, this.masterMaintenanceUseCase));
         actionMap.put("ShainDeleteForm", new com.example.shain.adapter.in.web.ShainDeleteFormAction(this.getShainByIdUseCase));
         actionMap.put("ShainDeleteExecute", new com.example.shain.adapter.in.web.ShainDeleteExecuteAction(this.deleteShainUseCase));
 
@@ -236,7 +257,8 @@ public class DependencyFactory {
         actionMap.put("GrantLeaveSelected", new com.example.leave.adapter.in.web.GrantLeaveSelectedAction(this.addLeaveDaysToEmployeesUseCase));
 
         // Approval Actions
-        actionMap.put("ApprovalList", new ApprovalListAction(this.getPendingApprovalsUseCase, this.getPendingOvertimeRequestsUseCase));
+        actionMap.put("ApprovalList", new ApprovalListAction(this.getPendingApprovalsUseCase, this.getPendingOvertimeRequestsUseCase,
+                this.leaveRequestUseCase, this.approvalWorkflowService));
         actionMap.put("ApprovalExecute", new ApprovalExecuteAction(this.approveAttendanceUseCase));
         actionMap.put("ApprovalHistory", new ApprovalHistoryAction(this.getApprovalHistoryUseCase));
 
@@ -255,6 +277,23 @@ public class DependencyFactory {
         // API Actions
         actionMap.put("KintaiUpdateApi", new KintaiUpdateApiAction(this.updateAttendanceUseCase));
         actionMap.put("SearchShainApi", new com.example.shain.adapter.in.web.SearchShainApiAction(this.getShainListUseCase));
+
+        // Leave Request Actions
+        actionMap.put("LeaveRequestMenu", new com.example.leave.adapter.in.web.LeaveRequestMenuAction(
+                this.leaveRequestUseCase, this.getWorkTypesUseCase, this.approvalWorkflowService));
+        actionMap.put("LeaveRequestSubmit", new com.example.leave.adapter.in.web.LeaveRequestSubmitAction(this.leaveRequestUseCase));
+        actionMap.put("LeaveRequestExecute", new com.example.leave.adapter.in.web.LeaveRequestExecuteAction(this.leaveRequestUseCase));
+
+        // Master Actions
+        actionMap.put("MasterMenu", new com.example.master.adapter.in.web.MasterMenuAction());
+        actionMap.put("MasterJobClass", new com.example.master.adapter.in.web.MasterJobClassAction(this.masterMaintenanceUseCase));
+        actionMap.put("MasterPermissionGroup", new com.example.master.adapter.in.web.MasterPermissionGroupAction(this.masterMaintenanceUseCase));
+        actionMap.put("MasterDepartment", new com.example.master.adapter.in.web.MasterDepartmentAction(this.masterMaintenanceUseCase));
+        actionMap.put("MasterAbstract", new com.example.master.adapter.in.web.MasterAbstractAction(this.masterMaintenanceUseCase));
+        actionMap.put("MasterLeaveRule", new com.example.master.adapter.in.web.MasterLeaveRuleAction(this.masterMaintenanceUseCase));
+        actionMap.put("MasterApprovalRoute", new com.example.master.adapter.in.web.MasterApprovalRouteAction(this.masterMaintenanceUseCase));
+
+        initializeFeatureMap();
     }
 
     /**
@@ -262,6 +301,43 @@ public class DependencyFactory {
      * @param actionName アクション名 (例: "KintaiDisplay")
      * @return Actionインスタンス
      */
+    /**
+     * アクションごとに必要な機能。ここに無いアクションは、ログインしていれば誰でも使える。
+     */
+    private void initializeFeatureMap() {
+        requireFeature(Feature.ATTENDANCE, "KintaiDisplay", "KintaiUpdateApi", "WorkReportExport", "WorkReportImport",
+                "WeeklyWorkReportSave");
+        requireFeature(Feature.OVERTIME_REQUEST, "OvertimeRequestMenu", "OvertimeRequestSubmit");
+        requireFeature(Feature.LEAVE_REQUEST, "LeaveRequestMenu", "LeaveRequestSubmit");
+        requireFeature(Feature.APPROVAL, "ApprovalList", "ApprovalExecute", "ApprovalHistory", "OvertimeRequestExecute",
+                "LeaveRequestExecute");
+        requireFeature(Feature.SHAIN_ADMIN, "ShainList", "ShainUpdateForm", "ShainUpdateExecute", "ShainInsertForm",
+                "ShainInsertExecute", "ShainDeleteForm", "ShainDeleteExecute", "SearchShainApi");
+        requireFeature(Feature.PAID_LEAVE_ADMIN, "PaidLeaveAdmin", "UpdateLeave", "GrantLeaveByYear", "GrantLeaveSelected");
+        requireFeature(Feature.MASTER_ADMIN, "CorrectionMasterList", "CorrectionMasterRegister", "MasterMenu",
+                "MasterJobClass", "MasterPermissionGroup", "MasterDepartment", "MasterAbstract", "MasterLeaveRule",
+                "MasterApprovalRoute");
+    }
+
+    private void requireFeature(Feature feature, String... actionNames) {
+        for (String name : actionNames) {
+            if (!actionMap.containsKey(name)) {
+                throw new IllegalStateException("No Action configured for name: " + name);
+            }
+            featureMap.put(name, feature);
+        }
+    }
+
+    /** ログインしなくても使えるアクションか。 */
+    public boolean isPublicAction(String actionName) {
+        return PUBLIC_ACTIONS.contains(actionName);
+    }
+
+    /** アクションに必要な機能。ログインしていれば誰でも使えるアクションは null。 */
+    public Feature getRequiredFeature(String actionName) {
+        return featureMap.get(actionName);
+    }
+
     public Action getAction(String actionName) {
         Action action = actionMap.get(actionName);
         if (action == null) {

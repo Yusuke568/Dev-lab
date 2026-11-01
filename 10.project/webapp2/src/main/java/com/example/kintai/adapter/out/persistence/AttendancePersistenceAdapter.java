@@ -282,13 +282,15 @@ public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, S
     }
 
     @Override
-    public List<PendingApprovalItem> loadAll() {
+    public List<PendingApprovalItem> loadManagedBy(String approverId) {
         String sql = readSqlFile("get_pending_approvals.sql");
         List<PendingApprovalItem> items = new ArrayList<>();
 
         try (Connection con = ConnectionBase.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, Integer.parseInt(approverId));
+            ps.setInt(2, Integer.parseInt(approverId));
+            ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
                 String employeeId = String.valueOf(rs.getInt("STAFF_ID"));
@@ -312,6 +314,25 @@ public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, S
         }
 
         return items;
+    }
+
+    @Override
+    public boolean isManagedBy(String employeeId, String approverId) {
+        String sql = "WITH RECURSIVE managed AS (" +
+                "SELECT id FROM department WHERE approver_staff_id = ? " +
+                "UNION SELECT d.id FROM department d JOIN managed m ON d.parent_id = m.id) " +
+                "SELECT 1 FROM staff_table WHERE id = ? AND id <> ? AND department_id IN (SELECT id FROM managed)";
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, Integer.parseInt(approverId));
+            ps.setInt(2, Integer.parseInt(employeeId));
+            ps.setInt(3, Integer.parseInt(approverId));
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to check approver of employee: " + employeeId, e);
+        }
     }
 
     private String readSqlFile(String fileName) {

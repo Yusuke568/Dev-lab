@@ -67,14 +67,34 @@ public class OvertimeRequestPersistenceAdapter implements OvertimeRequestPort {
     }
 
     @Override
-    public List<OvertimeRequest> findPending() {
+    public Optional<OvertimeRequest> findById(int requestId) {
+        String sql = "SELECT id, staff_id, target_date, planned_overtime_minutes, planned_start_time, planned_end_time, reason, " +
+                "status, decided_by, decided_at, created_at, current_level FROM overtime_request WHERE id = ?";
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, requestId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapRow(rs));
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to find overtime request: " + requestId, e);
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public List<OvertimeRequest> findPendingForApprover(String approverId) {
         String sql = readSqlFile("find_pending_overtime_requests.sql");
         List<OvertimeRequest> list = new ArrayList<>();
         try (Connection con = ConnectionBase.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                list.add(mapRow(rs, rs.getString("staff_name")));
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, Integer.parseInt(approverId));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapRow(rs, rs.getString("staff_name")));
+                }
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to find pending overtime requests.", e);
@@ -83,7 +103,19 @@ public class OvertimeRequestPersistenceAdapter implements OvertimeRequestPort {
     }
 
     @Override
-    public void insert(EmployeeId employeeId, LocalDate date, int plannedOvertimeMinutes, String plannedStartTime, String plannedEndTime, String reason) {
+    public void advanceLevel(int requestId) {
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "UPDATE overtime_request SET current_level = current_level + 1 WHERE id = ?")) {
+            ps.setInt(1, requestId);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to advance overtime request: " + requestId, e);
+        }
+    }
+
+    @Override
+    public int insert(EmployeeId employeeId, LocalDate date, int plannedOvertimeMinutes, String plannedStartTime, String plannedEndTime, String reason) {
         String sql = readSqlFile("insert_overtime_request.sql");
         try (Connection con = ConnectionBase.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -93,7 +125,10 @@ public class OvertimeRequestPersistenceAdapter implements OvertimeRequestPort {
             setNullableString(ps, 4, plannedStartTime);
             setNullableString(ps, 5, plannedEndTime);
             ps.setString(6, reason);
-            ps.executeUpdate();
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getInt(1);
+            }
         } catch (Exception e) {
             throw new RuntimeException("Failed to insert overtime request.", e);
         }
@@ -160,8 +195,11 @@ public class OvertimeRequestPersistenceAdapter implements OvertimeRequestPort {
         Timestamp createdAtTs = rs.getTimestamp("created_at");
         String createdAt = createdAtTs != null ? createdAtTs.toLocalDateTime().format(DATETIME_FORMATTER) : null;
 
+        int currentLevel = rs.getInt("current_level");
+
         return new OvertimeRequest(id, employeeId, employeeName, targetDate, plannedOvertimeMinutes,
-                plannedStartTime, plannedEndTime, reason, status, decidedBy, decidedAt, createdAt);
+                plannedStartTime, plannedEndTime, reason, status, decidedBy, decidedAt, createdAt,
+                currentLevel > 0 ? currentLevel : 1);
     }
 
     private String readSqlFile(String fileName) {

@@ -36,10 +36,18 @@ public class OvertimeRequest {
     private final String decidedBy;
     private final String decidedAt; // "yyyy-MM-dd HH:mm" or null
     private final String createdAt; // "yyyy-MM-dd HH:mm"
+    private final int currentLevel; // 承認ルートの何段目の承認待ちか（1始まり）
 
     public OvertimeRequest(int id, String employeeId, String employeeName, LocalDate targetDate,
                             int plannedOvertimeMinutes, String plannedStartTime, String plannedEndTime, String reason,
                             String status, String decidedBy, String decidedAt, String createdAt) {
+        this(id, employeeId, employeeName, targetDate, plannedOvertimeMinutes, plannedStartTime, plannedEndTime,
+                reason, status, decidedBy, decidedAt, createdAt, 1);
+    }
+
+    public OvertimeRequest(int id, String employeeId, String employeeName, LocalDate targetDate,
+                            int plannedOvertimeMinutes, String plannedStartTime, String plannedEndTime, String reason,
+                            String status, String decidedBy, String decidedAt, String createdAt, int currentLevel) {
         this.id = id;
         this.employeeId = employeeId;
         this.employeeName = employeeName;
@@ -52,6 +60,7 @@ public class OvertimeRequest {
         this.decidedBy = decidedBy;
         this.decidedAt = decidedAt;
         this.createdAt = createdAt;
+        this.currentLevel = currentLevel;
     }
 
     public int getId() { return id; }
@@ -66,6 +75,7 @@ public class OvertimeRequest {
     public String getDecidedBy() { return decidedBy; }
     public String getDecidedAt() { return decidedAt; }
     public String getCreatedAt() { return createdAt; }
+    public int getCurrentLevel() { return currentLevel; }
 
     public boolean isPending() { return STATUS_PENDING.equals(status); }
     public boolean isApproved() { return STATUS_APPROVED.equals(status); }

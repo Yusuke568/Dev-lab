@@ -58,6 +58,7 @@
 
 	<div class="menu-grid">
 		<!-- 勤怠管理カード -->
+		<c:if test="${sessionScope.can.ATTENDANCE}">
 		<div class="menu-card">
 			<div class="icon">📅</div>
 			<h3>勤怠管理</h3>
@@ -81,8 +82,10 @@
 				<button type="submit" class="btn btn-primary" style="width: 100%;">勤怠情報を表示</button>
 			</form>
 		</div>
+		</c:if>
 
 		<!-- 残業事前申請カード -->
+		<c:if test="${sessionScope.can.OVERTIME_REQUEST}">
 		<div class="menu-card-wrapper">
 			<div class="menu-card" style="cursor: pointer; height: 100%;" onclick="location.href='${pageContext.request.contextPath}/overtimeRequestMenu.do'">
 				<div class="icon">🕐</div>
@@ -90,8 +93,20 @@
 				<p>時間外労働の事前申請・承認結果の確認・再申請を行います。</p>
 			</div>
 		</div>
+		</c:if>
 
-		<c:if test="${sessionScope.loginUserRole != '0'}">
+		<!-- 休暇申請カード -->
+		<c:if test="${sessionScope.can.LEAVE_REQUEST}">
+		<div class="menu-card-wrapper">
+			<div class="menu-card" style="cursor: pointer; height: 100%;" onclick="location.href='${pageContext.request.contextPath}/leaveRequestMenu.do'">
+				<div class="icon">🌴</div>
+				<h3>休暇申請</h3>
+				<p>有給・代休などの休暇を申請し、承認状況を確認します。</p>
+			</div>
+		</div>
+		</c:if>
+
+		<c:if test="${sessionScope.can.SHAIN_ADMIN}">
 			<!-- 社員一覧カード -->
 			<div class="menu-card-wrapper">
 				<div class="menu-card" style="cursor: pointer; height: 100%;" onclick="location.href='${pageContext.request.contextPath}/shainList.do'">
@@ -100,7 +115,9 @@
 					<p>社員情報の確認や編集を行います。</p>
 				</div>
 			</div>
-			
+		</c:if>
+
+		<c:if test="${sessionScope.can.PAID_LEAVE_ADMIN}">
 			<!-- 有給休暇管理カード -->
 			<div class="menu-card-wrapper">
 				<div class="menu-card" style="cursor: pointer; height: 100%;" onclick="location.href='${pageContext.request.contextPath}/paidLeaveAdmin.do'">
@@ -109,13 +126,26 @@
 					<p>有給休暇の付与や日数の管理を行います。</p>
 				</div>
 			</div>
+		</c:if>
 
+		<c:if test="${sessionScope.can.APPROVAL}">
 			<!-- 勤怠承認カード -->
 			<div class="menu-card-wrapper">
 				<div class="menu-card" style="cursor: pointer; height: 100%;" onclick="location.href='${pageContext.request.contextPath}/approvalList.do'">
 					<div class="icon">✅</div>
 					<h3>勤怠承認</h3>
-					<p>申請中の勤怠を確認し、承認・却下を行います。</p>
+					<p>自分宛ての残業・休暇申請と、配下の社員の勤怠を承認・却下します。</p>
+				</div>
+			</div>
+		</c:if>
+
+		<c:if test="${sessionScope.can.MASTER_ADMIN}">
+			<!-- マスタ管理カード -->
+			<div class="menu-card-wrapper">
+				<div class="menu-card" style="cursor: pointer; height: 100%;" onclick="location.href='${pageContext.request.contextPath}/masterMenu.do'">
+					<div class="icon">⚙️</div>
+					<h3>マスタ管理</h3>
+					<p>権限グループ・役職・組織図・承認ルートなどのマスタを設定します。</p>
 				</div>
 			</div>
 		</c:if>

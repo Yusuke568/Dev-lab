@@ -15,9 +15,11 @@ import java.io.IOException;
 public class ShainUpdateExecuteAction implements Action {
 
     private final UpdateShainUseCase updateShainUseCase;
+    private final com.example.master.application.port.in.MasterMaintenanceUseCase masterUseCase;
 
-    public ShainUpdateExecuteAction(UpdateShainUseCase updateShainUseCase) {
+    public ShainUpdateExecuteAction(UpdateShainUseCase updateShainUseCase, com.example.master.application.port.in.MasterMaintenanceUseCase masterUseCase) {
         this.updateShainUseCase = updateShainUseCase;
+        this.masterUseCase = masterUseCase;
     }
 
     @Override
@@ -32,6 +34,9 @@ public class ShainUpdateExecuteAction implements Action {
         );
 
         updateShainUseCase.updateShain(command);
+        String departmentId = request.getParameter("departmentId");
+        masterUseCase.assignDepartment(Integer.parseInt(request.getParameter("id")),
+                departmentId == null || departmentId.isBlank() ? null : Integer.valueOf(departmentId));
         return new View("/shainList.do", true);
     }
 }

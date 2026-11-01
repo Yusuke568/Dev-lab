@@ -15,9 +15,15 @@ import java.io.IOException;
 public class ShainInsertExecuteAction implements Action {
 
     private final RegisterShainUseCase registerShainUseCase;
+    private final com.example.shain.application.port.in.GetNextShainIdUseCase getNextShainIdUseCase;
+    private final com.example.master.application.port.in.MasterMaintenanceUseCase masterUseCase;
 
-    public ShainInsertExecuteAction(RegisterShainUseCase registerShainUseCase) {
+    public ShainInsertExecuteAction(RegisterShainUseCase registerShainUseCase,
+                                    com.example.shain.application.port.in.GetNextShainIdUseCase getNextShainIdUseCase,
+                                    com.example.master.application.port.in.MasterMaintenanceUseCase masterUseCase) {
         this.registerShainUseCase = registerShainUseCase;
+        this.getNextShainIdUseCase = getNextShainIdUseCase;
+        this.masterUseCase = masterUseCase;
     }
 
     @Override
@@ -30,7 +36,15 @@ public class ShainInsertExecuteAction implements Action {
                 request.getParameter("jobclass")
         );
 
+        // 登録時の採番と同じ方法で、これから登録される社員IDを先に求めておく
+        int newId = Integer.parseInt(getNextShainIdUseCase.getNextId().getValue());
         registerShainUseCase.registerShain(command);
+        masterUseCase.assignDepartment(newId, parseDepartment(request));
         return new View("/shainList.do", true);
+    }
+
+    private static Integer parseDepartment(HttpServletRequest request) {
+        String value = request.getParameter("departmentId");
+        return value == null || value.isBlank() ? null : Integer.valueOf(value);
     }
 }

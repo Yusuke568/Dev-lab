@@ -9,8 +9,12 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.util.Set;
+
+import com.example.permission.domain.model.Feature;
 
 /**
  * すべてのリクエストを最初に受け取るフロントコントローラー。（�Eキサゴナル移行後！E
@@ -49,6 +53,11 @@ public class FrontController extends HttpServlet {
             // 1. Actionの特宁E
             Action action = getAction(request);
 
+            // 1-2. ログインと権限のチェック
+            if (!authorize(request, response)) {
+                return;
+            }
+
             // 2. Actionの実衁E
             View view = action.execute(request, response);
 
@@ -73,17 +82,54 @@ public class FrontController extends HttpServlet {
      * リクエスチERIから対応するActionオブジェクトをDependencyFactory経由で取得する、E
      */
     private Action getAction(HttpServletRequest request) {
-        // 侁E /shainList.do -> shainList
+        return getFactory().getAction(getActionName(request));
+    }
+
+    /**
+     * リクエストURIからアクション名を求める（例: /shainList.do -> ShainList）。
+     */
+    private String getActionName(HttpServletRequest request) {
         String path = request.getServletPath();
         String actionName = path.substring(1, path.lastIndexOf(".do"));
+        return Character.toUpperCase(actionName.charAt(0)) + actionName.substring(1);
+    }
 
-        // 侁E shainList -> ShainList
-        String capitalizedActionName = Character.toUpperCase(actionName.charAt(0)) + actionName.substring(1);
-        
-        // FactoryからActionインスタンスを取征E
+    private DependencyFactory getFactory() {
         ServletContext context = getServletContext();
-        DependencyFactory factory = (DependencyFactory) context.getAttribute(DEPENDENCY_FACTORY);
-        
-        return factory.getAction(capitalizedActionName);
+        return (DependencyFactory) context.getAttribute(DEPENDENCY_FACTORY);
+    }
+
+    /**
+     * ログインと権限を確認する。
+     * 未ログインならログイン画面へ、必要な機能の権限がなければエラー画面へ送り、false を返す。
+     */
+    private boolean authorize(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        String actionName = getActionName(request);
+        DependencyFactory factory = getFactory();
+        if (factory.isPublicAction(actionName)) {
+            return true;
+        }
+
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("loginUser") == null) {
+            response.sendRedirect(request.getContextPath() + "/login.do");
+            return false;
+        }
+
+        Feature required = factory.getRequiredFeature(actionName);
+        if (required == null) {
+            return true;
+        }
+        @SuppressWarnings("unchecked")
+        Set<String> features = (Set<String>) session.getAttribute("features");
+        if (features != null && features.contains(required.name())) {
+            return true;
+        }
+
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        request.setAttribute("errorMessage", "「" + required.getLabel() + "」を使う権限がありません。");
+        request.getRequestDispatcher("/WEB-INF/view/error.jsp").forward(request, response);
+        return false;
     }
 }

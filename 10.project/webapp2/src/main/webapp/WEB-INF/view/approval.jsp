@@ -14,7 +14,7 @@
 <div class="card">
 	<div class="text-center page-title-container">
 		<h1>勤怠承認</h1>
-		<p>残業の事前申請、および有給取得を含む勤怠申請を確認し、承認または却下します。（通常の勤務は自動承認され、ここには表示されません）</p>
+		<p>あなたが承認者になっている申請を確認し、承認または却下します。残業事前申請・休暇申請は組織図に沿った承認ルートの順に回ってきます。勤怠は配下の社員の分だけ表示されます。（通常の勤務は自動承認され、ここには表示されません）</p>
 	</div>
 
 	<div class="page-header-actions">
@@ -38,6 +38,7 @@
 				<th>時間外内訳</th>
 				<th>申請理由</th>
 				<th>申請日時</th>
+				<th>承認ルート</th>
 				<th class="text-center">操作</th>
 			</tr>
 		</thead>
@@ -52,6 +53,11 @@
 					<td><c:out value="${req.plannedOvertimeBreakdown}" /></td>
 					<td><c:out value="${req.reason}" /></td>
 					<td><c:out value="${req.createdAt}" /></td>
+					<td>
+						<c:forEach var="step" items="${overtimeRoutes[req.id]}" varStatus="st">
+							<c:out value="${step.label}" /><c:if test="${!st.last}"> → </c:if>
+						</c:forEach>
+					</td>
 					<td>
 						<div style="display: flex; gap: 0.5rem; justify-content: center;">
 							<form action="${pageContext.request.contextPath}/overtimeRequestExecute.do" method="post">
@@ -70,7 +76,59 @@
 			</c:forEach>
 			<c:if test="${empty pendingOvertimeRequests}">
 				<tr>
-					<td colspan="9" class="text-center">承認待ちの残業事前申請はありません。</td>
+					<td colspan="10" class="text-center">承認待ちの残業事前申請はありません。</td>
+				</tr>
+			</c:if>
+		</tbody>
+	</table>
+
+	<h2 class="table-title">休暇申請（承認待ち）</h2>
+	<table class="table">
+		<thead>
+			<tr>
+				<th>社員ID</th>
+				<th>氏名</th>
+				<th>対象日</th>
+				<th>区分</th>
+				<th>理由</th>
+				<th>申請日時</th>
+				<th>承認ルート</th>
+				<th class="text-center">操作</th>
+			</tr>
+		</thead>
+		<tbody>
+			<c:forEach var="req" items="${pendingLeaveRequests}">
+				<tr>
+					<td><c:out value="${req.employeeId}" /></td>
+					<td><c:out value="${req.employeeName}" /></td>
+					<td><c:out value="${req.targetDate}" /></td>
+					<td><c:out value="${req.abstractName}" /></td>
+					<td><c:out value="${req.reason}" /></td>
+					<td><c:out value="${req.createdAt}" /></td>
+					<td>
+						<c:forEach var="step" items="${leaveRoutes[req.id]}" varStatus="st">
+							<c:out value="${step.label}" /><c:if test="${!st.last}"> → </c:if>
+						</c:forEach>
+					</td>
+					<td>
+						<div style="display: flex; gap: 0.5rem; justify-content: center;">
+							<form action="${pageContext.request.contextPath}/leaveRequestExecute.do" method="post">
+								<input type="hidden" name="requestId" value="${req.id}">
+								<input type="hidden" name="decision" value="approve">
+								<button type="submit" class="btn btn-primary">承認</button>
+							</form>
+							<form action="${pageContext.request.contextPath}/leaveRequestExecute.do" method="post">
+								<input type="hidden" name="requestId" value="${req.id}">
+								<input type="hidden" name="decision" value="reject">
+								<button type="submit" class="btn btn-danger">却下</button>
+							</form>
+						</div>
+					</td>
+				</tr>
+			</c:forEach>
+			<c:if test="${empty pendingLeaveRequests}">
+				<tr>
+					<td colspan="8" class="text-center">承認待ちの休暇申請はありません。</td>
 				</tr>
 			</c:if>
 		</tbody>

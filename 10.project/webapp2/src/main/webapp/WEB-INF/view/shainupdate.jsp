@@ -69,6 +69,16 @@
 				</select>
 			</div>
 
+			<div class="form-group">
+				<label for="departmentId" class="form-label">所属部署</label> <select
+					id="departmentId" name="departmentId" class="form-input">
+					<option value="">（未所属）</option>
+					<c:forEach var="d" items="${departments}">
+						<option value="${d.id}" <c:if test="${currentDepartmentId == d.id}">selected</c:if>><c:out value="${d.indent}" /><c:out value="${d.name}" /></option>
+					</c:forEach>
+				</select>
+			</div>
+
 			<div class="form-actions">
 				<a href="${pageContext.request.contextPath}/shainList.do" class="btn btn-secondary">‹ キャンセル</a>
 				<button type="submit" class="btn btn-primary">✓ 更新</button>

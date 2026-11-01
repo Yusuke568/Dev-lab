@@ -1,0 +1,12 @@
+<%@ page pageEncoding="UTF-8"%>
+<%-- マスタ画面共通：戻るリンクと保存結果のメッセージ --%>
+	<div class="page-header-actions">
+		<a href="${pageContext.request.contextPath}/masterMenu.do" class="btn btn-secondary">‹ マスタ管理へ戻る</a>
+	</div>
+
+	<c:if test="${not empty message}">
+		<div class="status-item status-info" style="margin: 1rem 0;">✓ <c:out value="${message}" /></div>
+	</c:if>
+	<c:if test="${not empty errorMessage}">
+		<div class="error-message" style="margin: 1rem 0;"><c:out value="${errorMessage}" /></div>
+	</c:if>

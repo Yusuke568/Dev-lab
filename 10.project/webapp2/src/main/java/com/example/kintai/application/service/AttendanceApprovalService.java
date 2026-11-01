@@ -48,12 +48,15 @@ public class AttendanceApprovalService implements GetPendingApprovalsUseCase, Ap
     }
 
     @Override
-    public List<PendingApprovalItem> getPendingApprovals() {
-        return loadPendingApprovalsPort.loadAll();
+    public List<PendingApprovalItem> getPendingApprovals(String approverId) {
+        return loadPendingApprovalsPort.loadManagedBy(approverId);
     }
 
     @Override
     public void decide(String employeeId, LocalDate date, boolean approve, String decidedBy) {
+        if (!loadPendingApprovalsPort.isManagedBy(employeeId, decidedBy)) {
+            throw new IllegalStateException("配下の社員の勤怠のみ承認・却下できます: " + employeeId);
+        }
         EmployeeId id = new EmployeeId(employeeId);
         AttendanceRecord record = loadAttendanceRecordPort.loadByEmployeeAndDate(id, date)
                 .orElseThrow(() -> new IllegalArgumentException("対象の勤怠記録が見つかりません: " + employeeId + " " + date));

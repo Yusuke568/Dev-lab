@@ -19,10 +19,13 @@ public class ShainUpdateFormAction implements Action {
 
     private final GetShainByIdUseCase getShainByIdUseCase;
     private final GetAllClassmastersUseCase getAllClassmastersUseCase;
+    private final com.example.master.application.port.in.MasterMaintenanceUseCase masterUseCase;
 
-    public ShainUpdateFormAction(GetShainByIdUseCase getShainByIdUseCase, GetAllClassmastersUseCase getAllClassmastersUseCase) {
+    public ShainUpdateFormAction(GetShainByIdUseCase getShainByIdUseCase, GetAllClassmastersUseCase getAllClassmastersUseCase,
+                                 com.example.master.application.port.in.MasterMaintenanceUseCase masterUseCase) {
         this.getShainByIdUseCase = getShainByIdUseCase;
         this.getAllClassmastersUseCase = getAllClassmastersUseCase;
+        this.masterUseCase = masterUseCase;
     }
 
     @Override
@@ -36,7 +39,9 @@ public class ShainUpdateFormAction implements Action {
         return getShainByIdUseCase.getShainById(id)
                 .map(shain -> {
                     request.setAttribute("shain", new ShainDto(shain));
-                    request.setAttribute("classList", getAllClassmastersUseCase.getAllClassmasters());
+                    request.setAttribute("jobList", getAllClassmastersUseCase.getAllClassmasters());
+                    request.setAttribute("departments", masterUseCase.getDepartmentTree());
+                    request.setAttribute("currentDepartmentId", masterUseCase.getDepartmentIdOfStaff(id.getIntValue()));
                     return new View("/WEB-INF/view/shainupdate.jsp");
                 })
                 .orElse(new View("/WEB-INF/view/error.jsp"));

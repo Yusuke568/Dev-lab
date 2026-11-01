@@ -1,11 +1,14 @@
 package com.example.auth.domain.port.out;
 
+import java.util.Optional;
+
 /**
  * ログイン認証のための永続化操作を定義するポート。
  */
 public interface LoginPort {
     /**
-     * IDとパスワードが一致するか確認します。
+     * 有効なユーザーの保存済みパスワードハッシュを取得します。
+     * ユーザーが存在しない、または無効な場合は空を返します。
      */
-    boolean authenticate(String username, String password);
+    Optional<String> findPasswordHash(String username);
 }

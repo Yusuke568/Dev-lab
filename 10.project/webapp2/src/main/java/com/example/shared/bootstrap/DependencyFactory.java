@@ -138,7 +138,7 @@ public class DependencyFactory {
         com.example.auth.domain.port.out.LoginPort loginPort = new LoginPersistenceAdapter();
 
         // --- Service (Use Cases) を生成し、Adapter(Port)をコンストラクタで注入 ---
-        this.authenticateUseCase = new AuthenticateService(loginPort);
+        this.authenticateUseCase = new AuthenticateService(loginPort, new com.example.auth.domain.service.PasswordHasher());
         this.getMonthlyAttendanceUseCase = new GetMonthlyAttendanceService(
                 this.attendancePersistenceAdapter,
                 this.employeePersistenceAdapter

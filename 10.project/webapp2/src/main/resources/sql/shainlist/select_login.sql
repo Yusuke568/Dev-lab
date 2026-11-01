@@ -1,6 +1,6 @@
 SELECT
-    USERNAME
+    PASSWORD
 FROM
     login_table
 WHERE
-    USERNAME = ? AND PASSWORD = ?;
+    USERNAME = ? AND ENABLED = 1;

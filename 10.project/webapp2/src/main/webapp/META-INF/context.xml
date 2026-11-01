@@ -1,16 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE Context>
 <Context reloadable="true">
+	<!--
+		Supabase (PostgreSQL) 接続設定。
+		Supabaseダッシュボード → Project Settings → Database → Connection string (JDBC/URI) の
+		「Direct connection」（ポート5432）の値で以下を置き換えてください。
+		例: db.xxxxxxxxxxxxxxxx.supabase.co
+	-->
 	<Resource name="jdbc/kintai"
 		auth="Container"
 		type="javax.sql.DataSource"
-		driverClassName="com.mysql.cj.jdbc.Driver"
-		url="jdbc:mysql://localhost:3306/kintai?serverTimezone=Asia/Tokyo&amp;characterEncoding=UTF-8"
-		username="kintai"
-		password="kintai"
+		driverClassName="org.postgresql.Driver"
+		url="jdbc:postgresql://db.YOUR_PROJECT_REF.supabase.co:5432/postgres?sslmode=require"
+		username="postgres"
+		password="YOUR_SUPABASE_DB_PASSWORD"
 		maxTotal="100"
 		maxIdle="30"
 		maxWaitMillis="10000"
-		validationQuery="SELECT 0"
+		validationQuery="SELECT 1"
 	/>
 </Context>

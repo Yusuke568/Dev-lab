@@ -41,9 +41,10 @@ public class JdbcAttendanceRepository implements AttendanceRepository {
         String upsertDaily = "INSERT INTO daily_attendances " +
                 "(id, employee_id, work_date, start_time, end_time, break_minutes, abstract_id, leave_type, remarks, is_filled, is_locked) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
-                "ON DUPLICATE KEY UPDATE " +
-                "start_time = VALUES(start_time), end_time = VALUES(end_time), break_minutes = VALUES(break_minutes), " +
-                "abstract_id = VALUES(abstract_id), leave_type = VALUES(leave_type), remarks = VALUES(remarks), is_filled = VALUES(is_filled), is_locked = VALUES(is_locked)";
+                "ON CONFLICT (id) DO UPDATE SET " +
+                "start_time = EXCLUDED.start_time, end_time = EXCLUDED.end_time, break_minutes = EXCLUDED.break_minutes, " +
+                "abstract_id = EXCLUDED.abstract_id, leave_type = EXCLUDED.leave_type, remarks = EXCLUDED.remarks, is_filled = EXCLUDED.is_filled, is_locked = EXCLUDED.is_locked, " +
+                "updated_at = CURRENT_TIMESTAMP";
 
         String deleteSegments = "DELETE FROM work_time_segments WHERE daily_attendance_id = ?";
         String insertSegment = "INSERT INTO work_time_segments (id, daily_attendance_id, category, duration_minutes, task_description) " +
@@ -209,13 +210,13 @@ public class JdbcAttendanceRepository implements AttendanceRepository {
     @Override
     public void saveMonthlySummary(MonthlySummary summary) {
         String sql = "INSERT INTO monthly_summaries " +
-                "(id, employee_id, `year_month`, assignment_id, total_work_minutes, direct_minutes, indirect_minutes, " +
+                "(id, employee_id, year_month, assignment_id, total_work_minutes, direct_minutes, indirect_minutes, " +
                 "legal_overtime_minutes, settlement_status, status) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
-                "ON DUPLICATE KEY UPDATE " +
-                "total_work_minutes = VALUES(total_work_minutes), direct_minutes = VALUES(direct_minutes), " +
-                "indirect_minutes = VALUES(indirect_minutes), legal_overtime_minutes = VALUES(legal_overtime_minutes), " +
-                "settlement_status = VALUES(settlement_status), status = VALUES(status)";
+                "ON CONFLICT (id) DO UPDATE SET " +
+                "total_work_minutes = EXCLUDED.total_work_minutes, direct_minutes = EXCLUDED.direct_minutes, " +
+                "indirect_minutes = EXCLUDED.indirect_minutes, legal_overtime_minutes = EXCLUDED.legal_overtime_minutes, " +
+                "settlement_status = EXCLUDED.settlement_status, status = EXCLUDED.status, updated_at = CURRENT_TIMESTAMP";
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, summary.getId());
@@ -236,7 +237,7 @@ public class JdbcAttendanceRepository implements AttendanceRepository {
 
     @Override
     public Optional<MonthlySummary> findMonthlySummary(String employeeId, YearMonth yearMonth) {
-        String sql = "SELECT * FROM monthly_summaries WHERE employee_id = ? AND `year_month` = ?";
+        String sql = "SELECT * FROM monthly_summaries WHERE employee_id = ? AND year_month = ?";
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, employeeId);

@@ -41,11 +41,12 @@ public class JdbcWeeklyReportRepository implements WeeklyReportRepository {
                 "(id, employee_id, year_week, task_title, task_progress, personal_reflection, progress_summary, next_week_plan, workload_score, health_score, " +
                 "escalation_needed, status, submitted_at) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
-                "ON DUPLICATE KEY UPDATE " +
-                "task_title = VALUES(task_title), task_progress = VALUES(task_progress), personal_reflection = VALUES(personal_reflection), " +
-                "progress_summary = VALUES(progress_summary), next_week_plan = VALUES(next_week_plan), " +
-                "workload_score = VALUES(workload_score), health_score = VALUES(health_score), " +
-                "escalation_needed = VALUES(escalation_needed), status = VALUES(status), submitted_at = VALUES(submitted_at)";
+                "ON CONFLICT (id) DO UPDATE SET " +
+                "task_title = EXCLUDED.task_title, task_progress = EXCLUDED.task_progress, personal_reflection = EXCLUDED.personal_reflection, " +
+                "progress_summary = EXCLUDED.progress_summary, next_week_plan = EXCLUDED.next_week_plan, " +
+                "workload_score = EXCLUDED.workload_score, health_score = EXCLUDED.health_score, " +
+                "escalation_needed = EXCLUDED.escalation_needed, status = EXCLUDED.status, submitted_at = EXCLUDED.submitted_at, " +
+                "updated_at = CURRENT_TIMESTAMP";
 
         String deleteComments = "DELETE FROM weekly_report_comments WHERE weekly_report_id = ?";
         String insertComment = "INSERT INTO weekly_report_comments " +

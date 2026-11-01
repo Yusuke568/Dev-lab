@@ -13,9 +13,31 @@
 /* Additional styles for menu page */
 .menu-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	/* 画面幅が280pxより狭いときは、カードを画面幅いっぱいにしてはみ出さないようにする */
+	grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
 	gap: 24px;
 	margin-top: 2rem;
+}
+
+@media (max-width: 600px) {
+	.menu-grid {
+		gap: 16px;
+		margin-top: 1rem;
+	}
+
+	.menu-card {
+		padding: 16px;
+	}
+
+	.menu-card .icon {
+		font-size: 2.25rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.menu-card h3 {
+		margin-top: 0;
+		margin-bottom: 0.75rem;
+	}
 }
 
 .menu-card {

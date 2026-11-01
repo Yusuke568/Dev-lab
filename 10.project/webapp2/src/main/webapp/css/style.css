@@ -259,6 +259,13 @@ h3, h4 {
     display: none;
 }
 
+/* Mobile Styles */
+@media (max-width: 600px) {
+    body { padding: 12px; }
+    .card { padding: 16px; }
+    h1 { font-size: 1.4rem; margin-bottom: 20px; }
+}
+
 /* Print Styles */
 @media print {
     body { background-color: #fff; padding: 0; }

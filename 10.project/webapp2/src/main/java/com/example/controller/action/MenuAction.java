@@ -50,9 +50,9 @@ public class MenuAction implements Action {
                 List<YearMonth> availableMonths = new ArrayList<>();
                 try (Connection con = ConnectionBase.getConnection();
                      PreparedStatement ps = con.prepareStatement(
-                             "SELECT DISTINCT YEAR(WORK_DATE) AS y, MONTH(WORK_DATE) AS m " +
+                             "SELECT DISTINCT CAST(EXTRACT(YEAR FROM WORK_DATE) AS integer) AS y, CAST(EXTRACT(MONTH FROM WORK_DATE) AS integer) AS m " +
                              "FROM work_month_table " +
-                             "WHERE STAFF_ID = ? AND WORK_DATE <= CURRENT_DATE() " +
+                             "WHERE STAFF_ID = ? AND WORK_DATE <= CURRENT_DATE " +
                              "ORDER BY y DESC, m DESC")) {
                     ps.setInt(1, Integer.parseInt(loginUser));
                     try (ResultSet rs = ps.executeQuery()) {

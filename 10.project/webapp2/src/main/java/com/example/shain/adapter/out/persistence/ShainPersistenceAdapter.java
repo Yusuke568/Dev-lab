@@ -73,6 +73,23 @@ public class ShainPersistenceAdapter implements ShainPort {
     }
 
     @Override
+    public void assignDepartment(ShainId id, Integer departmentId) {
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     com.example.common.MyUtil.loadSqlFromClasspath("sql/shainlist/update_shain_department.sql"))) {
+            if (departmentId == null) {
+                ps.setNull(1, java.sql.Types.INTEGER);
+            } else {
+                ps.setInt(1, departmentId);
+            }
+            ps.setInt(2, id.getIntValue());
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to assign department: " + id, e);
+        }
+    }
+
+    @Override
     public ShainId nextId() {
         // IDの自動採番ロジック（実際にはDBのシーケンス等を利用）
         String sql = "SELECT MAX(id) FROM staff_table";

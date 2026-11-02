@@ -1,0 +1,6 @@
+UPDATE login_table
+SET
+    PASSWORD = ?,
+    MUST_CHANGE_PASSWORD = ?
+WHERE
+    USERNAME = ?;

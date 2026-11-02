@@ -1,0 +1,1 @@
+SELECT 1 FROM login_table WHERE USERNAME = ?;

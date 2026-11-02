@@ -14,6 +14,7 @@ import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.Set;
 
+import com.example.auth.domain.service.ForcedPasswordChangePolicy;
 import com.example.permission.domain.model.Feature;
 
 /**
@@ -114,6 +115,13 @@ public class FrontController extends HttpServlet {
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("loginUser") == null) {
             response.sendRedirect(request.getContextPath() + "/login.do");
+            return false;
+        }
+
+        // 管理者が初期化した人などは、パスワードを変更するまでほかの画面を使えない（ログアウトは可）
+        boolean mustChangePassword = Boolean.TRUE.equals(session.getAttribute("mustChangePassword"));
+        if (!ForcedPasswordChangePolicy.isAllowed(actionName, mustChangePassword)) {
+            response.sendRedirect(request.getContextPath() + "/passwordChange.do");
             return false;
         }
 

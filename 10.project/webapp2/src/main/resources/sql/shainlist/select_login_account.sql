@@ -1,0 +1,8 @@
+SELECT
+    PASSWORD,
+    ENABLED,
+    MUST_CHANGE_PASSWORD
+FROM
+    login_table
+WHERE
+    USERNAME = ?;

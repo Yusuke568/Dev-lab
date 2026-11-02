@@ -259,11 +259,53 @@ h3, h4 {
     display: none;
 }
 
+/* Password forms */
+.password-card {
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.error-list {
+    margin: 0;
+    padding-left: 1.2em;
+}
+
+.form-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.form-buttons .btn {
+    margin: 0;
+}
+
+.radio-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+}
+
+.radio-line input {
+    margin-top: 0.35em;
+}
+
+.temporary-password {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 1.3rem;
+    letter-spacing: 0.1em;
+}
+
 /* Mobile Styles */
 @media (max-width: 600px) {
     body { padding: 12px; }
     .card { padding: 16px; }
     h1 { font-size: 1.4rem; margin-bottom: 20px; }
+    .form-buttons .btn { flex: 1 1 100%; }
 }
 
 /* Print Styles */

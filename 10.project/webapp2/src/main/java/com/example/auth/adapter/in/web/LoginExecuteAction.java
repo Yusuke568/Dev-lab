@@ -6,6 +6,7 @@ import com.example.permission.domain.model.Feature;
 import com.example.shain.application.port.in.GetShainByIdUseCase;
 import com.example.shain.domain.model.ShainId;
 import com.example.shared.web.Action;
+import com.example.shared.web.CsrfToken;
 import com.example.shared.web.View;
 
 import javax.servlet.ServletException;
@@ -46,7 +47,10 @@ public class LoginExecuteAction implements Action {
 
         if (authenticateUseCase.authenticate(username, password)) {
             HttpSession session = request.getSession();
+            // ログイン前のセッションIDを使い続けさせない（セッション固定攻撃の対策）
+            request.changeSessionId();
             session.setAttribute("loginUser", username);
+            CsrfToken.getOrCreate(session);
             
             getShainByIdUseCase.getShainById(new ShainId(username)).ifPresent(shain -> {
                 session.setAttribute("loginUserRole", shain.getJobClass());
@@ -62,6 +66,11 @@ public class LoginExecuteAction implements Action {
             session.setAttribute("features", features);
             session.setAttribute("can", can);
 
+            // 管理者が初期化した、または初期パスワードのままなら、変更が終わるまでパスワード変更画面に留める
+            if (authenticateUseCase.isPasswordChangeRequired(username)) {
+                session.setAttribute("mustChangePassword", Boolean.TRUE);
+                return new View("/passwordChange.do", true);
+            }
             return new View("/menu.do", true);
         } else {
             request.setAttribute("errorMessage", "ユーザー名またはパスワードが間違っています。");

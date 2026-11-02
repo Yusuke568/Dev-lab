@@ -99,6 +99,8 @@ public class DependencyFactory {
     private final com.example.shain.application.port.in.UpdateShainUseCase updateShainUseCase;
     private final com.example.shain.application.port.in.GetNextShainIdUseCase getNextShainIdUseCase;
     private final RegisterShainUseCase registerShainUseCase;
+    private final com.example.auth.application.port.in.ChangeOwnPasswordUseCase changeOwnPasswordUseCase;
+    private final com.example.auth.application.port.in.ResetPasswordUseCase resetPasswordUseCase;
     private final com.example.shain.application.port.in.DeleteShainUseCase deleteShainUseCase;
     private final UpdatePaidLeaveDaysUseCase updatePaidLeaveDaysUseCase;
     private final GrantLeaveByYearsOfServiceUseCase grantLeaveByYearsOfServiceUseCase;
@@ -159,13 +161,23 @@ public class DependencyFactory {
                 this.approvalWorkflowService);
 
         // --- Service (Use Cases) を生成し、Adapter(Port)をコンストラクタで注入 ---
-        this.authenticateUseCase = new AuthenticateService(loginPort, new com.example.auth.domain.service.PasswordHasher());
+        com.example.auth.domain.service.PasswordHasher passwordHasher = new com.example.auth.domain.service.PasswordHasher();
+        com.example.auth.domain.service.PasswordPolicy passwordPolicy = new com.example.auth.domain.service.PasswordPolicy();
+        com.example.auth.domain.service.InitialPasswordResolver initialPasswordResolver =
+                new com.example.auth.domain.service.InitialPasswordResolver(passwordPolicy,
+                        new com.example.auth.domain.service.TemporaryPasswordGenerator());
+        this.authenticateUseCase = new AuthenticateService(loginPort, passwordHasher);
+        this.changeOwnPasswordUseCase = new com.example.auth.application.service.ChangeOwnPasswordService(
+                loginPort, passwordHasher, passwordPolicy);
+        this.resetPasswordUseCase = new com.example.auth.application.service.ResetPasswordService(
+                loginPort, this.shainPort, passwordHasher, initialPasswordResolver);
         this.getMonthlyAttendanceUseCase = new GetMonthlyAttendanceService(
                 this.attendancePersistenceAdapter,
                 this.employeePersistenceAdapter
         );
         
-        ShainService shainService = new ShainService(this.shainPort);
+        ShainService shainService = new ShainService(this.shainPort, loginPort, passwordHasher, initialPasswordResolver,
+                this.transactionManager);
         this.getShainListUseCase = shainService;
         this.getShainByIdUseCase = shainService;
         this.registerShainUseCase = shainService;
@@ -234,6 +246,10 @@ public class DependencyFactory {
         actionMap.put("Login", new com.example.auth.adapter.in.web.LoginAction());
         actionMap.put("LoginExecute", new com.example.auth.adapter.in.web.LoginExecuteAction(this.authenticateUseCase, this.getShainByIdUseCase, this.getUserFeaturesUseCase));
         actionMap.put("Logout", new com.example.auth.adapter.in.web.LogoutAction());
+        actionMap.put("PasswordChange", new com.example.auth.adapter.in.web.PasswordChangeAction());
+        actionMap.put("PasswordChangeExecute", new com.example.auth.adapter.in.web.PasswordChangeExecuteAction(this.changeOwnPasswordUseCase));
+        actionMap.put("PasswordResetForm", new com.example.auth.adapter.in.web.PasswordResetFormAction(this.getShainByIdUseCase));
+        actionMap.put("PasswordResetExecute", new com.example.auth.adapter.in.web.PasswordResetExecuteAction(this.resetPasswordUseCase, this.getShainByIdUseCase));
 
         // KintaiDisplayAction
         actionMap.put("KintaiDisplay", new KintaiDisplayAction(this.getMonthlyAttendanceUseCase, this.getWorkTypesUseCase, this.getCorrectionMastersUseCase, this.getMyOvertimeRequestsUseCase, this.getWeeklyWorkReportsUseCase));
@@ -242,8 +258,10 @@ public class DependencyFactory {
         actionMap.put("ShainList", new com.example.shain.adapter.in.web.ShainListAction(this.getShainListUseCase, this.getAllClassmastersUseCase));
         actionMap.put("ShainUpdateForm", new com.example.shain.adapter.in.web.ShainUpdateFormAction(this.getShainByIdUseCase, this.getAllClassmastersUseCase, this.masterMaintenanceUseCase));
         actionMap.put("ShainUpdateExecute", new com.example.shain.adapter.in.web.ShainUpdateExecuteAction(this.updateShainUseCase, this.masterMaintenanceUseCase));
-        actionMap.put("ShainInsertForm", new com.example.shain.adapter.in.web.ShainInsertFormAction(this.getAllClassmastersUseCase, this.getNextShainIdUseCase, this.masterMaintenanceUseCase));
-        actionMap.put("ShainInsertExecute", new com.example.shain.adapter.in.web.ShainInsertExecuteAction(this.registerShainUseCase, this.getNextShainIdUseCase, this.masterMaintenanceUseCase));
+        com.example.shain.adapter.in.web.ShainInsertFormAction shainInsertFormAction =
+                new com.example.shain.adapter.in.web.ShainInsertFormAction(this.getAllClassmastersUseCase, this.getNextShainIdUseCase, this.masterMaintenanceUseCase);
+        actionMap.put("ShainInsertForm", shainInsertFormAction);
+        actionMap.put("ShainInsertExecute", new com.example.shain.adapter.in.web.ShainInsertExecuteAction(this.registerShainUseCase, shainInsertFormAction));
         actionMap.put("ShainDeleteForm", new com.example.shain.adapter.in.web.ShainDeleteFormAction(this.getShainByIdUseCase));
         actionMap.put("ShainDeleteExecute", new com.example.shain.adapter.in.web.ShainDeleteExecuteAction(this.deleteShainUseCase));
 
@@ -312,7 +330,8 @@ public class DependencyFactory {
         requireFeature(Feature.APPROVAL, "ApprovalList", "ApprovalExecute", "ApprovalHistory", "OvertimeRequestExecute",
                 "LeaveRequestExecute");
         requireFeature(Feature.SHAIN_ADMIN, "ShainList", "ShainUpdateForm", "ShainUpdateExecute", "ShainInsertForm",
-                "ShainInsertExecute", "ShainDeleteForm", "ShainDeleteExecute", "SearchShainApi");
+                "ShainInsertExecute", "ShainDeleteForm", "ShainDeleteExecute", "SearchShainApi",
+                "PasswordResetForm", "PasswordResetExecute");
         requireFeature(Feature.PAID_LEAVE_ADMIN, "PaidLeaveAdmin", "UpdateLeave", "GrantLeaveByYear", "GrantLeaveSelected");
         requireFeature(Feature.MASTER_ADMIN, "CorrectionMasterList", "CorrectionMasterRegister", "MasterMenu",
                 "MasterJobClass", "MasterPermissionGroup", "MasterDepartment", "MasterAbstract", "MasterLeaveRule",

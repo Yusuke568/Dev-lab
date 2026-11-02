@@ -1,6 +1,7 @@
 package com.example.auth.application.service;
 
 import com.example.auth.application.port.in.AuthenticateUseCase;
+import com.example.auth.domain.model.LoginAccount;
 import com.example.auth.domain.port.out.LoginPort;
 import com.example.auth.domain.service.PasswordHasher;
 
@@ -30,5 +31,10 @@ public class AuthenticateService implements AuthenticateUseCase {
         Optional<String> storedHash = loginPort.findPasswordHash(username);
         boolean matched = passwordHasher.verify(password.toCharArray(), storedHash.orElse(dummyHash));
         return storedHash.isPresent() && matched;
+    }
+
+    @Override
+    public boolean isPasswordChangeRequired(String username) {
+        return loginPort.findAccount(username).map(LoginAccount::isMustChangePassword).orElse(false);
     }
 }

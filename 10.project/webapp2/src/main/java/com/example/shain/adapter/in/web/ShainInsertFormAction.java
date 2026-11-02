@@ -35,6 +35,7 @@ public class ShainInsertFormAction implements Action {
         request.setAttribute("yearList", entryYears());
         request.setAttribute("departments", masterUseCase.getDepartmentTree());
         request.setAttribute("nextId", getNextShainIdUseCase.getNextId().getValue());
+        com.example.shared.web.CsrfToken.getOrCreate(request.getSession());
         return new View("/WEB-INF/view/shaininsert.jsp");
     }
 

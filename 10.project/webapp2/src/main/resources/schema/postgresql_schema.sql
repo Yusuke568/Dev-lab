@@ -83,7 +83,8 @@ CREATE TABLE leave_grant_rules (
 CREATE TABLE login_table (
     username  varchar(50) PRIMARY KEY,
     password  varchar(255),  -- PBKDF2 ハッシュ（pbkdf2_sha256$反復回数$ソルト$ハッシュ）。平文は保存しない
-    enabled   integer DEFAULT 1
+    enabled   integer DEFAULT 1,
+    must_change_password boolean NOT NULL DEFAULT false  -- true なら次回ログイン時にパスワード変更を強制する
 );
 
 -- ----------------------------------------------------------------------------

@@ -70,6 +70,13 @@
 								<c:param name='id' value='${shain.id}'/>
 							</c:url>
 							<a href="${deleteUrl}" class="btn btn-danger">削除</a>
+
+							<c:if test="${sessionScope.can.SHAIN_ADMIN}">
+								<c:url value='/passwordResetForm.do' var='resetUrl'>
+									<c:param name='id' value='${shain.id}'/>
+								</c:url>
+								<a href="${resetUrl}" class="btn">パスワード初期化</a>
+							</c:if>
 						</td>
 					</tr>
 				</c:forEach>
@@ -83,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const jobClassFilter = document.getElementById('jobClassFilter');
     const tableBody = document.getElementById('shainTableBody');
     const contextPath = '${pageContext.request.contextPath}';
+    const canResetPassword = ${sessionScope.can.SHAIN_ADMIN == true};
     let debounceTimer;
 
     function runSearch() {
@@ -129,6 +137,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const deleteUrl = new URL(contextPath + '/shainDeleteForm.do', window.location.origin);
             deleteUrl.searchParams.append('id', shain.id);
 
+            const resetUrl = new URL(contextPath + '/passwordResetForm.do', window.location.origin);
+            resetUrl.searchParams.append('id', shain.id);
+            const resetLink = canResetPassword
+                ? `<a href="\${resetUrl.pathname}\${resetUrl.search}" class="btn">パスワード初期化</a>`
+                : '';
+
             row.innerHTML = `
                 <td>\${escapeHTML(shain.id)}</td>
                 <td>\${escapeHTML(shain.name)}</td>
@@ -139,6 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="action-cell">
                     <a href="\${updateUrl.pathname}\${updateUrl.search}" class="btn btn-secondary">変更</a>
                     <a href="\${deleteUrl.pathname}\${deleteUrl.search}" class="btn btn-danger">削除</a>
+                    \${resetLink}
                 </td>
             `;
             tableBody.appendChild(row);

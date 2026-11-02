@@ -172,6 +172,15 @@
 			</div>
 		</c:if>
 		
+		<!-- パスワード変更カード（ログインしている全員） -->
+		<div class="menu-card-wrapper">
+			<div class="menu-card" style="cursor: pointer; height: 100%;" onclick="location.href='${pageContext.request.contextPath}/passwordChange.do'">
+				<div class="icon">🔑</div>
+				<h3>パスワード変更</h3>
+				<p>ログインに使うパスワードを変更します。</p>
+			</div>
+		</div>
+
 		<!-- ログイン画面へ戻るカード -->
 		<div class="menu-card-wrapper">
 			<div class="menu-card" style="cursor: pointer; height: 100%;" onclick="location.href='${pageContext.request.contextPath}/logout.do'">

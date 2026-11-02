@@ -39,4 +39,9 @@ public interface ShainPort {
      * 次の利用可能な社員IDを取得します。
      */
     ShainId nextId();
+
+    /**
+     * 社員の所属部署を設定します（null なら未所属）。
+     */
+    void assignDepartment(ShainId id, Integer departmentId);
 }

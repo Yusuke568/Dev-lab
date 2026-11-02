@@ -251,6 +251,7 @@
     .table-kintai, .table-kintai tbody, .table-kintai tr, .table-kintai td {
         display: block;
         width: 100%;
+        box-sizing: border-box; /* 余白と枠線を幅に含め、カードからはみ出さないようにする */
     }
     .table-kintai tr {
         margin-bottom: 12px;
@@ -298,6 +299,23 @@
     .table-kintai .form-input {
         width: 60%;
         display: inline-block;
+    }
+
+    /* 一括入力：出勤・退勤を横並び、勤務区分とボタンは1行ずつ */
+    .bulk-input > div {
+        flex: 1 1 calc(50% - 0.5rem);
+        min-width: 0;
+    }
+    .bulk-input > div:nth-child(3),
+    .bulk-input > .btn {
+        flex-basis: 100%;
+    }
+    /* iPhone の時刻入力が空のときに潰れたり重なったりしないようにする */
+    input[type="time"].form-input {
+        -webkit-appearance: none;
+        appearance: none;
+        min-height: 2.75em;
+        min-width: 0;
     }
 }
 </style>
@@ -380,6 +398,7 @@
 					<button type="button" class="btn btn-secondary"
 						onclick="document.getElementById('work-report-import-file').click();">📥 作業報告書(Excel)取込</button>
 				</form>
+				<a href="${pageContext.request.contextPath}/passwordChange.do" class="btn btn-secondary">パスワード変更</a>
 				<a href="${pageContext.request.contextPath}/logout.do" class="btn btn-secondary">ログアウト</a>
 				<a href="${pageContext.request.contextPath}/menu.do" class="btn btn-secondary">メニュー</a>
 			</div>
@@ -482,7 +501,7 @@
 
 		<div class="card" style="margin-bottom: 1rem;">
 			<h4>一括入力</h4>
-			<div style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+			<div class="bulk-input" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
 				<div>
 					<label class="form-label">出勤</label>
 					<input type="time" id="bulk-start" class="form-input">

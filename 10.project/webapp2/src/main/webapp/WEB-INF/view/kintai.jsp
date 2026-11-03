@@ -286,8 +286,101 @@
     min-width: 7em;
 }
 
+/* --- 上部の「その他の操作」 --- */
+.more-actions > summary {
+    list-style: none;
+}
+.more-actions > summary::-webkit-details-marker {
+    display: none;
+}
+.more-actions > summary::after {
+    content: " ▾";
+}
+.more-actions[open] > summary::after {
+    content: " ▴";
+}
+.more-actions.always-open > summary {
+    display: none;
+}
+.more-actions-menu {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+/* --- 一括入力の選択 --- */
+.bulk-select {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    margin-bottom: 0.75rem;
+}
+.bulk-select .radio-line {
+    margin-bottom: 0;
+}
+.bulk-count {
+    font-size: 0.9rem;
+    color: #4a5568;
+}
+
+/* --- 保存結果などのメッセージ（alert の代わり） --- */
+.inline-message {
+    font-size: 0.9rem;
+}
+.inline-message:empty {
+    display: none;
+}
+.inline-message.success {
+    color: #1a7f1a;
+    font-weight: 700;
+}
+.inline-message.error {
+    color: #c50000;
+    font-weight: 700;
+}
+.save-status {
+    flex: 1 1 200px;
+}
+.table-kintai tr.row-error {
+    box-shadow: inset 0 0 0 3px #e53e3e;
+}
+
 /* --- スマートフォン対応 --- */
 @media (max-width: 768px) {
+    .more-actions {
+        flex: 1 1 100%;
+    }
+    .more-actions > summary {
+        display: block;
+        margin: 2px;
+    }
+    .more-actions-menu {
+        flex-direction: column;
+        align-items: stretch;
+        margin-top: 0.5rem;
+    }
+    .more-actions-menu .btn,
+    .more-actions-menu form,
+    .more-actions-menu form .btn {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        margin: 0;
+    }
+    /* 週次作業報告：PC 向けの固定幅を、スマホでは画面幅に合わせる */
+    .weekly-report-block .form-input {
+        width: 100% !important;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    .weekly-report-block textarea.form-input {
+        resize: vertical !important;
+    }
+    .weekly-report-block .form-group {
+        flex: 1 1 100%;
+    }
     /* iPhone は 16px 未満の入力欄をタップすると画面を拡大するので、16px にそろえる */
     .form-input,
     .table .form-input {
@@ -423,6 +516,19 @@
 		        <span class="msg">36協定：時間外労働が上限に近づいています（目安160H超）</span>
 		    </div>
 	    </c:if>
+	    <c:if test="${proxyMode}">
+		    <div class="status-banner status-warning">
+		        <span class="icon">👀</span>
+		        <span class="msg">
+		            <c:out value="${attendanceData.employeeName}" />さん（社員ID <c:out value="${staffId}" />）の勤怠表を表示しています。
+		            保存すると、この社員の勤怠として記録されます。
+		            <c:url value="/subordinateAttendance.do" var="subordinateUrl">
+		                <c:param name="ym" value="${attendanceData.yearMonth}" />
+		            </c:url>
+		            <a href="${subordinateUrl}">配下の一覧に戻る</a>
+		        </span>
+		    </div>
+	    </c:if>
 	    <c:if test="${not empty kintaiSuccessMessage}">
 		    <div class="status-banner status-success" style="background-color:#e8f8e8;color:#1a7f1a;">
 		        <span class="icon">✔️</span>
@@ -473,23 +579,38 @@
 						<c:out value="${attendanceData.totalWorkHours}" />
 					</div>
 				</div>
-				<a href="${pageContext.request.contextPath}/overtimeRequestMenu.do" class="btn btn-secondary">🕐 残業事前申請</a>
-				<a href="${pageContext.request.contextPath}/correctionMasterList.do" class="btn btn-secondary">🔧 補正マスタ設定</a>
-				<c:url value="/workReportExport.do" var="workReportExportUrl">
-					<c:param name="year" value="${attendanceData.yearMonth.year}" />
-					<c:param name="month" value="${attendanceData.yearMonth.monthValue}" />
-				</c:url>
-				<a href="${workReportExportUrl}" class="btn btn-secondary">📊 作業報告書(Excel)出力</a>
-				<form id="work-report-import-form" action="${pageContext.request.contextPath}/workReportImport.do"
-					method="post" enctype="multipart/form-data" style="display: inline;">
-					<input type="file" id="work-report-import-file" name="workReportFile" accept=".xlsm"
-						style="display: none;" onchange="document.getElementById('work-report-import-form').submit();">
-					<button type="button" class="btn btn-secondary"
-						onclick="document.getElementById('work-report-import-file').click();">📥 作業報告書(Excel)取込</button>
-				</form>
-				<a href="${pageContext.request.contextPath}/passwordChange.do" class="btn btn-secondary">パスワード変更</a>
-				<a href="${pageContext.request.contextPath}/logout.do" class="btn btn-secondary">ログアウト</a>
 				<a href="${pageContext.request.contextPath}/menu.do" class="btn btn-secondary">メニュー</a>
+				<c:if test="${sessionScope.can.OVERTIME_REQUEST and not proxyMode}">
+					<a href="${pageContext.request.contextPath}/overtimeRequestMenu.do" class="btn btn-secondary">🕐 残業事前申請</a>
+				</c:if>
+				<c:if test="${proxyMode}">
+					<a href="${subordinateUrl}" class="btn btn-secondary">👥 配下の一覧</a>
+				</c:if>
+				<%-- スマホでは使う機会の少ない操作を「その他の操作」にまとめる。PC では最初から開いておく（下の script） --%>
+				<details class="more-actions" id="more-actions">
+					<summary class="btn btn-secondary">その他の操作</summary>
+					<div class="more-actions-menu">
+						<c:if test="${sessionScope.can.MASTER_ADMIN}">
+							<a href="${pageContext.request.contextPath}/correctionMasterList.do" class="btn btn-secondary">🔧 補正マスタ設定</a>
+						</c:if>
+						<c:if test="${not proxyMode}">
+						<c:url value="/workReportExport.do" var="workReportExportUrl">
+							<c:param name="year" value="${attendanceData.yearMonth.year}" />
+							<c:param name="month" value="${attendanceData.yearMonth.monthValue}" />
+						</c:url>
+						<a href="${workReportExportUrl}" class="btn btn-secondary">📊 作業報告書(Excel)出力</a>
+						<form id="work-report-import-form" action="${pageContext.request.contextPath}/workReportImport.do"
+							method="post" enctype="multipart/form-data" style="display: inline;">
+							<input type="file" id="work-report-import-file" name="workReportFile" accept=".xlsm"
+								style="display: none;" onchange="document.getElementById('work-report-import-form').submit();">
+							<button type="button" class="btn btn-secondary"
+								onclick="document.getElementById('work-report-import-file').click();">📥 作業報告書(Excel)取込</button>
+						</form>
+						</c:if>
+						<a href="${pageContext.request.contextPath}/passwordChange.do" class="btn btn-secondary">パスワード変更</a>
+						<a href="${pageContext.request.contextPath}/logout.do" class="btn btn-secondary">ログアウト</a>
+					</div>
+				</details>
 			</div>
 		</div>
 
@@ -545,7 +666,7 @@
 						<div class="status-item status-success">✔ 勤怠システム稼働中</div>
 						<div class="status-item status-info">ℹ 提出期限：毎月3営業日以内</div>
 
-						<c:if test="${not empty datesNeedingRequest}">
+						<c:if test="${not empty datesNeedingRequest and not proxyMode}">
 							<div class="status-item status-danger">
 								⚠ 残業の事前申請が必要な日があります（<c:out value="${fn:length(datesNeedingRequest)}" />件）：
 								<c:forEach var="d" items="${datesNeedingRequest}" varStatus="loop">
@@ -555,13 +676,13 @@
 								（クリックした日の内容で申請フォームに自動入力されます）
 							</div>
 						</c:if>
-						<c:if test="${pendingRequestCount > 0}">
+						<c:if test="${pendingRequestCount > 0 and not proxyMode}">
 							<div class="status-item status-info">
 								ℹ 残業事前申請が承認待ちです（<c:out value="${pendingRequestCount}" />件）
 								<a href="${pageContext.request.contextPath}/overtimeRequestMenu.do">確認する ›</a>
 							</div>
 						</c:if>
-						<c:if test="${rejectedRequestCount > 0}">
+						<c:if test="${rejectedRequestCount > 0 and not proxyMode}">
 							<div class="status-item status-warning">
 								⚠ 却下された残業事前申請があります（<c:out value="${rejectedRequestCount}" />件）
 								<a href="${pageContext.request.contextPath}/overtimeRequestMenu.do">再申請する ›</a>
@@ -573,6 +694,7 @@
 		</div>
 
 		<div class="card actions-card">
+			<c:if test="${not proxyMode}">
 			<div class="today-panel">
 				<div class="today-label">今日 <span id="today-date"></span></div>
 				<div class="today-times" id="today-times">出勤 <strong id="today-start">--:--</strong> ／ 退勤 <strong id="today-end">--:--</strong></div>
@@ -586,11 +708,18 @@
 				<button id="today-jump-btn" type="button" onclick="scrollToToday()"
 					class="btn btn-secondary">📍 今日の行へ</button>
 			</div>
+			</c:if>
 			<div id="overtime-summary">時間外労働: <c:out value="${attendanceData.totalOvertimeFormatted}" />（保存済みデータに基づく。未保存の変更は反映されません）</div>
 		</div>
 
 		<div class="card" style="margin-bottom: 1rem;">
 			<h4>一括入力</h4>
+			<%-- スマホでは表の見出し（全選択のチェック）が隠れるので、ここでも選べるようにする --%>
+			<div class="bulk-select">
+				<label class="radio-line"><input type="checkbox" id="bulk-select-all" onchange="toggleAllRows(this)"> すべての日を選択</label>
+				<button type="button" class="btn btn-secondary" onclick="selectWeekdays()">平日だけ選択</button>
+				<span class="bulk-count" id="bulk-selected-count">0日選択中</span>
+			</div>
 			<div class="bulk-input" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
 				<div>
 					<label class="form-label">出勤</label>
@@ -611,6 +740,7 @@
 				</div>
 				<button class="btn btn-primary" onclick="applyBulkInput()">選択行に反映</button>
 			</div>
+			<div class="inline-message" id="bulk-message" role="status"></div>
 		</div>
 
 		<div class="table-responsive">
@@ -699,7 +829,10 @@
 
 		<%-- 月の途中の日を直しても、すぐ保存できるよう画面の下に固定する --%>
 		<div class="save-bar" id="save-bar">
-			<span class="dirty-indicator" id="dirty-indicator" role="status"></span>
+			<div class="save-status">
+				<div class="dirty-indicator" id="dirty-indicator" role="status"></div>
+				<div class="inline-message" id="save-message" role="alert"></div>
+			</div>
 			<div class="save-buttons">
 				<button id="temp-save-btn" onclick="saveAttendance(true)"
 					class="btn btn-secondary">📝 一時保存</button>
@@ -752,6 +885,7 @@
 			</div>
 		</c:forEach>
 		<button type="button" class="btn btn-primary" onclick="saveWeeklyWorkReports()">週次報告を保存</button>
+		<div class="inline-message" id="wwr-message" role="status"></div>
 	</div>
 
 	<!-- Status dropdown template for JS -->
@@ -795,16 +929,21 @@
 	        personalNote: block.querySelector(".wwr-note").value
 	    }));
 
-	    fetch(contextPath + "/weeklyWorkReportSave.do", {
+	    const message = document.getElementById("wwr-message");
+	    message.className = "inline-message";
+	    message.textContent = "保存しています…";
+	    const staffId = document.getElementById("kintai-app-root").dataset.staffId;
+	    fetch(contextPath + "/weeklyWorkReportSave.do?staffId=" + encodeURIComponent(staffId), {
 	        method: "POST",
 	        headers: { "Content-Type": "application/json" },
 	        body: JSON.stringify(reports)
 	    }).then((res) => {
-	        if (res.ok) {
-	            alert("週次作業報告を保存しました！");
-	        } else {
-	            alert("週次作業報告の保存に失敗しました…");
-	        }
+	        if (!res.ok) throw new Error("save failed");
+	        message.className = "inline-message success";
+	        message.textContent = "週次作業報告を保存しました。";
+	    }).catch(() => {
+	        message.className = "inline-message error";
+	        message.textContent = "週次作業報告を保存できませんでした。通信状態を確かめて、もう一度保存してください。";
 	    });
 	}
 
@@ -838,6 +977,15 @@
 	}
 
 	document.addEventListener("DOMContentLoaded", renderWeeklyReportCard);
+
+	// PC では「その他の操作」を最初から開いておく（スマホでは閉じておき、上部を短くする）
+	document.addEventListener("DOMContentLoaded", () => {
+	    const more = document.getElementById("more-actions");
+	    if (more && window.matchMedia("(min-width: 769px)").matches) {
+	        more.open = true;
+	        more.classList.add("always-open");
+	    }
+	});
 	</script>
 </body>
 </html>

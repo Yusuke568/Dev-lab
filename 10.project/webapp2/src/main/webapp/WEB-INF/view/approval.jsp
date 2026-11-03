@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
 	pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -170,7 +171,14 @@
 				<tr data-employee-id="${item.employeeId}"
 					data-reason="${item.abstractName == '有給' ? 'leave' : (item.overtimeMinutes > 0 ? 'overtime' : '')}">
 					<td><c:out value="${item.employeeId}" /></td>
-					<td><c:out value="${item.employeeName}" /></td>
+					<td>
+						<c:url value="/kintaiDisplay.do" var="memberKintaiUrl">
+							<c:param name="id" value="${item.employeeId}" />
+							<c:param name="year" value="${fn:substring(item.date, 0, 4)}" />
+							<c:param name="month" value="${fn:substring(item.date, 5, 7)}" />
+						</c:url>
+						<a href="${memberKintaiUrl}" title="この月の勤怠表を開く"><c:out value="${item.employeeName}" /></a>
+					</td>
 					<td><c:out value="${item.date}" /></td>
 					<td><c:out value="${item.week}" /></td>
 					<td><c:out value="${item.startTime}" /></td>

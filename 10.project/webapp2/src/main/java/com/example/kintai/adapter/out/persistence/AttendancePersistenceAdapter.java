@@ -28,7 +28,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, SaveAttendanceRecordPort, LoadPendingApprovalsPort {
+public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, SaveAttendanceRecordPort, LoadPendingApprovalsPort,
+        com.example.kintai.domain.port.out.SubordinatePort {
 
     private static final java.time.format.DateTimeFormatter TIME_FORMATTER = java.time.format.DateTimeFormatter.ofPattern("HH:mm");
 
@@ -337,6 +338,25 @@ public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, S
         } catch (Exception e) {
             throw new RuntimeException("Failed to check approver of employee: " + employeeId, e);
         }
+    }
+
+    @Override
+    public List<com.example.kintai.domain.model.attendance.Subordinate> findManagedStaff(String approverId) {
+        List<com.example.kintai.domain.model.attendance.Subordinate> result = new java.util.ArrayList<>();
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(readSqlFile("find_managed_staff.sql"))) {
+            ps.setInt(1, Integer.parseInt(approverId));
+            ps.setInt(2, Integer.parseInt(approverId));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    result.add(new com.example.kintai.domain.model.attendance.Subordinate(
+                            String.valueOf(rs.getInt("staff_id")), rs.getString("staff_name"), rs.getString("department_name")));
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to find managed staff of: " + approverId, e);
+        }
+        return result;
     }
 
     private String readSqlFile(String fileName) {

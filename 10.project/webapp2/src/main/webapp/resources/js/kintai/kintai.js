@@ -24,45 +24,101 @@ function postRecords(records) {
   });
 }
 
+/** 画面下の保存バーに、保存の結果を表示する（alert の代わり）。 */
+function showSaveMessage(text, type) {
+  const el = document.getElementById("save-message");
+  if (!el) return;
+  el.textContent = text;
+  el.className = "inline-message" + (type ? " " + type : "");
+}
+
+/** 入力に問題がある日へ移動し、枠で示す。 */
+function showRowError(date, message) {
+  rows.forEach((row) => row.classList.remove("row-error"));
+  const row = findRow(date);
+  if (row) {
+    row.classList.add("row-error");
+    row.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+  showSaveMessage(message, "error");
+}
+
+/** 再読み込みの後に、保存結果とスクロール位置を引き継ぐためのキー */
+const FLASH_KEY = "kintaiSaveFlash";
+
 function saveAttendance(isTemporary = false) {
   let records = collectAttendanceRecords(staffId);
 
   if (!isTemporary) {
     for (const r of records) {
+      const day = Number(r.kintaidate.slice(8)) + "日";
       if (r.kintaifrom && r.kintaito) {
         const s = getMinutes(r.kintaifrom);
         const e = getMinutes(r.kintaito);
         if (e < s) {
-          alert(r.kintaidate + ": 退勤時刻が出勤時刻より前になっています");
+          showRowError(r.kintaidate, day + "：退勤時刻が出勤時刻より前になっています");
           return;
         }
         if (e - s > 24 * 60) {
-          alert(r.kintaidate + ": 実働時間が24時間を超えています");
+          showRowError(r.kintaidate, day + "：実働時間が24時間を超えています");
           return;
         }
       }
       const paidLeaveObj = workTypes.find(w => w.name === '有給');
       const paidLeaveId = paidLeaveObj ? paidLeaveObj.id : undefined;
       if (r.abstractId === paidLeaveId && (r.kintaifrom || r.kintaito)) {
-        alert(r.kintaidate + ": 有給申請日に勤務実績が入力されています");
+        showRowError(r.kintaidate, day + "：有給の日に出勤・退勤時刻が入力されています");
         return;
       }
     }
   }
+  rows.forEach((row) => row.classList.remove("row-error"));
 
   // add isTemporary to records
   records = records.map(r => Object.assign({}, r, { isTemporary: isTemporary }));
 
-  postRecords(records).then((res) => {
-    if (res.ok) {
-      dirtyDates.clear();
-      updateDirtyState();
-      alert("保存しました！");
-      location.reload(); // Optional: Reload to see updated leave days
-    } else {
-      alert("保存に失敗しました…");
-    }
-  });
+  showSaveMessage("保存しています…", "");
+  postRecords(records)
+    .then(async (res) => {
+      if (res.ok) {
+        dirtyDates.clear();
+        updateDirtyState();
+        // 有給残日数や承認状態を最新にするため読み込み直す。結果の表示と位置は引き継ぐ
+        try {
+          sessionStorage.setItem(FLASH_KEY, JSON.stringify({
+            message: isTemporary ? "一時保存しました。" : "保存（提出）しました。",
+            scrollY: window.scrollY
+          }));
+        } catch (e) {
+          // 保存できない環境では、引き継がずに読み込み直す
+        }
+        location.reload();
+        return;
+      }
+      // 400 などは、サーバーが返した理由をそのまま表示する
+      const text = (await res.text().catch(() => "")).trim();
+      const reason = text && text.length < 200 && !text.startsWith("<") ? text : "保存できませんでした。";
+      showSaveMessage(reason, "error");
+    })
+    .catch(() => {
+      showSaveMessage("保存できませんでした。通信状態を確かめて、もう一度保存してください。", "error");
+    });
+}
+
+/** 保存して読み込み直した後に、結果の表示とスクロール位置を戻す。 */
+function restoreAfterSave() {
+  let flash = null;
+  try {
+    flash = JSON.parse(sessionStorage.getItem(FLASH_KEY) || "null");
+    sessionStorage.removeItem(FLASH_KEY);
+  } catch (e) {
+    flash = null;
+  }
+  if (!flash) return;
+  showSaveMessage(flash.message, "success");
+  if (typeof flash.scrollY === "number") {
+    window.scrollTo(0, flash.scrollY);
+  }
 }
 
 // Make it globally accessible from the JSP
@@ -73,6 +129,7 @@ window.toggleAllRows = toggleAllRows;
 window.applyBulkInput = applyBulkInput;
 window.toggleRowDetails = toggleRowDetails;
 window.scrollToToday = scrollToToday;
+window.selectWeekdays = selectWeekdays;
 
 const rows = document.querySelectorAll("#calendar-log tbody tr");
 
@@ -118,6 +175,31 @@ function toggleRowDetails(btn) {
 function toggleAllRows(checkbox) {
   const checkboxes = document.querySelectorAll(".row-checkbox");
   checkboxes.forEach((cb) => (cb.checked = checkbox.checked));
+  updateSelectedCount();
+}
+
+/** 土日・祝日以外の日だけを選ぶ。 */
+function selectWeekdays() {
+  rows.forEach((row) => {
+    const cb = row.querySelector(".row-checkbox");
+    const weekend = row.classList.contains("saturday") || row.classList.contains("sunday") ||
+      row.classList.contains("holiday");
+    if (cb) cb.checked = !weekend;
+  });
+  updateSelectedCount();
+}
+
+/** 選んだ日数を表示し、「すべて選択」のチェックを実際の選択に合わせる。 */
+function updateSelectedCount() {
+  const checkboxes = Array.from(document.querySelectorAll(".row-checkbox"));
+  const selected = checkboxes.filter((cb) => cb.checked).length;
+  const allChecked = checkboxes.length > 0 && selected === checkboxes.length;
+  const count = document.getElementById("bulk-selected-count");
+  if (count) count.textContent = selected + "日選択中";
+  ["bulk-select-all", "bulk-check-all"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.checked = allChecked;
+  });
 }
 
 function applyBulkInput() {
@@ -140,10 +222,16 @@ function applyBulkInput() {
     }
   });
 
+  const message = document.getElementById("bulk-message");
   if (updated) {
     updateButtonState();
-  } else {
-    alert("反映する行を選択してください。");
+    if (message) {
+      message.className = "inline-message success";
+      message.textContent = "選んだ日に反映しました。下の「保存」で保存してください。";
+    }
+  } else if (message) {
+    message.className = "inline-message error";
+    message.textContent = "反映する日を選んでください（「すべての日を選択」「平日だけ選択」または各日のチェック）。";
   }
 }
 
@@ -322,7 +410,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     table.addEventListener("change", (e) => {
-      if (e.target.matches(".row-checkbox")) return;
+      if (e.target.matches(".row-checkbox")) {
+        updateSelectedCount();
+        return;
+      }
       markDirty(e.target.closest("tr"));
       // 補正CDを選択したら、マスタ登録済みの補正(通)・補正(深)を自動反映
       if (e.target.matches("select[name='correctionId']")) {
@@ -343,4 +434,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initial state update
   updateButtonState();
   updateDirtyState();
+  updateSelectedCount();
+  restoreAfterSave();
 });

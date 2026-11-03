@@ -38,6 +38,7 @@ public class KintaiDisplayAction implements Action {
     private final GetCorrectionMastersUseCase getCorrectionMastersUseCase;
     private final GetMyOvertimeRequestsUseCase getMyOvertimeRequestsUseCase;
     private final GetWeeklyWorkReportsUseCase getWeeklyWorkReportsUseCase;
+    private final com.example.kintai.application.port.in.AttendanceAccessUseCase attendanceAccessUseCase;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
@@ -46,7 +47,9 @@ public class KintaiDisplayAction implements Action {
      */
     public KintaiDisplayAction(GetMonthlyAttendanceUseCase getMonthlyAttendanceUseCase, GetWorkTypesUseCase getWorkTypesUseCase,
                                 GetCorrectionMastersUseCase getCorrectionMastersUseCase, GetMyOvertimeRequestsUseCase getMyOvertimeRequestsUseCase,
-                                GetWeeklyWorkReportsUseCase getWeeklyWorkReportsUseCase) {
+                                GetWeeklyWorkReportsUseCase getWeeklyWorkReportsUseCase,
+                                com.example.kintai.application.port.in.AttendanceAccessUseCase attendanceAccessUseCase) {
+        this.attendanceAccessUseCase = attendanceAccessUseCase;
         this.getMonthlyAttendanceUseCase = getMonthlyAttendanceUseCase;
         this.getWorkTypesUseCase = getWorkTypesUseCase;
         this.getCorrectionMastersUseCase = getCorrectionMastersUseCase;
@@ -59,7 +62,25 @@ public class KintaiDisplayAction implements Action {
             throws ServletException, IOException {
         try {
             // 1. リクエストからコマンドを作�E
-            String idParam = request.getParameter("id");
+            // 表示できるのは、本人の勤怠表と、承認権限を持つ人にとっての組織図上の配下の社員の勤怠表
+            HttpSession loginSession = request.getSession(false);
+            String loginUser = loginSession != null ? (String) loginSession.getAttribute("loginUser") : null;
+            if (loginUser == null) {
+                return new View("/login.do", true);
+            }
+            String requestedId = request.getParameter("id");
+            String idParam = requestedId == null || requestedId.isBlank() ? loginUser : requestedId.trim();
+            boolean proxyMode = !idParam.equals(loginUser);
+            if (proxyMode) {
+                @SuppressWarnings("unchecked")
+                Set<String> features = (Set<String>) loginSession.getAttribute("features");
+                if (!attendanceAccessUseCase.canAccess(loginUser, features, idParam)) {
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    request.setAttribute("errorMessage", "この社員の勤怠表を見る権限がありません。組織図で自分の配下にいる社員の勤怠表だけを表示できます。");
+                    return new View("/WEB-INF/view/error.jsp");
+                }
+            }
+            request.setAttribute("proxyMode", proxyMode);
             String yearParam = request.getParameter("year");
             String monthParam = request.getParameter("month");
 

@@ -159,6 +159,15 @@
 					<p>自分宛ての残業・休暇申請と、配下の社員の勤怠を承認・却下します。</p>
 				</div>
 			</div>
+
+			<!-- 配下の勤怠表カード -->
+			<div class="menu-card-wrapper">
+				<div class="menu-card" style="cursor: pointer; height: 100%;" onclick="location.href='${pageContext.request.contextPath}/subordinateAttendance.do'">
+					<div class="icon">👥</div>
+					<h3>配下の勤怠表</h3>
+					<p>組織図で自分の配下にいる社員の勤怠表を参照・編集します。</p>
+				</div>
+			</div>
 		</c:if>
 
 		<c:if test="${sessionScope.can.MASTER_ADMIN}">

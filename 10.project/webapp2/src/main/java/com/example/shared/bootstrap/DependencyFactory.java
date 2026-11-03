@@ -78,6 +78,7 @@ public class DependencyFactory {
     // --- Adapters & Ports ---
     private final EmployeePersistenceAdapter employeePersistenceAdapter;
     private final AttendancePersistenceAdapter attendancePersistenceAdapter;
+    private final com.example.kintai.application.port.in.AttendanceAccessUseCase attendanceAccessUseCase;
     private final com.example.shain.domain.port.out.ShainPort shainPort;
     private final ClassmasterPort classmasterPort;
     private final TransactionManager transactionManager;
@@ -134,6 +135,7 @@ public class DependencyFactory {
         // --- 依存関係の最下層 (Adapters) からインスタンスを生成 ---
         this.employeePersistenceAdapter = new EmployeePersistenceAdapter();
         this.attendancePersistenceAdapter = new AttendancePersistenceAdapter();
+        this.attendanceAccessUseCase = new com.example.kintai.application.service.AttendanceAccessService(this.attendancePersistenceAdapter);
         this.shainPort = new ShainPersistenceAdapter();
         this.classmasterPort = new ClassmasterPersistenceAdapter();
         this.transactionManager = new TransactionManagerImpl();
@@ -252,7 +254,7 @@ public class DependencyFactory {
         actionMap.put("PasswordResetExecute", new com.example.auth.adapter.in.web.PasswordResetExecuteAction(this.resetPasswordUseCase, this.getShainByIdUseCase));
 
         // KintaiDisplayAction
-        actionMap.put("KintaiDisplay", new KintaiDisplayAction(this.getMonthlyAttendanceUseCase, this.getWorkTypesUseCase, this.getCorrectionMastersUseCase, this.getMyOvertimeRequestsUseCase, this.getWeeklyWorkReportsUseCase));
+        actionMap.put("KintaiDisplay", new KintaiDisplayAction(this.getMonthlyAttendanceUseCase, this.getWorkTypesUseCase, this.getCorrectionMastersUseCase, this.getMyOvertimeRequestsUseCase, this.getWeeklyWorkReportsUseCase, this.attendanceAccessUseCase));
 
         // Shain Actions (New Context)
         actionMap.put("ShainList", new com.example.shain.adapter.in.web.ShainListAction(this.getShainListUseCase, this.getAllClassmastersUseCase));
@@ -279,6 +281,7 @@ public class DependencyFactory {
                 this.leaveRequestUseCase, this.approvalWorkflowService));
         actionMap.put("ApprovalExecute", new ApprovalExecuteAction(this.approveAttendanceUseCase));
         actionMap.put("ApprovalHistory", new ApprovalHistoryAction(this.getApprovalHistoryUseCase));
+        actionMap.put("SubordinateAttendance", new com.example.kintai.adapter.in.web.SubordinateAttendanceAction(this.attendanceAccessUseCase));
 
         // Correction Master Actions
         actionMap.put("CorrectionMasterList", new CorrectionMasterListAction(this.getCorrectionMastersUseCase));
@@ -288,12 +291,12 @@ public class DependencyFactory {
         actionMap.put("OvertimeRequestMenu", new OvertimeRequestMenuAction(this.getMyOvertimeRequestsUseCase, this.getMonthlyAttendanceUseCase));
         actionMap.put("WorkReportExport", new WorkReportExportAction(this.exportWorkReportUseCase));
         actionMap.put("WorkReportImport", new com.example.kintai.adapter.in.web.WorkReportImportAction(this.importWorkReportUseCase));
-        actionMap.put("WeeklyWorkReportSave", new WeeklyWorkReportSaveAction(this.saveWeeklyWorkReportsUseCase));
+        actionMap.put("WeeklyWorkReportSave", new WeeklyWorkReportSaveAction(this.saveWeeklyWorkReportsUseCase, this.attendanceAccessUseCase));
         actionMap.put("OvertimeRequestSubmit", new OvertimeRequestSubmitAction(this.submitOvertimeRequestUseCase));
         actionMap.put("OvertimeRequestExecute", new OvertimeRequestExecuteAction(this.decideOvertimeRequestUseCase));
 
         // API Actions
-        actionMap.put("KintaiUpdateApi", new KintaiUpdateApiAction(this.updateAttendanceUseCase));
+        actionMap.put("KintaiUpdateApi", new KintaiUpdateApiAction(this.updateAttendanceUseCase, this.attendanceAccessUseCase));
         actionMap.put("SearchShainApi", new com.example.shain.adapter.in.web.SearchShainApiAction(this.getShainListUseCase));
 
         // Leave Request Actions
@@ -327,7 +330,7 @@ public class DependencyFactory {
                 "WeeklyWorkReportSave");
         requireFeature(Feature.OVERTIME_REQUEST, "OvertimeRequestMenu", "OvertimeRequestSubmit");
         requireFeature(Feature.LEAVE_REQUEST, "LeaveRequestMenu", "LeaveRequestSubmit");
-        requireFeature(Feature.APPROVAL, "ApprovalList", "ApprovalExecute", "ApprovalHistory", "OvertimeRequestExecute",
+        requireFeature(Feature.APPROVAL, "ApprovalList", "ApprovalExecute", "ApprovalHistory", "OvertimeRequestExecute", "SubordinateAttendance",
                 "LeaveRequestExecute");
         requireFeature(Feature.SHAIN_ADMIN, "ShainList", "ShainUpdateForm", "ShainUpdateExecute", "ShainInsertForm",
                 "ShainInsertExecute", "ShainDeleteForm", "ShainDeleteExecute", "SearchShainApi",

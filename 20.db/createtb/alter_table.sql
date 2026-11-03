@@ -1,1 +1,0 @@
-ALTER TABLE work_month_table ADD COLUMN APPROVAL_STATUS int DEFAULT 0 COMMENT '承認ステータス(0:未申請, 1:申請中, 2:承認済)';

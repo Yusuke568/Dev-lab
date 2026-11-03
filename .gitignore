@@ -14,10 +14,6 @@ target/
 hs_err_pid*
 
 # Eclipse
-# .project
-.settings/
-.classpath
 .project
-
-# AI
-.gemini/
+.classpath
+.settings/

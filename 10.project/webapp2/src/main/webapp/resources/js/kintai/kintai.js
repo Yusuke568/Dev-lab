@@ -206,6 +206,8 @@ function applyBulkInput() {
   const bulkStart = document.getElementById("bulk-start").value;
   const bulkEnd = document.getElementById("bulk-end").value;
   const bulkStatus = document.getElementById("bulk-status").value;
+  const bulkCorrectionEl = document.getElementById("bulk-correction");
+  const bulkCorrection = bulkCorrectionEl ? bulkCorrectionEl.value : "keep";
 
   let updated = false;
   rows.forEach((row) => {
@@ -217,6 +219,9 @@ function applyBulkInput() {
       if (bulkStatus !== "") {
         const select = row.querySelector("select[name='status']");
         if (select) select.value = bulkStatus;
+      }
+      if (bulkCorrection !== "keep") {
+        applyBulkCorrectionToRow(row, bulkCorrection);
       }
       markDirty(row);
     }
@@ -232,6 +237,24 @@ function applyBulkInput() {
   } else if (message) {
     message.className = "inline-message error";
     message.textContent = "反映する日を選んでください（「すべての日を選択」「平日だけ選択」または各日のチェック）。";
+  }
+}
+
+/**
+ * 一括入力の補正CDを1日分に反映する。補正CDを選んだら、マスタ登録済みの補正(通)・補正(深)も入れる。
+ * 「なし」（空）なら補正CDを外し、補正(通)・補正(深)も空にする。
+ */
+function applyBulkCorrectionToRow(row, correctionId) {
+  const select = row.querySelector("select[name='correctionId']");
+  if (!select) return;
+  select.value = correctionId;
+  if (correctionId === "") {
+    const usInput = row.querySelector("input[name='correctionUsTime']");
+    const midInput = row.querySelector("input[name='correctionMidTime']");
+    if (usInput) usInput.value = "";
+    if (midInput) midInput.value = "";
+  } else {
+    applyCorrectionMasterToRow(select);
   }
 }
 

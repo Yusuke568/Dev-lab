@@ -487,12 +487,12 @@
         display: inline-block;
     }
 
-    /* 一括入力：出勤・退勤を横並び、勤務区分とボタンは1行ずつ */
+    /* 一括入力：出勤・退勤を横並び、勤務区分・補正CDとボタンは1行ずつ */
     .bulk-input > div {
         flex: 1 1 calc(50% - 0.5rem);
         min-width: 0;
     }
-    .bulk-input > div:nth-child(3),
+    .bulk-input > div:nth-child(n+3),
     .bulk-input > .btn {
         flex-basis: 100%;
     }
@@ -735,6 +735,17 @@
 						<option value="">(変更なし)</option>
 						<c:forEach var="opt" items="${workTypes}">
 							<option value="${opt.id}"><c:out value="${opt.name}" /></option>
+						</c:forEach>
+					</select>
+				</div>
+				<div>
+					<label class="form-label" for="bulk-correction">補正CD</label>
+					<%-- 「なし」は補正CDを外し、補正(通)・補正(深)も空にする --%>
+					<select id="bulk-correction" class="form-input">
+						<option value="keep">(変更なし)</option>
+						<option value="">なし（補正を外す）</option>
+						<c:forEach var="cm" items="${correctionMasters}">
+							<option value="${cm.id}"><c:out value="${cm.name}" /></option>
 						</c:forEach>
 					</select>
 				</div>

@@ -801,12 +801,35 @@
 									<c:set var="isPaidLeaveDay" value="true" />
 								</c:if>
 							</c:forEach>
+							<%--
+								時間外の日は「残業事前申請」の状態を出す。勤怠の承認状態（approvalStatus）は、
+								事前申請のない時間外や有給を提出したときに承認者の確認待ちになる別の状態なので、
+								「申請中」とは書かない。
+							--%>
+							<c:set var="otRequest" value="${overtimeRequestStatus[daily.date]}" />
 							<c:choose>
 								<c:when test="${daily.overtimeMinutes == 0 && !isPaidLeaveDay}">ー</c:when>
-								<c:when test="${daily.approvalStatus == 2}"><span style="color: green; font-weight: bold;">承認済</span></c:when>
-								<c:when test="${daily.approvalStatus == 3}"><span style="color: red; font-weight: bold;">却下</span></c:when>
-								<c:when test="${daily.approvalStatus == 1}"><span style="color: orange; font-weight: bold;">申請中</span></c:when>
-								<c:otherwise><span style="color: gray;">未申請</span></c:otherwise>
+								<c:when test="${isPaidLeaveDay}">
+									<c:choose>
+										<c:when test="${daily.approvalStatus == 2}"><span style="color: green; font-weight: bold;">承認済</span></c:when>
+										<c:when test="${daily.approvalStatus == 3}"><span style="color: red; font-weight: bold;">却下</span></c:when>
+										<c:when test="${daily.approvalStatus == 1}"><span style="color: orange; font-weight: bold;">承認待ち</span></c:when>
+										<c:otherwise><span style="color: gray;">未提出</span></c:otherwise>
+									</c:choose>
+								</c:when>
+								<c:when test="${otRequest == 'APPROVED'}"><span style="color: green; font-weight: bold;">事前申請 承認済</span></c:when>
+								<c:when test="${otRequest == 'PENDING'}"><span style="color: orange; font-weight: bold;">事前申請 申請中</span></c:when>
+								<c:when test="${otRequest == 'REJECTED'}"><span style="color: red; font-weight: bold;">事前申請 却下</span></c:when>
+								<c:when test="${daily.approvalStatus == 2}"><span style="color: green; font-weight: bold;">勤怠 承認済</span></c:when>
+								<c:when test="${daily.approvalStatus == 3}"><span style="color: red; font-weight: bold;">勤怠 却下</span></c:when>
+								<c:otherwise>
+									<span style="color: #c50000; font-weight: bold;">事前申請 未申請</span>
+									<c:if test="${daily.approvalStatus == 1}"><br><span style="color: #718096; font-size: 0.8rem;">勤怠は承認者の確認待ち</span></c:if>
+									<c:if test="${not proxyMode}">
+										<c:url value="/overtimeRequestMenu.do" var="dayRequestUrl"><c:param name="targetDate" value="${daily.date}" /></c:url>
+										<br><a href="${dayRequestUrl}" style="font-size: 0.85rem;">申請する ›</a>
+									</c:if>
+								</c:otherwise>
 							</c:choose>
 						</td>
 						<td data-label="補正CD" class="detail-col"><select name="correctionId" class="form-input correction-select">

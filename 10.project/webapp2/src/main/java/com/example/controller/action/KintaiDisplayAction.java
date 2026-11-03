@@ -106,6 +106,10 @@ public class KintaiDisplayAction implements Action {
                     .filter(d -> d.getOvertimeMinutes() > 0 && !requestedDates.contains(d.getDate()))
                     .map(DailyAttendanceDto::getDate)
                     .collect(Collectors.toList());
+            // 日ごとの残業事前申請の状態（勤怠表の「状態」欄用）。同じ日に複数あれば後のものを使う
+            java.util.Map<LocalDate, String> overtimeRequestStatus = myRequests.stream()
+                    .collect(Collectors.toMap(OvertimeRequest::getTargetDate, OvertimeRequest::getStatus, (a, b) -> b));
+            request.setAttribute("overtimeRequestStatus", overtimeRequestStatus);
             long pendingRequestCount = myRequests.stream().filter(OvertimeRequest::isPending).count();
             long rejectedRequestCount = myRequests.stream().filter(OvertimeRequest::isRejected).count();
 

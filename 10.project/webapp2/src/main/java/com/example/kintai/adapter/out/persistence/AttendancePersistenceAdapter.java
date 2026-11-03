@@ -190,8 +190,10 @@ public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, S
         Timestamp fromTime = record.getStartTime() != null
                 ? Timestamp.valueOf(record.getWorkDate().atTime(record.getStartTime()))
                 : null;
+        // 日をまたいだ退勤（出勤 9:00・退勤 翌1:00 など）は、翌日の日付で記録する
+        boolean endsNextDay = record.getWorkTime() != null && record.getWorkTime().isEndsNextDay();
         Timestamp toTime = record.getEndTime() != null
-                ? Timestamp.valueOf(record.getWorkDate().atTime(record.getEndTime()))
+                ? Timestamp.valueOf(record.getWorkDate().plusDays(endsNextDay ? 1 : 0).atTime(record.getEndTime()))
                 : null;
 
         try (Connection con = ConnectionBase.getConnection();

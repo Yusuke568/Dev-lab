@@ -210,6 +210,22 @@
     flex-wrap: wrap;
 }
 
+/* --- 日をまたいだ退勤の印 --- */
+.next-day-badge {
+    display: inline-block;
+    margin-left: 4px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    background: #ebf4ff;
+    color: #1a3d6d;
+    font-size: 0.75rem;
+    font-weight: 700;
+    vertical-align: middle;
+}
+.next-day-badge[hidden] {
+    display: none;
+}
+
 /* --- 今日の打刻 --- */
 .today-panel {
     flex: 1 1 260px;
@@ -897,7 +913,9 @@
 						<td data-label="出勤" class="editable-time"><input type="time" name="kintaifrom" class="form-input"
 							value="${daily.startTime == '-' ? '' : fn:escapeXml(daily.startTime)}" aria-label="${daily.date.dayOfMonth}日の出勤"></td>
 						<td data-label="退勤" class="editable-time"><input type="time" name="kintaito" class="form-input"
-							value="${daily.endTime == '-' ? '' : fn:escapeXml(daily.endTime)}" aria-label="${daily.date.dayOfMonth}日の退勤"></td>
+							value="${daily.endTime == '-' ? '' : fn:escapeXml(daily.endTime)}" aria-label="${daily.date.dayOfMonth}日の退勤">
+							<%-- 退勤が出勤より前の時刻なら、日をまたいだ翌日の退勤として扱う --%>
+							<span class="next-day-badge" hidden title="出勤より前の時刻なので、翌日の退勤として扱います">翌日</span></td>
 						<td data-label="時間"><c:out value="${daily.workHours}" /></td>
 						<td data-label="時間外">
 							<c:choose>

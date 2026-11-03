@@ -24,20 +24,32 @@ const STANDARD_WORK_MINUTES = 480; // 8時間
 const BREAK_START = "12:00";
 const BREAK_END = "13:00";
 
-/** 出退勤時刻から休憩控除のみを行った実働時間（分）。補正は含まない。 */
-function calculateRawWorkMinutes(start, end) {
+/** 退勤が出勤より前の時刻なら、日をまたいで翌日に退勤したとみなす（例：9:00〜翌1:00）。 */
+export function isNextDayEnd(start, end) {
+  if (!start || !end) return false;
   const s = getMinutes(start);
   const e = getMinutes(end);
-  if (isNaN(s) || isNaN(e) || s >= e) return null;
+  return !isNaN(s) && !isNaN(e) && e < s;
+}
+
+/** 出退勤時刻から休憩控除のみを行った実働時間（分）。補正は含まない。日またぎにも対応する。 */
+function calculateRawWorkMinutes(start, end) {
+  const s = getMinutes(start);
+  let e = getMinutes(end);
+  if (isNaN(s) || isNaN(e) || s === e) return null;
+  if (e < s) e += 24 * 60; // 翌日の退勤
 
   let total = e - s;
 
+  // 当日と翌日の昼休み（12:00〜13:00）のうち、勤務時間に重なる分を引く
   const breakStart = getMinutes(BREAK_START);
   const breakEnd = getMinutes(BREAK_END);
-  const overlapStart = Math.max(s, breakStart);
-  const overlapEnd = Math.min(e, breakEnd);
-  if (overlapStart < overlapEnd) {
-    total -= (overlapEnd - overlapStart);
+  for (const offset of [0, 24 * 60]) {
+    const overlapStart = Math.max(s, breakStart + offset);
+    const overlapEnd = Math.min(e, breakEnd + offset);
+    if (overlapStart < overlapEnd) {
+      total -= (overlapEnd - overlapStart);
+    }
   }
 
   return total;

@@ -1,6 +1,6 @@
 import {
   collectAttendanceRecords, collectRowRecord, getMinutes, calculateTotalWorkMinutes,
-  localDateString, currentTimeString, getTimeInput
+  localDateString, currentTimeString, getTimeInput, isNextDayEnd
 } from "./utils.js";
 
 // Get data from the root element's dataset
@@ -52,17 +52,9 @@ function saveAttendance(isTemporary = false) {
   if (!isTemporary) {
     for (const r of records) {
       const day = Number(r.kintaidate.slice(8)) + "日";
-      if (r.kintaifrom && r.kintaito) {
-        const s = getMinutes(r.kintaifrom);
-        const e = getMinutes(r.kintaito);
-        if (e < s) {
-          showRowError(r.kintaidate, day + "：退勤時刻が出勤時刻より前になっています");
-          return;
-        }
-        if (e - s > 24 * 60) {
-          showRowError(r.kintaidate, day + "：実働時間が24時間を超えています");
-          return;
-        }
+      if (r.kintaifrom && r.kintaito && r.kintaifrom === r.kintaito) {
+        showRowError(r.kintaidate, day + "：出勤と退勤が同じ時刻です");
+        return;
       }
       const paidLeaveObj = workTypes.find(w => w.name === '有給');
       const paidLeaveId = paidLeaveObj ? paidLeaveObj.id : undefined;
@@ -306,6 +298,9 @@ function updateOvertimePerRow() {
     const end = getTimeInput(row, "kintaito").value;
     const workTimeCell = row.cells[5]; // 実働時間（補正後）を表示するセル
 
+    const nextDayBadge = row.querySelector(".next-day-badge");
+    if (nextDayBadge) nextDayBadge.hidden = !isNextDayEnd(start, end);
+
     if (start && end) {
       const correctionMinutes = getRowCorrectionMinutes(row);
       const totalMinutes = calculateTotalWorkMinutes(start, end, correctionMinutes);
@@ -319,8 +314,40 @@ function updateOvertimePerRow() {
   });
 }
 
+/**
+ * 日付が変わってから退勤するときの、前日の行。
+ * 今日の出勤がなく、前日に出勤だけ記録されていて、今の時刻が前日の出勤時刻より前（＝勤務が24時間以内）なら、
+ * 前日の勤務の退勤（翌日の退勤）として扱う。前日の退勤を押し忘れただけの日を、翌日夜の退勤で締めないようにする。
+ */
+function findOpenShiftRow(now = new Date()) {
+  const todayRow = findRow(localDateString(now));
+  if (todayRow && getTimeInput(todayRow, "kintaifrom").value) return null;
+  const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  const row = findRow(localDateString(yesterday));
+  if (!row) return null;
+  const start = getTimeInput(row, "kintaifrom").value;
+  if (start && !getTimeInput(row, "kintaito").value && currentTimeString(now) < start) {
+    return row;
+  }
+  return null;
+}
+
 /** 出勤・退勤ボタンと「今日」欄を、今日の行の入力内容に合わせる。 */
 function updateButtonState() {
+  const openShiftRow = findOpenShiftRow();
+  if (openShiftRow) {
+    // 前日から続いている勤務：退勤ボタンで前日の行に翌日の退勤を記録する
+    const clockIn = document.getElementById("clock-in-btn");
+    const clockOut = document.getElementById("clock-out-btn");
+    const todayStart = document.getElementById("today-start");
+    const todayEnd = document.getElementById("today-end");
+    if (todayStart) todayStart.textContent = getTimeInput(openShiftRow, "kintaifrom").value + "（前日）";
+    if (todayEnd) todayEnd.textContent = "--:--";
+    if (clockIn) clockIn.disabled = false;
+    if (clockOut) clockOut.disabled = false;
+    updateOvertimePerRow();
+    return;
+  }
   const todayRow = findRow(localDateString());
 
   const clockInBtn = document.getElementById("clock-in-btn");
@@ -363,7 +390,8 @@ function showTodayMessage(text, isError) {
  */
 function recordAttendance(type) {
   const now = new Date();
-  const row = findRow(localDateString(now));
+  const openShiftRow = type === "退勤" ? findOpenShiftRow(now) : null;
+  const row = openShiftRow || findRow(localDateString(now));
   if (!row) {
     alert("表示中の月に今日の行がありません。今月の画面で打刻してください。");
     return;
@@ -382,7 +410,8 @@ function recordAttendance(type) {
       if (!res.ok) throw new Error("save failed");
       dirtyDates.delete(row.dataset.date);
       updateDirtyState();
-      showTodayMessage(type + " " + timeStr + " を記録しました（一時保存）", false);
+      const nextDay = openShiftRow ? "（前日の勤務の翌日の退勤）" : "";
+      showTodayMessage(type + " " + timeStr + nextDay + " を記録しました（一時保存）", false);
     })
     .catch(() => {
       // 保存できなかったときは画面にだけ残し、下の保存ボタンで保存してもらう

@@ -164,6 +164,30 @@ class WorkReportXlsmExportAdapterTest {
         assertEquals("住民情報システム", imported.getProjectName());
     }
 
+    /** 日をまたいだ退勤は「25:00」のように24時間を足して出力し、取り込むと翌日の退勤（1:00）に戻る */
+    @Test
+    void 日またぎの退勤は25時として出力し_取り込むと元の時刻に戻る() throws Exception {
+        List<DailyAttendanceDto> days = List.of(day(2, "09:00", "01:00", 1), day(3, "09:00", "18:00", 1));
+        MonthlyAttendanceDto month = new MonthlyAttendanceDto(YearMonth.of(2026, 11), days, "24:00", 1440, 0, 0, "山田 太郎");
+
+        byte[] xlsm = new WorkReportXlsmExportAdapter().generate(month, "山田 太郎", List.of(workType(1, "出勤", false)), List.of());
+
+        try (XSSFWorkbook book = new XSSFWorkbook(new ByteArrayInputStream(xlsm))) {
+            Sheet sheet = book.getSheet("11月");
+            // 2日はExcelの9行目。F列（退勤）は1日=1.0の時刻値
+            assertEquals(25 * 60, Math.round(sheet.getRow(8).getCell(5).getNumericCellValue() * 1440));
+            assertEquals(18 * 60, Math.round(sheet.getRow(9).getCell(5).getNumericCellValue() * 1440));
+        }
+
+        var importedDays = new WorkReportXlsmImportAdapter().parse(new ByteArrayInputStream(xlsm)).stream()
+                .filter(m -> m.getYearMonth().equals(YearMonth.of(2026, 11)))
+                .findFirst().orElseThrow()
+                .getDays();
+        var day2 = importedDays.stream().filter(d -> d.getDate().getDayOfMonth() == 2).findFirst().orElseThrow();
+        assertEquals("09:00", day2.getStartTime());
+        assertEquals("01:00", day2.getEndTime());
+    }
+
     private static String text(Sheet sheet, String ref) {
         org.apache.poi.ss.util.CellReference cr = new org.apache.poi.ss.util.CellReference(ref);
         Row row = sheet.getRow(cr.getRow());

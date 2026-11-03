@@ -77,8 +77,9 @@ public class UpdateAttendanceService implements UpdateAttendanceUseCase {
                         int fromMin = Integer.parseInt(fromParts[0]) * 60 + Integer.parseInt(fromParts[1]);
                         int toMin = Integer.parseInt(toParts[0]) * 60 + Integer.parseInt(toParts[1]);
 
+                        // 退勤が出勤より前の時刻なら、日をまたいで翌日に退勤したものとして扱う
                         if (toMin < fromMin) {
-                            throw new IllegalArgumentException("退勤時刻が出勤時刻より前になっています: " + date);
+                            toMin += 24 * 60;
                         }
                         if (toMin - fromMin > 24 * 60) {
                             throw new IllegalArgumentException("実働時間が24時間を超えています: " + date);

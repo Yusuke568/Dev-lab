@@ -178,11 +178,10 @@ public class WorkReportXlsmImportAdapter implements WorkReportImportPort {
             return null;
         }
         int totalMinutes = (int) Math.round(fraction * 1440);
-        // 「24:00」（＝日またぎなしの終業として入力された、ちょうど24時間分の値）は
-        // 24で割った余りを取ると「0:00」に巻き戻ってしまい、出勤時刻より前に見えてしまう。
-        // 当システムは日をまたぐ出退勤（LocalTime）を扱えないため、同日の最終時刻として23:59に丸める。
+        // 24:00 以降（「25:00」など）は日をまたいだ退勤。翌日の時刻（1:00 など）にすると
+        // 出勤時刻より前になるので、保存時に翌日の退勤として扱われる（24:00 は翌日の 0:00）。
         if (totalMinutes >= 1440) {
-            return "23:59";
+            totalMinutes -= 1440;
         }
         int hours = totalMinutes / 60;
         int minutes = totalMinutes % 60;

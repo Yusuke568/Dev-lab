@@ -112,7 +112,10 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
             setTimeValue(sheet, row, "E", daily.getStartTime());
         }
         if (!"-".equals(daily.getEndTime())) {
-            setTimeValue(sheet, row, "F", daily.getEndTime());
+            // 退勤が出勤より前の時刻なら日をまたいだ退勤なので、様式どおり「25:00」のように24時間を足す
+            boolean endsNextDay = !"-".equals(daily.getStartTime())
+                    && LocalTime.parse(daily.getEndTime(), TIME_FORMATTER).isBefore(LocalTime.parse(daily.getStartTime(), TIME_FORMATTER));
+            setTimeValue(sheet, row, "F", daily.getEndTime(), endsNextDay);
         }
 
         Integer correctionUsTime = daily.getCorrectionUsTime();
@@ -242,8 +245,13 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
     }
 
     private void setTimeValue(Sheet sheet, int row, String column, String hhmm) {
+        setTimeValue(sheet, row, column, hhmm, false);
+    }
+
+    /** 時刻を Excel の時刻値（1日=1.0）で書く。翌日なら1日分を足す（25:00 = 1.0417）。 */
+    private void setTimeValue(Sheet sheet, int row, String column, String hhmm, boolean nextDay) {
         LocalTime time = LocalTime.parse(hhmm, TIME_FORMATTER);
-        double fraction = (time.getHour() * 60 + time.getMinute()) / 1440.0;
+        double fraction = (time.getHour() * 60 + time.getMinute()) / 1440.0 + (nextDay ? 1 : 0);
         setNumericValue(sheet, column + (row + 1), fraction);
     }
 

@@ -64,7 +64,7 @@ public class AttendanceRecord {
             return Duration.ZERO;
         }
         Duration raw = workTime.getDuration();
-        Duration afterBreak = raw.minus(calculateBreakDeduction(workTime.getStartTime(), workTime.getEndTime()));
+        Duration afterBreak = raw.minus(calculateBreakDeduction(workTime));
         return afterBreak.isNegative() ? Duration.ZERO : afterBreak;
     }
 
@@ -73,13 +73,23 @@ public class AttendanceRecord {
                 + (correctionMidTime != null ? correctionMidTime : 0);
     }
 
-    private static Duration calculateBreakDeduction(LocalTime start, LocalTime end) {
-        LocalTime overlapStart = start.isAfter(BREAK_START) ? start : BREAK_START;
-        LocalTime overlapEnd = end.isBefore(BREAK_END) ? end : BREAK_END;
-        if (overlapStart.isBefore(overlapEnd)) {
-            return Duration.between(overlapStart, overlapEnd);
+    /**
+     * 勤務時間と昼休み（12:00〜13:00）の重なり。日をまたぐ勤務は翌日の昼休みとの重なりも見る。
+     */
+    private static Duration calculateBreakDeduction(WorkTime workTime) {
+        int start = workTime.getStartMinuteOfDay();
+        int end = workTime.getEndMinuteFromStartDay();
+        int breakStart = BREAK_START.getHour() * 60 + BREAK_START.getMinute();
+        int breakEnd = BREAK_END.getHour() * 60 + BREAK_END.getMinute();
+        long minutes = 0;
+        for (int dayOffset = 0; dayOffset <= 24 * 60; dayOffset += 24 * 60) {
+            int overlapStart = Math.max(start, breakStart + dayOffset);
+            int overlapEnd = Math.min(end, breakEnd + dayOffset);
+            if (overlapStart < overlapEnd) {
+                minutes += overlapEnd - overlapStart;
+            }
         }
-        return Duration.ZERO;
+        return Duration.ofMinutes(minutes);
     }
 
     // --- Getters and Setters ---

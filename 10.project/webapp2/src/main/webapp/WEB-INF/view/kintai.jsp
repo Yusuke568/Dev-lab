@@ -286,6 +286,70 @@
     min-width: 7em;
 }
 
+/* --- 週次作業報告（作業報告書の週ブロックと同じ並び） --- */
+.weekly-report-block {
+    background: #f8fafc;
+    margin-bottom: 1rem;
+}
+.wwr-title {
+    margin-top: 0;
+}
+.wwr-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem 1.5rem;
+}
+.wwr-heading {
+    margin: 0 0 0.5rem;
+    padding-bottom: 4px;
+    border-bottom: 2px solid #e2e8f0;
+    font-size: 0.95rem;
+    color: #1a3d6d;
+}
+.wwr-limit {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: #718096;
+}
+.weekly-report-block textarea.wwr-text {
+    width: 100%;
+    max-width: calc(20em + 30px); /* 1行20文字が収まる幅 */
+    resize: vertical;
+    line-height: 1.5;
+}
+.wwr-counter {
+    font-size: 0.8rem;
+    color: #718096;
+    margin-top: 2px;
+}
+.wwr-counter.over {
+    color: #c50000;
+    font-weight: 700;
+}
+.weekly-report-block textarea.over {
+    border-color: #e53e3e;
+}
+.wwr-prefixed {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.wwr-prefix {
+    white-space: nowrap;
+    font-size: 0.9rem;
+}
+.wwr-summary {
+    background: #ffffff;
+    border: 1px dashed #cbd5e0;
+    border-radius: 4px;
+    padding: 8px 10px;
+    font-size: 0.9rem;
+    font-variant-numeric: tabular-nums;
+}
+.wwr-summary-indent {
+    padding-left: 1em;
+}
+
 /* --- 上部の「その他の操作」 --- */
 .more-actions > summary {
     list-style: none;
@@ -368,6 +432,9 @@
         width: 100%;
         box-sizing: border-box;
         margin: 0;
+    }
+    .wwr-grid {
+        grid-template-columns: 1fr;
     }
     /* 週次作業報告：PC 向けの固定幅を、スマホでは画面幅に合わせる */
     .weekly-report-block .form-input {
@@ -881,42 +948,81 @@
 	<div class="card" id="weekly-report-card">
 		<h4>週次作業報告（木～翌水、作業報告書Excel出力に反映されます）</h4>
 		<p style="font-size: 0.85rem; color: #666; margin-top: -0.5rem;">
-			※リーダー所見欄はExcel出力後に手入力してください。
+			作業報告書Excelの週ごとの欄と同じ並びです。リーダー所見欄はExcel出力後に手入力してください。
 		</p>
 		<div style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1rem;">
 			<button type="button" class="btn btn-secondary" id="wwr-prev-btn" onclick="moveWeeklyReportCard(-1)">◀ 前の週</button>
 			<span id="wwr-page-indicator" style="font-weight: 700; min-width: 8em; text-align: center;"></span>
 			<button type="button" class="btn btn-secondary" id="wwr-next-btn" onclick="moveWeeklyReportCard(1)">次の週 ▶</button>
 		</div>
+		<%--
+			作業報告書Excelの週ブロック（10行）と同じ並び・同じ文字数の制限にする。
+			行数のある欄は「1行20文字・最大n行」で、超えた分はExcelに出力されない。
+		--%>
 		<c:forEach var="week" items="${weeklyWorkReports}" varStatus="loop">
-			<div class="card weekly-report-block" style="background: #f8fafc; margin-bottom: 1rem;"
-				data-week-end="${week.weekEndDate}">
-				<h4 style="margin-top: 0;"><c:out value="${week.weekLabel}" /></h4>
-				<div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-					<div class="form-group">
-						<label class="form-label">客先名（20文字まで）</label>
-						<input type="text" class="form-input wwr-client" maxlength="20" value="${week.clientName}" style="width: 240px;">
-					</div>
-					<div class="form-group">
-						<label class="form-label">作業進捗（オンスケ／〇日遅れ等・10文字まで）</label>
-						<input type="text" class="form-input wwr-status" maxlength="10" value="${week.progressStatus}" style="width: 130px;">
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="form-label">PJ名（18文字まで）</label>
-					<input type="text" class="form-input wwr-project" maxlength="18" value="${week.projectName}" style="width: 320px;">
-				</div>
-				<div class="form-group">
-					<label class="form-label">工程名・作業名等（18文字まで）</label>
-					<input type="text" class="form-input wwr-process" maxlength="18" value="${week.processName}" style="width: 320px;">
-				</div>
-				<div class="form-group">
-					<label class="form-label">作業進捗、作業内容と状況（改行区切りで最大6行、1行20文字まで）</label>
-					<textarea class="form-input wwr-detail" maxlength="150" style="width: 160px; height: 150px; resize: both;"><c:out value="${week.progressDetail}" /></textarea>
-				</div>
-				<div class="form-group">
-					<label class="form-label">本人所感（改行区切りで最大10行、1行20文字まで）</label>
-					<textarea class="form-input wwr-note" maxlength="250" style="width: 320px; height: 240px; resize: both;"><c:out value="${week.personalNote}" /></textarea>
+			<c:set var="summary" value="${weeklyWorkSummaries[loop.index]}" />
+			<div class="card weekly-report-block" data-week-end="${week.weekEndDate}">
+				<h4 class="wwr-title">第${loop.index + 1}週 <c:out value="${week.weekLabel}" /></h4>
+				<div class="wwr-grid">
+					<section class="wwr-section">
+						<h5 class="wwr-heading">作業件名、工程名・作業名</h5>
+						<div class="form-group">
+							<label class="form-label">客先名 <span class="wwr-limit">20文字まで</span></label>
+							<input type="text" class="form-input wwr-client" maxlength="20" placeholder="(客先名)"
+								value="<c:out value='${week.clientName}' />">
+						</div>
+						<div class="form-group">
+							<label class="form-label">PJ名 <span class="wwr-limit">18文字まで</span></label>
+							<input type="text" class="form-input wwr-project" maxlength="18" placeholder="(PJ名)"
+								value="<c:out value='${week.projectName}' />">
+						</div>
+						<div class="form-group">
+							<label class="form-label">工程名・作業名等 <span class="wwr-limit">18文字まで</span></label>
+							<input type="text" class="form-input wwr-process" maxlength="18" placeholder="(工程名・作業名等)"
+								value="<c:out value='${week.processName}' />">
+						</div>
+						<c:if test="${not empty summary}">
+							<div class="wwr-summary" aria-label="累計/残業時間（勤怠から自動計算）">
+								<div><c:out value="${summary.headingLine}" /></div>
+								<div class="wwr-summary-indent"><c:out value="${summary.totalsLine}" /></div>
+								<div class="wwr-summary-indent"><c:out value="${summary.previousMonthLine}" /></div>
+								<div class="wwr-limit">稼働/残業。勤怠から自動で計算します（入力不要）</div>
+							</div>
+						</c:if>
+					</section>
+
+					<section class="wwr-section">
+						<h5 class="wwr-heading">作業進捗、作業内容と状況</h5>
+						<div class="form-group">
+							<label class="form-label">作業進捗 <span class="wwr-limit">10文字まで</span></label>
+							<div class="wwr-prefixed">
+								<span class="wwr-prefix">作業進捗：</span>
+								<input type="text" class="form-input wwr-status" maxlength="10" placeholder="オンスケ、〇日遅れ等"
+									value="<c:out value='${week.progressStatus}' />">
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="form-label">作業内容と状況 <span class="wwr-limit">1行20文字・6行まで</span></label>
+							<textarea class="form-input wwr-text wwr-detail" rows="6" data-max-lines="6" data-max-chars="20"><c:out value="${week.progressDetail}" /></textarea>
+							<div class="wwr-counter" aria-live="polite"></div>
+						</div>
+						<div class="form-group">
+							<label class="form-label">問題点・対処 <span class="wwr-limit">1行20文字・2行まで</span></label>
+							<textarea class="form-input wwr-text wwr-problem" rows="2" data-max-lines="2" data-max-chars="20"
+								placeholder="問題とその対処を記載（問題なければ「問題なし」）"><c:out value="${week.problemCountermeasure}" /></textarea>
+							<div class="wwr-counter" aria-live="polite"></div>
+						</div>
+					</section>
+
+					<section class="wwr-section">
+						<h5 class="wwr-heading">本人所感</h5>
+						<div class="form-group">
+							<label class="form-label">本人所感 <span class="wwr-limit">1行20文字・10行まで</span></label>
+							<textarea class="form-input wwr-text wwr-note" rows="10" data-max-lines="10" data-max-chars="20"><c:out value="${week.personalNote}" /></textarea>
+							<div class="wwr-counter" aria-live="polite"></div>
+						</div>
+						<p class="wwr-limit">リーダー所見は、Excel出力後にリーダーが記入します。</p>
+					</section>
 				</div>
 			</div>
 		</c:forEach>
@@ -952,9 +1058,57 @@
 	    }
 	}
 
+	/**
+	 * 行数のある欄（1行20文字・最大n行）の入力状況を数えて表示する。
+	 * 制限を超えていれば true を返す（超えた分は作業報告書Excelに出力されないため）。
+	 */
+	function updateWeeklyCounter(textarea) {
+	    const maxLines = Number(textarea.dataset.maxLines);
+	    const maxChars = Number(textarea.dataset.maxChars);
+	    const lines = textarea.value === "" ? [] : textarea.value.split(/\r?\n/);
+	    const longLines = [];
+	    lines.forEach((line, i) => {
+	        if (line.length > maxChars) longLines.push(i + 1);
+	    });
+	    const tooManyLines = lines.length > maxLines;
+	    const over = tooManyLines || longLines.length > 0;
+	    const counter = textarea.parentElement.querySelector(".wwr-counter");
+	    if (counter) {
+	        let text = lines.length + " / " + maxLines + "行";
+	        if (tooManyLines) text += "：" + (maxLines + 1) + "行目以降はExcelに出力されません";
+	        if (longLines.length > 0) text += "：" + longLines.join("・") + "行目が" + maxChars + "文字を超えています";
+	        counter.textContent = text;
+	        counter.classList.toggle("over", over);
+	    }
+	    textarea.classList.toggle("over", over);
+	    return over;
+	}
+
+	document.addEventListener("DOMContentLoaded", () => {
+	    document.querySelectorAll(".weekly-report-block textarea.wwr-text").forEach((textarea) => {
+	        updateWeeklyCounter(textarea);
+	        textarea.addEventListener("input", () => updateWeeklyCounter(textarea));
+	    });
+	});
+
 	function saveWeeklyWorkReports() {
 	    const contextPath = document.body.dataset.contextPath || "";
 	    const blocks = document.querySelectorAll(".weekly-report-block");
+	    const message = document.getElementById("wwr-message");
+
+	    // 制限を超えた欄があれば、その週を表示して保存しない
+	    for (let i = 0; i < blocks.length; i++) {
+	        const overArea = Array.from(blocks[i].querySelectorAll("textarea.wwr-text")).find((t) => updateWeeklyCounter(t));
+	        if (overArea) {
+	            wwrCurrentIndex = i;
+	            renderWeeklyReportCard();
+	            overArea.focus();
+	            message.className = "inline-message error";
+	            message.textContent = "第" + (i + 1) + "週に、行数か1行の文字数の制限を超えた欄があります。直してから保存してください。";
+	            return;
+	        }
+	    }
+
 	    const reports = Array.from(blocks).map((block) => ({
 	        weekEndDate: block.dataset.weekEnd,
 	        clientName: block.querySelector(".wwr-client").value,
@@ -962,10 +1116,10 @@
 	        processName: block.querySelector(".wwr-process").value,
 	        progressStatus: block.querySelector(".wwr-status").value,
 	        progressDetail: block.querySelector(".wwr-detail").value,
+	        problemCountermeasure: block.querySelector(".wwr-problem").value,
 	        personalNote: block.querySelector(".wwr-note").value
 	    }));
 
-	    const message = document.getElementById("wwr-message");
 	    message.className = "inline-message";
 	    message.textContent = "保存しています…";
 	    const staffId = document.getElementById("kintai-app-root").dataset.staffId;

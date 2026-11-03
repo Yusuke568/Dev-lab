@@ -111,12 +111,15 @@ public class WorkReportXlsmImportAdapter implements WorkReportImportPort {
             String progressStatus = stripPrefix(cleanPlaceholder(getStringValue(sheet, "AS" + baseRow)), "作業進捗：");
             String progressDetail = joinLines(sheet, "AS", baseRow + 1, 6);
             String personalNote = joinLines(sheet, "AT", baseRow, 10);
+            String problemCountermeasure = joinLines(sheet, "AS", baseRow + 8, 2);
 
             boolean hasAnyContent = hasText(clientName) || hasText(projectName) || hasText(processName)
-                    || hasText(progressStatus) || hasText(progressDetail) || hasText(personalNote);
+                    || hasText(progressStatus) || hasText(progressDetail) || hasText(personalNote)
+                    || hasText(problemCountermeasure);
             if (hasAnyContent) {
                 reports.add(new WeeklyWorkReport(null, weekStart, weekEnd,
-                        clientName, projectName, processName, progressStatus, progressDetail, personalNote));
+                        clientName, projectName, processName, progressStatus, progressDetail, personalNote,
+                        problemCountermeasure));
             }
         }
         return reports;

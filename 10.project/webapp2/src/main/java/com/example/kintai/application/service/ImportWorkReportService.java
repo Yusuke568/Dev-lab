@@ -97,7 +97,8 @@ public class ImportWorkReportService implements ImportWorkReportUseCase {
                 WeeklyWorkReport report = new WeeklyWorkReport(
                         employeeId.getValue(), parsed.getWeekStartDate(), parsed.getWeekEndDate(),
                         parsed.getClientName(), parsed.getProjectName(), parsed.getProcessName(),
-                        parsed.getProgressStatus(), parsed.getProgressDetail(), parsed.getPersonalNote()
+                        parsed.getProgressStatus(), parsed.getProgressDetail(), parsed.getPersonalNote(),
+                        parsed.getProblemCountermeasure()
                 );
                 try {
                     saveWeeklyWorkReportsUseCase.saveWeeklyWorkReports(employeeId, Collections.singletonList(report));

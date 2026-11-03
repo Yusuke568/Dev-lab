@@ -12,6 +12,7 @@ public class WeeklyWorkReportDto {
     private String progressStatus;
     private String progressDetail;
     private String personalNote;
+    private String problemCountermeasure;
 
     public String getWeekEndDate() { return weekEndDate; }
     public void setWeekEndDate(String weekEndDate) { this.weekEndDate = weekEndDate; }
@@ -33,4 +34,7 @@ public class WeeklyWorkReportDto {
 
     public String getPersonalNote() { return personalNote; }
     public void setPersonalNote(String personalNote) { this.personalNote = personalNote; }
+
+    public String getProblemCountermeasure() { return problemCountermeasure; }
+    public void setProblemCountermeasure(String problemCountermeasure) { this.problemCountermeasure = problemCountermeasure; }
 }

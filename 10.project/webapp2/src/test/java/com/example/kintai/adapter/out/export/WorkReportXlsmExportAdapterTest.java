@@ -62,6 +62,33 @@ class WorkReportXlsmExportAdapterTest {
         }
     }
 
+    /** 週次作業報告の「問題点・対処」は、週ブロックの「問題点・対処：」の下の2行（AS列）に出る */
+    @Test
+    void 問題点と対処を週ブロックの2行に出力する() throws Exception {
+        MonthlyAttendanceDto month = new MonthlyAttendanceDto(YearMonth.of(2026, 11), List.of(), "0:00", 0, 0, 0, "山田 太郎");
+        com.example.kintai.domain.model.attendance.WeeklyWorkReport week1 = new com.example.kintai.domain.model.attendance.WeeklyWorkReport(
+                "126", LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 4),
+                "客先A", "PJ-X", "設計", "オンスケ", "画面設計\nレビュー対応", "順調", "問題なし\n");
+
+        byte[] xlsm = new WorkReportXlsmExportAdapter().generate(month, "山田 太郎", List.of(), List.of(week1));
+
+        try (XSSFWorkbook book = new XSSFWorkbook(new ByteArrayInputStream(xlsm))) {
+            Sheet sheet = book.getSheet("11月");
+            // 第1週は Excel の5〜14行目。「問題点・対処：」は12行目、その下の13・14行目に書く
+            assertEquals("問題点・対処：", text(sheet, "AS12"));
+            assertEquals("問題なし", text(sheet, "AS13"));
+            assertEquals("作業進捗：オンスケ", text(sheet, "AS5"));
+            assertEquals("画面設計", text(sheet, "AS6"));
+        }
+    }
+
+    private static String text(Sheet sheet, String ref) {
+        org.apache.poi.ss.util.CellReference cr = new org.apache.poi.ss.util.CellReference(ref);
+        Row row = sheet.getRow(cr.getRow());
+        Cell cell = row == null ? null : row.getCell(cr.getCol());
+        return cell == null ? "" : cell.getStringCellValue();
+    }
+
     /** 日の摘要欄（AN列。1日目はExcelの8行目） */
     private static String an(Sheet sheet, int dayOfMonth) {
         Row row = sheet.getRow(7 + dayOfMonth - 1);

@@ -29,7 +29,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, SaveAttendanceRecordPort, LoadPendingApprovalsPort,
-        com.example.kintai.domain.port.out.SubordinatePort {
+        com.example.kintai.domain.port.out.SubordinatePort, com.example.kintai.domain.port.out.LoadAttendancePeriodPort {
 
     private static final java.time.format.DateTimeFormatter TIME_FORMATTER = java.time.format.DateTimeFormatter.ofPattern("HH:mm");
 
@@ -136,6 +136,25 @@ public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, S
             throw new RuntimeException("Failed to sum annual overtime.", e);
         }
         return 0L;
+    }
+
+    @Override
+    public List<AttendanceRecord> loadByEmployeeAndPeriod(EmployeeId employeeId, LocalDate from, LocalDate to) {
+        List<AttendanceRecord> records = new java.util.ArrayList<>();
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(readSqlFile("get_staff_period.sql"))) {
+            ps.setInt(1, Integer.parseInt(employeeId.getValue()));
+            ps.setDate(2, java.sql.Date.valueOf(from));
+            ps.setDate(3, java.sql.Date.valueOf(to));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    records.add(mapToAttendanceRecord(rs));
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load attendance for period.", e);
+        }
+        return records;
     }
 
     @Override

@@ -25,10 +25,20 @@ public class WeeklyWorkReport {
     private final String progressStatus;
     private final String progressDetail;
     private final String personalNote;
+    private final String problemCountermeasure; // 問題点・対処（2行）
 
     public WeeklyWorkReport(String employeeId, LocalDate weekStartDate, LocalDate weekEndDate,
                              String clientName, String projectName, String processName,
                              String progressStatus, String progressDetail, String personalNote) {
+        this(employeeId, weekStartDate, weekEndDate, clientName, projectName, processName,
+                progressStatus, progressDetail, personalNote, null);
+    }
+
+    public WeeklyWorkReport(String employeeId, LocalDate weekStartDate, LocalDate weekEndDate,
+                             String clientName, String projectName, String processName,
+                             String progressStatus, String progressDetail, String personalNote,
+                             String problemCountermeasure) {
+        this.problemCountermeasure = problemCountermeasure;
         this.employeeId = employeeId;
         this.weekStartDate = weekStartDate;
         this.weekEndDate = weekEndDate;
@@ -49,6 +59,7 @@ public class WeeklyWorkReport {
     public String getProgressStatus() { return progressStatus; }
     public String getProgressDetail() { return progressDetail; }
     public String getPersonalNote() { return personalNote; }
+    public String getProblemCountermeasure() { return problemCountermeasure; }
 
     private static final DateTimeFormatter LABEL_FORMATTER = DateTimeFormatter.ofPattern("M/d");
 

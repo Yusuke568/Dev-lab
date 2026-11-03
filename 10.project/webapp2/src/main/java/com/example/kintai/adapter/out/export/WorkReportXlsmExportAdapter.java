@@ -58,6 +58,7 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
     private static final int MAX_LEN_PROGRESS_STATUS = 10;
     private static final int MAX_LEN_PROGRESS_DETAIL_LINE = 20;
     private static final int MAX_LEN_PERSONAL_NOTE_LINE = 20;
+    private static final int MAX_LEN_PROBLEM_LINE = 20;
 
     @Override
     public byte[] generate(MonthlyAttendanceDto monthlyData, String employeeName, List<WorkType> workTypes,
@@ -180,6 +181,8 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
                 setStringValue(sheet, "AS" + baseRow, "作業進捗：" + truncate(report.getProgressStatus(), MAX_LEN_PROGRESS_STATUS));
             }
             writeLines(sheet, "AS", baseRow + 1, 6, report.getProgressDetail(), MAX_LEN_PROGRESS_DETAIL_LINE);
+            // 「問題点・対処：」（AS列の8行目、様式の見出し）の下の2行
+            writeLines(sheet, "AS", baseRow + 8, 2, report.getProblemCountermeasure(), MAX_LEN_PROBLEM_LINE);
 
             writeLines(sheet, "AT", baseRow, 10, report.getPersonalNote(), MAX_LEN_PERSONAL_NOTE_LINE);
         }

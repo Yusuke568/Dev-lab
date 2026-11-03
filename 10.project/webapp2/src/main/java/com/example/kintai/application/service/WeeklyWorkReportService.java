@@ -43,7 +43,8 @@ public class WeeklyWorkReportService implements GetWeeklyWorkReportsUseCase, Sav
                 // 表示用の開始日は月の週ブロック構成に基づくものを優先する（第1週が月初で切り詰められるため）
                 result.add(new WeeklyWorkReport(employeeId.getValue(), weekStart, weekEnd,
                         existing.getClientName(), existing.getProjectName(), existing.getProcessName(),
-                        existing.getProgressStatus(), existing.getProgressDetail(), existing.getPersonalNote()));
+                        existing.getProgressStatus(), existing.getProgressDetail(), existing.getPersonalNote(),
+                        existing.getProblemCountermeasure()));
             } else {
                 result.add(new WeeklyWorkReport(employeeId.getValue(), weekStart, weekEnd,
                         null, null, null, null, null, null));

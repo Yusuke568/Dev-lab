@@ -75,7 +75,8 @@ public class WeeklyWorkReportSaveAction implements Action {
                     dto.getProcessName(),
                     dto.getProgressStatus(),
                     dto.getProgressDetail(),
-                    dto.getPersonalNote()
+                    dto.getPersonalNote(),
+                    dto.getProblemCountermeasure()
             )).collect(Collectors.toList());
 
             saveWeeklyWorkReportsUseCase.saveWeeklyWorkReports(new EmployeeId(targetStaffId), reports);

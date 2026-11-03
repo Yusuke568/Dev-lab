@@ -39,6 +39,7 @@ public class KintaiDisplayAction implements Action {
     private final GetMyOvertimeRequestsUseCase getMyOvertimeRequestsUseCase;
     private final GetWeeklyWorkReportsUseCase getWeeklyWorkReportsUseCase;
     private final com.example.kintai.application.port.in.AttendanceAccessUseCase attendanceAccessUseCase;
+    private final com.example.kintai.application.port.in.GetWeeklyWorkSummariesUseCase getWeeklyWorkSummariesUseCase;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
@@ -48,8 +49,10 @@ public class KintaiDisplayAction implements Action {
     public KintaiDisplayAction(GetMonthlyAttendanceUseCase getMonthlyAttendanceUseCase, GetWorkTypesUseCase getWorkTypesUseCase,
                                 GetCorrectionMastersUseCase getCorrectionMastersUseCase, GetMyOvertimeRequestsUseCase getMyOvertimeRequestsUseCase,
                                 GetWeeklyWorkReportsUseCase getWeeklyWorkReportsUseCase,
-                                com.example.kintai.application.port.in.AttendanceAccessUseCase attendanceAccessUseCase) {
+                                com.example.kintai.application.port.in.AttendanceAccessUseCase attendanceAccessUseCase,
+                                com.example.kintai.application.port.in.GetWeeklyWorkSummariesUseCase getWeeklyWorkSummariesUseCase) {
         this.attendanceAccessUseCase = attendanceAccessUseCase;
+        this.getWeeklyWorkSummariesUseCase = getWeeklyWorkSummariesUseCase;
         this.getMonthlyAttendanceUseCase = getMonthlyAttendanceUseCase;
         this.getWorkTypesUseCase = getWorkTypesUseCase;
         this.getCorrectionMastersUseCase = getCorrectionMastersUseCase;
@@ -134,6 +137,8 @@ public class KintaiDisplayAction implements Action {
             // 週次作業報告（作業報告書Excel出力の「作業件名」「作業進捗」「本人所感」欄に対応）
             List<WeeklyWorkReport> weeklyWorkReports = getWeeklyWorkReportsUseCase.getWeeklyWorkReports(employeeId, yearMonth);
             request.setAttribute("weeklyWorkReports", weeklyWorkReports);
+            // 各週の「累計/残業時間」（作業報告書Excelでは数式で計算される欄。画面では確認用に表示する）
+            request.setAttribute("weeklyWorkSummaries", getWeeklyWorkSummariesUseCase.getWeeklyWorkSummaries(employeeId, yearMonth));
 
             // 作業報告書Excelインポート等、他アクションからのセッション経由メッセージ
             HttpSession messageSession = request.getSession(false);

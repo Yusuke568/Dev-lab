@@ -254,7 +254,8 @@ public class DependencyFactory {
         actionMap.put("PasswordResetExecute", new com.example.auth.adapter.in.web.PasswordResetExecuteAction(this.resetPasswordUseCase, this.getShainByIdUseCase));
 
         // KintaiDisplayAction
-        actionMap.put("KintaiDisplay", new KintaiDisplayAction(this.getMonthlyAttendanceUseCase, this.getWorkTypesUseCase, this.getCorrectionMastersUseCase, this.getMyOvertimeRequestsUseCase, this.getWeeklyWorkReportsUseCase, this.attendanceAccessUseCase));
+        actionMap.put("KintaiDisplay", new KintaiDisplayAction(this.getMonthlyAttendanceUseCase, this.getWorkTypesUseCase, this.getCorrectionMastersUseCase, this.getMyOvertimeRequestsUseCase, this.getWeeklyWorkReportsUseCase, this.attendanceAccessUseCase,
+                new com.example.kintai.application.service.WeeklyWorkSummaryService(this.attendancePersistenceAdapter)));
 
         // Shain Actions (New Context)
         actionMap.put("ShainList", new com.example.shain.adapter.in.web.ShainListAction(this.getShainListUseCase, this.getAllClassmastersUseCase));

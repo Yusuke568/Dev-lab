@@ -67,6 +67,7 @@ public class WeeklyWorkReportPersistenceAdapter implements WeeklyWorkReportPort 
             setNullableString(ps, 6, report.getProgressStatus());
             setNullableString(ps, 7, report.getProgressDetail());
             setNullableString(ps, 8, report.getPersonalNote());
+            setNullableString(ps, 9, report.getProblemCountermeasure());
             ps.executeUpdate();
         } catch (Exception e) {
             throw new RuntimeException("Failed to save weekly work report.", e);
@@ -91,9 +92,10 @@ public class WeeklyWorkReportPersistenceAdapter implements WeeklyWorkReportPort 
         String progressStatus = rs.getString("progress_status");
         String progressDetail = rs.getString("progress_detail");
         String personalNote = rs.getString("personal_note");
+        String problemCountermeasure = rs.getString("problem_countermeasure");
 
         return new WeeklyWorkReport(employeeId, weekStartDate, weekEndDate,
-                clientName, projectName, processName, progressStatus, progressDetail, personalNote);
+                clientName, projectName, processName, progressStatus, progressDetail, personalNote, problemCountermeasure);
     }
 
     private String readSqlFile(String fileName) {

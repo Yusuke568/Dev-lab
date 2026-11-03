@@ -140,6 +140,7 @@ CREATE TABLE weekly_work_report (
     progress_status   varchar(100),
     progress_detail   text,
     personal_note     text,
+    problem_countermeasure text,  -- 問題点・対処（作業報告書の「問題点・対処：」の下の2行）
     created_at        timestamp DEFAULT CURRENT_TIMESTAMP,
     updated_at        timestamp DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uq_staff_week UNIQUE (staff_id, week_end_date)

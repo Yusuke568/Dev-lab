@@ -39,14 +39,9 @@ public class ExportWorkReportService implements ExportWorkReportUseCase {
                 new GetMonthlyAttendanceUseCase.GetMonthlyAttendanceCommand(employeeId, yearMonth));
 
         List<WorkType> workTypes = getWorkTypesUseCase.getWorkTypes();
-        Integer paidLeaveWorkTypeId = workTypes.stream()
-                .filter(wt -> "有給".equals(wt.getName()) || wt.isPaid())
-                .map(WorkType::getId)
-                .findFirst()
-                .orElse(null);
 
         List<WeeklyWorkReport> weeklyWorkReports = getWeeklyWorkReportsUseCase.getWeeklyWorkReports(employeeId, yearMonth);
 
-        return workReportExportPort.generate(monthlyData, monthlyData.getEmployeeName(), paidLeaveWorkTypeId, weeklyWorkReports);
+        return workReportExportPort.generate(monthlyData, monthlyData.getEmployeeName(), workTypes, weeklyWorkReports);
     }
 }

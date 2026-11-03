@@ -52,16 +52,6 @@ public class ImportWorkReportService implements ImportWorkReportUseCase {
         }
 
         List<WorkType> workTypes = getWorkTypesUseCase.getWorkTypes();
-        Integer paidLeaveId = workTypes.stream()
-                .filter(wt -> "有給".equals(wt.getName()) || wt.isPaid())
-                .map(WorkType::getId)
-                .findFirst()
-                .orElse(null);
-        Integer defaultWorkTypeId = workTypes.stream()
-                .filter(wt -> "出勤".equals(wt.getName()))
-                .map(WorkType::getId)
-                .findFirst()
-                .orElse(null);
 
         List<String> skipped = new ArrayList<>();
         int importedMonthCount = 0;
@@ -71,7 +61,13 @@ public class ImportWorkReportService implements ImportWorkReportUseCase {
             boolean monthHadFailure = false;
 
             for (ImportedDayData day : month.getDays()) {
-                Integer abstractId = "有休".equals(day.getCategory()) ? paidLeaveId : defaultWorkTypeId;
+                // 摘要欄の値を勤務区分に読み替える（有休 → 有給、代休 → 代休 など）。
+                // 摘要が空欄の日は、時刻があれば出勤、時刻もなければ未設定（null）
+                boolean blankCategory = day.getCategory() == null || day.getCategory().isBlank();
+                boolean hasTime = hasText(day.getStartTime()) || hasText(day.getEndTime());
+                Integer abstractId = blankCategory && !hasTime
+                        ? null
+                        : com.example.kintai.domain.service.WorkReportCategoryMapper.toWorkTypeId(day.getCategory(), workTypes);
                 AttendanceUpdateCommand command = new AttendanceUpdateCommand(
                         employeeId.getValue(),
                         day.getDate(),
@@ -119,6 +115,10 @@ public class ImportWorkReportService implements ImportWorkReportUseCase {
         }
 
         return new ImportResult(importedMonthCount, skipped);
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     private String rootMessage(Throwable e) {

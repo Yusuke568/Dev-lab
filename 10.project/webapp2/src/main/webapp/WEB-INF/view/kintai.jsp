@@ -733,6 +733,7 @@
 					<label class="form-label">勤務区分</label>
 					<select id="bulk-status" class="form-input">
 						<option value="">(変更なし)</option>
+						<option value="unset">未設定にする</option>
 						<c:forEach var="opt" items="${workTypes}">
 							<option value="${opt.id}"><c:out value="${opt.name}" /></option>
 						</c:forEach>
@@ -794,6 +795,7 @@
 							</c:choose>
 						</td>
 						<td data-label="勤務区分"><select name="status" class="form-input">
+								<option value="" ${empty daily.abstractId ? 'selected' : ''}>未設定</option>
 								<c:forEach var="opt" items="${workTypes}">
 									<option value="${opt.id}"
 										${opt.id == daily.abstractId ? 'selected' : ''}>

@@ -1,11 +1,14 @@
 package com.example.kintai.adapter.out.export;
 
+import com.example.entity.WorkType;
 import com.example.kintai.adapter.in.web.dto.DailyAttendanceDto;
 import com.example.kintai.adapter.in.web.dto.MonthlyAttendanceDto;
 import com.example.kintai.domain.model.attendance.WeeklyWorkReport;
 import com.example.kintai.domain.port.out.WorkReportExportPort;
+import com.example.kintai.domain.service.WorkReportCategoryMapper;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.util.CellReference;
@@ -17,7 +20,10 @@ import java.io.InputStream;
 import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 社内所定の「作業報告書」Excel（.xlsm）テンプレートに月次勤怠データを埋め込むアダプタ。
@@ -33,8 +39,10 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
     private static final String TEMPLATE_PATH = "/templates/work_report_template.xlsm";
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
-    // 様式側のプルダウン選択肢（AX14:AX22）に定義されている正式な値をそのまま使う
-    private static final String AN_PAID_LEAVE = "有休";
+    // 「摘要」欄（AN列）のプルダウンの選択肢が入っている範囲（様式の入力規則と同じ）
+    private static final String CATEGORY_OPTIONS_COLUMN = "AX";
+    private static final int CATEGORY_OPTIONS_FIRST_ROW = 14;
+    private static final int CATEGORY_OPTIONS_LAST_ROW = 22;
     private static final String SIGN_PLUS = "＋";
 
     // 1日目のデータはExcel上の8行目から始まる（B8=1, B9=2, ...）。POIの行番号は0始まりのため7を基準にする。
@@ -52,7 +60,7 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
     private static final int MAX_LEN_PERSONAL_NOTE_LINE = 20;
 
     @Override
-    public byte[] generate(MonthlyAttendanceDto monthlyData, String employeeName, Integer paidLeaveWorkTypeId,
+    public byte[] generate(MonthlyAttendanceDto monthlyData, String employeeName, List<WorkType> workTypes,
                             List<WeeklyWorkReport> weeklyWorkReports) {
         try (InputStream templateStream = getClass().getResourceAsStream(TEMPLATE_PATH)) {
             if (templateStream == null) {
@@ -69,9 +77,19 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
                 setNumericValue(sheet, "A1", yearMonth.getYear());
                 setStringValue(sheet, "AP2", employeeName);
 
+                // 勤務区分ID → 摘要欄の値（様式のプルダウンにある値だけ）
+                List<String> categoryOptions = readCategoryOptions(sheet);
+                Map<Integer, String> categoryByWorkTypeId = new HashMap<>();
+                if (workTypes != null) {
+                    for (WorkType workType : workTypes) {
+                        WorkReportCategoryMapper.toCategory(workType, categoryOptions)
+                                .ifPresent(category -> categoryByWorkTypeId.put(workType.getId(), category));
+                    }
+                }
+
                 for (DailyAttendanceDto daily : monthlyData.getDailyRecords()) {
                     int row = FIRST_DAY_ROW + daily.getDate().getDayOfMonth() - 1;
-                    writeDay(sheet, row, daily, paidLeaveWorkTypeId);
+                    writeDay(sheet, row, daily, categoryByWorkTypeId);
                 }
 
                 writeWeeklyWorkReports(sheet, weeklyWorkReports);
@@ -85,7 +103,7 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
         }
     }
 
-    private void writeDay(Sheet sheet, int row, DailyAttendanceDto daily, Integer paidLeaveWorkTypeId) {
+    private void writeDay(Sheet sheet, int row, DailyAttendanceDto daily, Map<Integer, String> categoryByWorkTypeId) {
         if (!"-".equals(daily.getStartTime())) {
             setTimeValue(sheet, row, "E", daily.getStartTime());
         }
@@ -110,14 +128,30 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
             setMinutesAsTimeValue(sheet, row, "K", indirectTime);
         }
 
-        if (paidLeaveWorkTypeId != null && paidLeaveWorkTypeId.equals(daily.getAbstractId())) {
-            setStringValue(sheet, row, "AN", AN_PAID_LEAVE);
+        // 摘要（AN列）：勤務区分を様式のプルダウンの値で書く。選択肢にない区分（休日など）は空欄
+        String category = daily.getAbstractId() != null ? categoryByWorkTypeId.get(daily.getAbstractId()) : null;
+        if (category != null) {
+            setStringValue(sheet, row, "AN", category);
         }
 
         String memo = daily.getWorkDescription();
         if (memo != null && !memo.isBlank()) {
             setStringValue(sheet, row, "AO", memo);
         }
+    }
+
+    /** 様式の「摘要」欄のプルダウンの選択肢（AX14:AX22）を読む。 */
+    private List<String> readCategoryOptions(Sheet sheet) {
+        List<String> options = new ArrayList<>();
+        int col = CellReference.convertColStringToIndex(CATEGORY_OPTIONS_COLUMN);
+        for (int r = CATEGORY_OPTIONS_FIRST_ROW; r <= CATEGORY_OPTIONS_LAST_ROW; r++) {
+            Row row = sheet.getRow(r - 1);
+            Cell cell = row != null ? row.getCell(col) : null;
+            if (cell != null && cell.getCellType() == CellType.STRING && !cell.getStringCellValue().isBlank()) {
+                options.add(cell.getStringCellValue().trim());
+            }
+        }
+        return options;
     }
 
     /**

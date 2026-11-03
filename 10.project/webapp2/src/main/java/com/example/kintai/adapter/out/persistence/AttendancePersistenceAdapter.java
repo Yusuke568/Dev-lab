@@ -98,9 +98,15 @@ public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, S
                     ps.setDate(2, java.sql.Date.valueOf(date));
                     ps.setString(3, date.getDayOfWeek().name());
                     
-                    // Weekend -> 10, Weekday -> 1
-                    int abstractId = (date.getDayOfWeek() == java.time.DayOfWeek.SATURDAY || date.getDayOfWeek() == java.time.DayOfWeek.SUNDAY) ? 10 : 1;
-                    ps.setInt(4, abstractId);
+                    // 土日 -> 休日(10)、今日までの平日 -> 出勤(1)、未到来の平日 -> 未設定(NULL)
+                    boolean weekend = date.getDayOfWeek() == java.time.DayOfWeek.SATURDAY || date.getDayOfWeek() == java.time.DayOfWeek.SUNDAY;
+                    if (weekend) {
+                        ps.setInt(4, 10);
+                    } else if (date.isAfter(LocalDate.now())) {
+                        ps.setNull(4, java.sql.Types.INTEGER);
+                    } else {
+                        ps.setInt(4, 1);
+                    }
                     
                     ps.addBatch();
                     hasMissing = true;

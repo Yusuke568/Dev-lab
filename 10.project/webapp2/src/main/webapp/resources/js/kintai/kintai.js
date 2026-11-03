@@ -218,8 +218,9 @@ function applyBulkInput() {
       if (bulkEnd) getTimeInput(row, "kintaito").value = bulkEnd;
       if (bulkStatus !== "") {
         const select = row.querySelector("select[name='status']");
-        if (select) select.value = bulkStatus;
+        if (select) select.value = bulkStatus === "unset" ? "" : bulkStatus;
       }
+      if (bulkStart || bulkEnd) setWorkTypeIfUnset(row);
       if (bulkCorrection !== "keep") {
         applyBulkCorrectionToRow(row, bulkCorrection);
       }
@@ -238,6 +239,14 @@ function applyBulkInput() {
     message.className = "inline-message error";
     message.textContent = "反映する日を選んでください（「すべての日を選択」「平日だけ選択」または各日のチェック）。";
   }
+}
+
+/** 勤務区分が未設定の日に時刻を入れたら、勤務区分を「出勤」にする。 */
+function setWorkTypeIfUnset(row) {
+  const select = row.querySelector("select[name='status']");
+  if (!select || select.value !== "") return;
+  const work = workTypes.find((wt) => wt.name === "出勤");
+  if (work) select.value = String(work.id);
 }
 
 /**
@@ -363,6 +372,7 @@ function recordAttendance(type) {
   const input = getTimeInput(row, type === "出勤" ? "kintaifrom" : "kintaito");
   const previous = input.value;
   input.value = timeStr;
+  setWorkTypeIfUnset(row);
   updateButtonState();
 
   const record = Object.assign({}, collectRowRecord(row, staffId), { isTemporary: true });
@@ -427,6 +437,9 @@ document.addEventListener("DOMContentLoaded", () => {
     table.addEventListener("input", (e) => {
       if (e.target.matches(".row-checkbox")) return;
       markDirty(e.target.closest("tr"));
+      if (e.target.matches("input[name='kintaifrom'], input[name='kintaito']") && e.target.value) {
+        setWorkTypeIfUnset(e.target.closest("tr"));
+      }
       if (e.target.matches("input[name='kintaifrom'], input[name='kintaito'], input[name='correctionUsTime'], input[name='correctionMidTime']")) {
         updateButtonState();
       }

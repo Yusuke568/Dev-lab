@@ -55,10 +55,13 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
     private static final int MAX_LEN_CLIENT_NAME = 20;
     private static final int MAX_LEN_PROJECT_NAME = 18;
     private static final int MAX_LEN_PROCESS_NAME = 18;
+    // 工程名・作業名等は、PJ名の下から「累計/残業時間」の上までの5行（週ブロックの3〜7行目）に書ける
+    private static final int MAX_LINES_PROCESS_NAME = 5;
     private static final int MAX_LEN_PROGRESS_STATUS = 10;
     private static final int MAX_LEN_PROGRESS_DETAIL_LINE = 20;
     private static final int MAX_LEN_PERSONAL_NOTE_LINE = 20;
     private static final int MAX_LEN_PROBLEM_LINE = 20;
+    private static final String PROBLEM_LABEL = "問題点・対処：";
 
     @Override
     public byte[] generate(MonthlyAttendanceDto monthlyData, String employeeName, List<WorkType> workTypes,
@@ -173,30 +176,55 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
             if (hasText(report.getProjectName())) {
                 setStringValue(sheet, "AR" + (baseRow + 1), "・" + truncate(report.getProjectName(), MAX_LEN_PROJECT_NAME));
             }
-            if (hasText(report.getProcessName())) {
-                setStringValue(sheet, "AR" + (baseRow + 2), "　" + truncate(report.getProcessName(), MAX_LEN_PROCESS_NAME));
-            }
+            writeLines(sheet, "AR", baseRow + 2, MAX_LINES_PROCESS_NAME, report.getProcessName(), MAX_LEN_PROCESS_NAME, "　");
 
             if (hasText(report.getProgressStatus())) {
                 setStringValue(sheet, "AS" + baseRow, "作業進捗：" + truncate(report.getProgressStatus(), MAX_LEN_PROGRESS_STATUS));
             }
             writeLines(sheet, "AS", baseRow + 1, 6, report.getProgressDetail(), MAX_LEN_PROGRESS_DETAIL_LINE);
-            // 「問題点・対処：」（AS列の8行目、様式の見出し）の下の2行
-            writeLines(sheet, "AS", baseRow + 8, 2, report.getProblemCountermeasure(), MAX_LEN_PROBLEM_LINE);
+            writeProblemCountermeasure(sheet, baseRow, report.getProblemCountermeasure());
 
             writeLines(sheet, "AT", baseRow, 10, report.getPersonalNote(), MAX_LEN_PERSONAL_NOTE_LINE);
         }
     }
 
+    /**
+     * 問題点・対処を書く。様式は AS列の8行目が見出し「問題点・対処：」、その下の2行が記入欄。
+     * 1行で見出しと合わせて1行に収まるとき（「問題なし」など）は、見出しの行に続けて書く。
+     * 書くときは記入欄の説明文（「(問題とその対処を記載)」など）を消す。
+     */
+    private void writeProblemCountermeasure(Sheet sheet, int baseRow, String text) {
+        if (!hasText(text)) {
+            return;
+        }
+        List<String> lines = new ArrayList<>(List.of(text.split("\\r?\\n")));
+        while (!lines.isEmpty() && lines.get(lines.size() - 1).isBlank()) {
+            lines.remove(lines.size() - 1);
+        }
+        setStringValue(sheet, "AS" + (baseRow + 8), "");
+        setStringValue(sheet, "AS" + (baseRow + 9), "");
+        if (lines.size() == 1 && PROBLEM_LABEL.length() + lines.get(0).trim().length() <= MAX_LEN_PROBLEM_LINE) {
+            setStringValue(sheet, "AS" + (baseRow + 7), PROBLEM_LABEL + lines.get(0).trim());
+        } else {
+            writeLines(sheet, "AS", baseRow + 8, 2, String.join("\n", lines), MAX_LEN_PROBLEM_LINE);
+        }
+    }
+
     /** 改行区切りのテキストを、指定列の連続する行に1行ずつ書き込む（最大maxLines行、各行maxLenChars文字まで）。 */
     private void writeLines(Sheet sheet, String column, int startRow, int maxLines, String text, int maxLenChars) {
+        writeLines(sheet, column, startRow, maxLines, text, maxLenChars, "");
+    }
+
+    /** 各行の先頭に prefix（様式の字下げなど）を付けて書き込む。 */
+    private void writeLines(Sheet sheet, String column, int startRow, int maxLines, String text, int maxLenChars,
+                            String prefix) {
         if (!hasText(text)) {
             return;
         }
         String[] lines = text.split("\\r?\\n");
         for (int i = 0; i < lines.length && i < maxLines; i++) {
             if (!lines[i].isBlank()) {
-                setStringValue(sheet, column + (startRow + i), truncate(lines[i], maxLenChars));
+                setStringValue(sheet, column + (startRow + i), prefix + truncate(lines[i], maxLenChars));
             }
         }
     }

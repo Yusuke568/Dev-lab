@@ -106,12 +106,13 @@ public class WorkReportXlsmImportAdapter implements WorkReportImportPort {
 
             String clientName = cleanPlaceholder(getStringValue(sheet, "AR" + baseRow));
             String projectName = stripPrefix(cleanPlaceholder(getStringValue(sheet, "AR" + (baseRow + 1))), "・");
-            String processName = stripPrefix(cleanPlaceholder(getStringValue(sheet, "AR" + (baseRow + 2))), "　");
+            // 工程名・作業名等は複数行（週ブロックの3〜7行目、各行の先頭は字下げの全角空白）
+            String processName = joinLines(sheet, "AR", baseRow + 2, 5, "　");
 
             String progressStatus = stripPrefix(cleanPlaceholder(getStringValue(sheet, "AS" + baseRow)), "作業進捗：");
             String progressDetail = joinLines(sheet, "AS", baseRow + 1, 6);
             String personalNote = joinLines(sheet, "AT", baseRow, 10);
-            String problemCountermeasure = joinLines(sheet, "AS", baseRow + 8, 2);
+            String problemCountermeasure = readProblemCountermeasure(sheet, baseRow);
 
             boolean hasAnyContent = hasText(clientName) || hasText(projectName) || hasText(processName)
                     || hasText(progressStatus) || hasText(progressDetail) || hasText(personalNote)
@@ -126,14 +127,34 @@ public class WorkReportXlsmImportAdapter implements WorkReportImportPort {
     }
 
     private String joinLines(Sheet sheet, String column, int startRow, int maxLines) {
+        return joinLines(sheet, column, startRow, maxLines, "");
+    }
+
+    /**
+     * 各行の先頭の prefix（様式の字下げなど）を外してつなげる。
+     * 途中の空行も残す（隣の列の行と位置をそろえて書くため）。末尾の空行は除く。
+     */
+    private String joinLines(Sheet sheet, String column, int startRow, int maxLines, String prefix) {
         List<String> lines = new ArrayList<>();
         for (int i = 0; i < maxLines; i++) {
-            String value = cleanPlaceholder(getStringValue(sheet, column + (startRow + i)));
-            if (hasText(value)) {
-                lines.add(value);
-            }
+            String value = stripPrefix(cleanPlaceholder(getStringValue(sheet, column + (startRow + i))), prefix);
+            lines.add(hasText(value) ? value : "");
+        }
+        while (!lines.isEmpty() && lines.get(lines.size() - 1).isEmpty()) {
+            lines.remove(lines.size() - 1);
         }
         return lines.isEmpty() ? null : String.join("\n", lines);
+    }
+
+    /** 問題点・対処。見出しの行（「問題点・対処：問題なし」）に続けて書かれた分と、その下の2行を読む。 */
+    private String readProblemCountermeasure(Sheet sheet, int baseRow) {
+        String label = getStringValue(sheet, "AS" + (baseRow + 7));
+        String inline = label != null && label.startsWith("問題点・対処：") ? label.substring("問題点・対処：".length()).trim() : "";
+        String below = joinLines(sheet, "AS", baseRow + 8, 2);
+        if (inline.isEmpty()) {
+            return below;
+        }
+        return below == null ? inline : inline + "\n" + below;
     }
 
     private String cleanPlaceholder(String value) {

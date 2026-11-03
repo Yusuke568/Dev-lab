@@ -61,6 +61,25 @@ public class WeeklyWorkReport {
     public String getPersonalNote() { return personalNote; }
     public String getProblemCountermeasure() { return problemCountermeasure; }
 
+    /** 工程名・作業名等の各行（作業報告書の週ブロック3〜7行目。空行も位置を保つ）。 */
+    public java.util.List<String> getProcessNameLines() { return toLines(processName, 5); }
+
+    /** 作業内容と状況の各行（週ブロック2〜7行目。空行も位置を保つ）。 */
+    public java.util.List<String> getProgressDetailLines() { return toLines(progressDetail, 6); }
+
+    private static java.util.List<String> toLines(String text, int size) {
+        java.util.List<String> lines = new java.util.ArrayList<>();
+        if (text != null && !text.isEmpty()) {
+            for (String line : text.split("\\r?\\n", -1)) {
+                lines.add(line);
+            }
+        }
+        while (lines.size() < size) {
+            lines.add("");
+        }
+        return lines;
+    }
+
     private static final DateTimeFormatter LABEL_FORMATTER = DateTimeFormatter.ofPattern("M/d");
 
     /** 画面表示用のラベル（例: "9/3(木) ～ 9/9(水)"）。 */

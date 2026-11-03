@@ -74,12 +74,94 @@ class WorkReportXlsmExportAdapterTest {
 
         try (XSSFWorkbook book = new XSSFWorkbook(new ByteArrayInputStream(xlsm))) {
             Sheet sheet = book.getSheet("11月");
-            // 第1週は Excel の5〜14行目。「問題点・対処：」は12行目、その下の13・14行目に書く
-            assertEquals("問題点・対処：", text(sheet, "AS12"));
-            assertEquals("問題なし", text(sheet, "AS13"));
+            // 第1週は Excel の5〜14行目。「問題なし」は短い1行なので、見出し（12行目）に続けて書き、下の説明文は消す
+            assertEquals("問題点・対処：問題なし", text(sheet, "AS12"));
+            assertEquals("", text(sheet, "AS13"));
+            assertEquals("", text(sheet, "AS14"));
             assertEquals("作業進捗：オンスケ", text(sheet, "AS5"));
             assertEquals("画面設計", text(sheet, "AS6"));
         }
+    }
+
+    @Test
+    void 長い問題点と対処は見出しの下の2行に書く() throws Exception {
+        MonthlyAttendanceDto month = new MonthlyAttendanceDto(YearMonth.of(2026, 11), List.of(), "0:00", 0, 0, 0, "山田 太郎");
+        com.example.kintai.domain.model.attendance.WeeklyWorkReport week1 = new com.example.kintai.domain.model.attendance.WeeklyWorkReport(
+                "126", LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 4),
+                null, null, null, null, null, null, "レビュー指摘が多く遅延気味\n有識者レビューを追加");
+
+        byte[] xlsm = new WorkReportXlsmExportAdapter().generate(month, "山田 太郎", List.of(), List.of(week1));
+
+        try (XSSFWorkbook book = new XSSFWorkbook(new ByteArrayInputStream(xlsm))) {
+            Sheet sheet = book.getSheet("11月");
+            assertEquals("問題点・対処：", text(sheet, "AS12"));
+            assertEquals("レビュー指摘が多く遅延気味", text(sheet, "AS13"));
+            assertEquals("有識者レビューを追加", text(sheet, "AS14"));
+        }
+    }
+
+    /** 作業報告書の例のように、工程名の行の右に作業内容を書く。空行の位置も取込で戻る */
+    @Test
+    void 工程名と作業内容の行の位置をそろえて出力し_取り込んでも位置が変わらない() throws Exception {
+        MonthlyAttendanceDto month = new MonthlyAttendanceDto(YearMonth.of(2026, 10), List.of(), "0:00", 0, 0, 0, "山田 太郎");
+        com.example.kintai.domain.model.attendance.WeeklyWorkReport week1 = new com.example.kintai.domain.model.attendance.WeeklyWorkReport(
+                "126", LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 7),
+                "BCC", "住民税業務保守",
+                "問い合わせ対応サポート\n問い合わせ対応\n住民税スケジュール資料整理\n確定申告振り返り会",
+                "オンスケ",
+                "\n→4/4 件完了\n\n→10/11 件完了\n→2/11 件完了",
+                "原課様への説明資料は完了。", "問題なし");
+
+        byte[] xlsm = new WorkReportXlsmExportAdapter().generate(month, "山田 太郎", List.of(), List.of(week1));
+
+        try (XSSFWorkbook book = new XSSFWorkbook(new ByteArrayInputStream(xlsm))) {
+            Sheet sheet = book.getSheet("10月");
+            assertEquals("　問い合わせ対応サポート", text(sheet, "AR7"));
+            assertEquals("→4/4 件完了", text(sheet, "AS7"));
+            assertEquals("　問い合わせ対応", text(sheet, "AR8"));
+            assertEquals("", text(sheet, "AS8"));
+            assertEquals("　住民税スケジュール資料整理", text(sheet, "AR9"));
+            assertEquals("→10/11 件完了", text(sheet, "AS9"));
+            assertEquals("→2/11 件完了", text(sheet, "AS10"));
+            assertEquals("問題点・対処：問題なし", text(sheet, "AS12"));
+        }
+
+        com.example.kintai.domain.model.attendance.WeeklyWorkReport imported = new WorkReportXlsmImportAdapter()
+                .parse(new ByteArrayInputStream(xlsm)).stream()
+                .filter(m -> m.getYearMonth().equals(YearMonth.of(2026, 10)))
+                .findFirst().orElseThrow()
+                .getWeeklyWorkReports().get(0);
+        assertEquals("\n→4/4 件完了\n\n→10/11 件完了\n→2/11 件完了", imported.getProgressDetail());
+        assertEquals("問い合わせ対応サポート\n問い合わせ対応\n住民税スケジュール資料整理\n確定申告振り返り会", imported.getProcessName());
+        assertEquals("問題なし", imported.getProblemCountermeasure());
+        assertEquals(List.of("", "→4/4 件完了", "", "→10/11 件完了", "→2/11 件完了", ""), imported.getProgressDetailLines());
+    }
+
+    /** 工程名・作業名等は改行ごとに週ブロックの3行目から下へ書き、取り込むと元の改行に戻る */
+    @Test
+    void 工程名は複数行で出力し_取り込むと元に戻る() throws Exception {
+        MonthlyAttendanceDto month = new MonthlyAttendanceDto(YearMonth.of(2026, 11), List.of(), "0:00", 0, 0, 0, "山田 太郎");
+        com.example.kintai.domain.model.attendance.WeeklyWorkReport week1 = new com.example.kintai.domain.model.attendance.WeeklyWorkReport(
+                "126", LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 4),
+                "BCC", "住民情報システム", "確定申告システム\n帳票改修", null, null, null, null);
+
+        byte[] xlsm = new WorkReportXlsmExportAdapter().generate(month, "山田 太郎", List.of(), List.of(week1));
+
+        try (XSSFWorkbook book = new XSSFWorkbook(new ByteArrayInputStream(xlsm))) {
+            Sheet sheet = book.getSheet("11月");
+            assertEquals("BCC", text(sheet, "AR5"));
+            assertEquals("・住民情報システム", text(sheet, "AR6"));
+            assertEquals("　確定申告システム", text(sheet, "AR7"));
+            assertEquals("　帳票改修", text(sheet, "AR8"));
+        }
+
+        com.example.kintai.domain.model.attendance.WeeklyWorkReport imported = new WorkReportXlsmImportAdapter()
+                .parse(new ByteArrayInputStream(xlsm)).stream()
+                .filter(m -> m.getYearMonth().equals(YearMonth.of(2026, 11)))
+                .findFirst().orElseThrow()
+                .getWeeklyWorkReports().get(0);
+        assertEquals("確定申告システム\n帳票改修", imported.getProcessName());
+        assertEquals("住民情報システム", imported.getProjectName());
     }
 
     private static String text(Sheet sheet, String ref) {

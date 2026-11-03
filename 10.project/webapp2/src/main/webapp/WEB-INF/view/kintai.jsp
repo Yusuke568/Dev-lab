@@ -296,8 +296,33 @@
 }
 .wwr-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
     gap: 1rem 1.5rem;
+}
+/* 作業件名／作業進捗：作業報告書と同じく、左右の同じ行を並べる */
+.wwr-sheet-head,
+.wwr-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0 1rem;
+}
+.wwr-row {
+    margin-bottom: 4px;
+}
+.wwr-row .form-input {
+    padding: 6px 8px;
+}
+.wwr-cell-label {
+    display: none; /* PC では上の列見出しで分かるので、各欄の見出しは出さない */
+}
+.wwr-cell-label-always {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #4a5568;
+}
+.wwr-sheet-note {
+    margin-top: 0.5rem;
 }
 .wwr-heading {
     margin: 0 0 0.5rem;
@@ -435,6 +460,25 @@
     }
     .wwr-grid {
         grid-template-columns: 1fr;
+    }
+    /* スマホでは左右を縦に並べ、各欄に見出しを出す */
+    .wwr-sheet-head {
+        display: none;
+    }
+    .wwr-row {
+        grid-template-columns: 1fr;
+        margin-bottom: 10px;
+        padding-bottom: 6px;
+        border-bottom: 1px dashed #e2e8f0;
+    }
+    .wwr-cell {
+        margin-bottom: 4px;
+    }
+    .wwr-cell-label {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #4a5568;
     }
     /* 週次作業報告：PC 向けの固定幅を、スマホでは画面幅に合わせる */
     .weekly-report-block .form-input {
@@ -964,54 +1008,84 @@
 			<div class="card weekly-report-block" data-week-end="${week.weekEndDate}">
 				<h4 class="wwr-title">第${loop.index + 1}週 <c:out value="${week.weekLabel}" /></h4>
 				<div class="wwr-grid">
-					<section class="wwr-section">
-						<h5 class="wwr-heading">作業件名、工程名・作業名</h5>
-						<div class="form-group">
-							<label class="form-label">客先名 <span class="wwr-limit">20文字まで</span></label>
-							<input type="text" class="form-input wwr-client" maxlength="20" placeholder="(客先名)"
-								value="<c:out value='${week.clientName}' />">
+					<%--
+						作業報告書の左2列（作業件名、工程名・作業名／作業進捗、作業内容と状況）は、
+						同じ行どうしが対応する（例：工程名の行の右に「→4/4 件完了」）ので、行ごとに左右の入力欄を並べる。
+					--%>
+					<section class="wwr-section wwr-sheet">
+						<div class="wwr-sheet-head" aria-hidden="true">
+							<div class="wwr-heading">作業件名、工程名・作業名</div>
+							<div class="wwr-heading">作業進捗、作業内容と状況</div>
 						</div>
-						<div class="form-group">
-							<label class="form-label">PJ名 <span class="wwr-limit">18文字まで</span></label>
-							<input type="text" class="form-input wwr-project" maxlength="18" placeholder="(PJ名)"
-								value="<c:out value='${week.projectName}' />">
-						</div>
-						<div class="form-group">
-							<label class="form-label">工程名・作業名等 <span class="wwr-limit">18文字まで</span></label>
-							<input type="text" class="form-input wwr-process" maxlength="18" placeholder="(工程名・作業名等)"
-								value="<c:out value='${week.processName}' />">
-						</div>
-						<c:if test="${not empty summary}">
-							<div class="wwr-summary" aria-label="累計/残業時間（勤怠から自動計算）">
-								<div><c:out value="${summary.headingLine}" /></div>
-								<div class="wwr-summary-indent"><c:out value="${summary.totalsLine}" /></div>
-								<div class="wwr-summary-indent"><c:out value="${summary.previousMonthLine}" /></div>
-								<div class="wwr-limit">稼働/残業。勤怠から自動で計算します（入力不要）</div>
+						<div class="wwr-row">
+							<div class="wwr-cell">
+								<label class="wwr-cell-label">客先名 <span class="wwr-limit">20文字まで</span></label>
+								<input type="text" class="form-input wwr-client" maxlength="20" placeholder="(客先名)" aria-label="客先名"
+									value="<c:out value='${week.clientName}' />">
 							</div>
-						</c:if>
-					</section>
-
-					<section class="wwr-section">
-						<h5 class="wwr-heading">作業進捗、作業内容と状況</h5>
-						<div class="form-group">
-							<label class="form-label">作業進捗 <span class="wwr-limit">10文字まで</span></label>
-							<div class="wwr-prefixed">
-								<span class="wwr-prefix">作業進捗：</span>
-								<input type="text" class="form-input wwr-status" maxlength="10" placeholder="オンスケ、〇日遅れ等"
-									value="<c:out value='${week.progressStatus}' />">
+							<div class="wwr-cell">
+								<label class="wwr-cell-label">作業進捗 <span class="wwr-limit">10文字まで</span></label>
+								<div class="wwr-prefixed">
+									<span class="wwr-prefix">作業進捗：</span>
+									<input type="text" class="form-input wwr-status" maxlength="10" placeholder="オンスケ、〇日遅れ等" aria-label="作業進捗"
+										value="<c:out value='${week.progressStatus}' />">
+								</div>
 							</div>
 						</div>
-						<div class="form-group">
-							<label class="form-label">作業内容と状況 <span class="wwr-limit">1行20文字・6行まで</span></label>
-							<textarea class="form-input wwr-text wwr-detail" rows="6" data-max-lines="6" data-max-chars="20"><c:out value="${week.progressDetail}" /></textarea>
-							<div class="wwr-counter" aria-live="polite"></div>
+						<div class="wwr-row">
+							<div class="wwr-cell">
+								<label class="wwr-cell-label">PJ名 <span class="wwr-limit">18文字まで</span></label>
+								<div class="wwr-prefixed">
+									<span class="wwr-prefix">・</span>
+									<input type="text" class="form-input wwr-project" maxlength="18" placeholder="(PJ名)" aria-label="PJ名"
+										value="<c:out value='${week.projectName}' />">
+								</div>
+							</div>
+							<div class="wwr-cell">
+								<label class="wwr-cell-label">作業内容と状況 1行目 <span class="wwr-limit">20文字まで</span></label>
+								<input type="text" class="form-input wwr-line wwr-detail-line" data-group="detail" maxlength="20"
+									aria-label="作業内容と状況 1行目" value="<c:out value='${week.progressDetailLines[0]}' />">
+							</div>
 						</div>
-						<div class="form-group">
-							<label class="form-label">問題点・対処 <span class="wwr-limit">1行20文字・2行まで</span></label>
-							<textarea class="form-input wwr-text wwr-problem" rows="2" data-max-lines="2" data-max-chars="20"
-								placeholder="問題とその対処を記載（問題なければ「問題なし」）"><c:out value="${week.problemCountermeasure}" /></textarea>
-							<div class="wwr-counter" aria-live="polite"></div>
+						<c:forEach begin="0" end="4" var="i">
+							<div class="wwr-row">
+								<div class="wwr-cell">
+									<label class="wwr-cell-label">工程名・作業名等 ${i + 1}行目 <span class="wwr-limit">18文字まで</span></label>
+									<div class="wwr-prefixed">
+										<span class="wwr-prefix">　</span>
+										<input type="text" class="form-input wwr-line wwr-process-line" data-group="process" maxlength="18"
+											aria-label="工程名・作業名等 ${i + 1}行目" placeholder="${i == 0 ? '(工程名・作業名等)' : ''}"
+											value="<c:out value='${week.processNameLines[i]}' />">
+									</div>
+								</div>
+								<div class="wwr-cell">
+									<label class="wwr-cell-label">作業内容と状況 ${i + 2}行目 <span class="wwr-limit">20文字まで</span></label>
+									<input type="text" class="form-input wwr-line wwr-detail-line" data-group="detail" maxlength="20"
+										aria-label="作業内容と状況 ${i + 2}行目" placeholder="${i == 0 ? '→4/4 件完了 など' : ''}"
+										value="<c:out value='${week.progressDetailLines[i + 1]}' />">
+								</div>
+							</div>
+						</c:forEach>
+						<div class="wwr-row">
+							<div class="wwr-cell">
+								<c:if test="${not empty summary}">
+									<div class="wwr-summary" aria-label="累計/残業時間（勤怠から自動計算）">
+										<div><c:out value="${summary.headingLine}" /></div>
+										<div class="wwr-summary-indent"><c:out value="${summary.totalsLine}" /></div>
+										<div class="wwr-summary-indent"><c:out value="${summary.previousMonthLine}" /></div>
+										<div class="wwr-limit">稼働/残業。勤怠から自動で計算します（入力不要）</div>
+									</div>
+								</c:if>
+							</div>
+							<div class="wwr-cell">
+								<label class="wwr-cell-label wwr-cell-label-always">問題点・対処 <span class="wwr-limit">1行20文字・2行まで</span></label>
+								<textarea class="form-input wwr-text wwr-problem" rows="2" data-max-lines="2" data-max-chars="20"
+									aria-label="問題点・対処" placeholder="問題とその対処を記載（問題なければ「問題なし」）"><c:out value="${week.problemCountermeasure}" /></textarea>
+								<div class="wwr-counter" aria-live="polite"></div>
+								<div class="wwr-limit">「問題なし」のように短い1行は「問題点・対処：」と同じ行に出力します。</div>
+							</div>
 						</div>
+						<p class="wwr-limit wwr-sheet-note">Enterで次の行へ移ります。複数行をまとめて貼り付けると下の行へ分けて入ります。左右の同じ行は、作業報告書でも同じ行に出力されます。</p>
 					</section>
 
 					<section class="wwr-section">
@@ -1084,7 +1158,50 @@
 	    return over;
 	}
 
+	/** 同じ週・同じ列（工程名／作業内容）の行ごとの入力欄 */
+	function wwrLineInputs(input) {
+	    return Array.from(input.closest(".weekly-report-block")
+	        .querySelectorAll(".wwr-line[data-group='" + input.dataset.group + "']"));
+	}
+
+	/** 行ごとの入力欄の値を、改行区切りの1つの値にする（途中の空行は位置を保ち、末尾の空行は除く）。 */
+	function wwrJoinLines(block, selector) {
+	    const values = Array.from(block.querySelectorAll(selector)).map((input) => input.value);
+	    while (values.length > 0 && values[values.length - 1].trim() === "") values.pop();
+	    return values.join("\n");
+	}
+
 	document.addEventListener("DOMContentLoaded", () => {
+	    // 行ごとの入力欄：Enter で次の行へ、複数行の貼り付けは下の行へ分けて入れる
+	    document.querySelectorAll(".weekly-report-block .wwr-line").forEach((input) => {
+	        input.addEventListener("keydown", (e) => {
+	            if (e.key !== "Enter" || e.isComposing) return;
+	            e.preventDefault();
+	            const inputs = wwrLineInputs(input);
+	            const next = inputs[inputs.indexOf(input) + 1];
+	            if (next) next.focus();
+	        });
+	        input.addEventListener("paste", (e) => {
+	            const text = (e.clipboardData || window.clipboardData).getData("text");
+	            if (!/\r?\n/.test(text)) return;
+	            e.preventDefault();
+	            const pasted = text.replace(/\r?\n$/, "").split(/\r?\n/);
+	            const inputs = wwrLineInputs(input);
+	            let index = inputs.indexOf(input);
+	            pasted.forEach((line) => {
+	                if (index < inputs.length) {
+	                    inputs[index].value = line.slice(0, Number(inputs[index].maxLength) || line.length);
+	                    index++;
+	                }
+	            });
+	            if (pasted.length > inputs.length - inputs.indexOf(input)) {
+	                const message = document.getElementById("wwr-message");
+	                message.className = "inline-message error";
+	                message.textContent = "貼り付けた行が欄の数より多いため、入りきらない行は省きました。";
+	            }
+	        });
+	    });
+
 	    document.querySelectorAll(".weekly-report-block textarea.wwr-text").forEach((textarea) => {
 	        updateWeeklyCounter(textarea);
 	        textarea.addEventListener("input", () => updateWeeklyCounter(textarea));
@@ -1113,9 +1230,9 @@
 	        weekEndDate: block.dataset.weekEnd,
 	        clientName: block.querySelector(".wwr-client").value,
 	        projectName: block.querySelector(".wwr-project").value,
-	        processName: block.querySelector(".wwr-process").value,
+	        processName: wwrJoinLines(block, ".wwr-process-line"),
 	        progressStatus: block.querySelector(".wwr-status").value,
-	        progressDetail: block.querySelector(".wwr-detail").value,
+	        progressDetail: wwrJoinLines(block, ".wwr-detail-line"),
 	        problemCountermeasure: block.querySelector(".wwr-problem").value,
 	        personalNote: block.querySelector(".wwr-note").value
 	    }));

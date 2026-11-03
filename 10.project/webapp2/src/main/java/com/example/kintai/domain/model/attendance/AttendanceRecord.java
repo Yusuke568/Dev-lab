@@ -19,6 +19,9 @@ public class AttendanceRecord {
     private final EmployeeId employeeId;
     private final LocalDate workDate;
     private WorkTime workTime;
+    /** 出勤だけ・退勤だけ打刻した日の時刻（workTime が揃っていないときだけ使う） */
+    private LocalTime partialStartTime;
+    private LocalTime partialEndTime;
     private String workDescription; // 作業冁E��など
     private Integer abstractId;
     private Integer correctionId;
@@ -95,6 +98,25 @@ public class AttendanceRecord {
 
     public void setWorkTime(WorkTime workTime) {
         this.workTime = workTime;
+    }
+
+    /**
+     * 出勤・退勤の片方だけが入力されている日の時刻を設定します。
+     * 両方揃っている日は WorkTime を使い、こちらは使いません。
+     */
+    public void setPartialTimes(LocalTime startTime, LocalTime endTime) {
+        this.partialStartTime = startTime;
+        this.partialEndTime = endTime;
+    }
+
+    /** 出勤時刻（未入力なら null）。片方だけ打刻した日も返す。 */
+    public LocalTime getStartTime() {
+        return workTime != null ? workTime.getStartTime() : partialStartTime;
+    }
+
+    /** 退勤時刻（未入力なら null）。片方だけ打刻した日も返す。 */
+    public LocalTime getEndTime() {
+        return workTime != null ? workTime.getEndTime() : partialEndTime;
     }
 
     public String getWorkDescription() {

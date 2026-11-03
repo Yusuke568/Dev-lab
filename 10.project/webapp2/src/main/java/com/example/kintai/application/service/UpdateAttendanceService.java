@@ -109,6 +109,11 @@ public class UpdateAttendanceService implements UpdateAttendanceUseCase {
                         : null;
 
                 AttendanceRecord record = new AttendanceRecord(employeeId, date, workTime);
+                if (workTime == null) {
+                    // 出勤ボタンだけ押した日などは、入力された方の時刻だけを残す
+                    record.setPartialTimes(hasFrom ? LocalTime.parse(cmd.getFromTime()) : null,
+                            hasTo ? LocalTime.parse(cmd.getToTime()) : null);
+                }
                 record.setWorkWeek(cmd.getWeek());
                 record.setAbstractId(cmd.getAbstractId());
                 record.setWorkDescription(cmd.getMemo());

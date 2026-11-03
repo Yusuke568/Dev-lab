@@ -72,8 +72,8 @@ public class GetMonthlyAttendanceService implements GetMonthlyAttendanceUseCase 
      * AttendanceRecord (ドメインモチE��) めEDailyAttendanceDto に変換します、E
      */
     private DailyAttendanceDto toDailyDto(AttendanceRecord record) {
-        String startTime = record.getWorkTime() != null ? record.getWorkTime().getStartTime().format(TIME_FORMATTER) : "-";
-        String endTime = record.getWorkTime() != null ? record.getWorkTime().getEndTime().format(TIME_FORMATTER) : "-";
+        String startTime = record.getStartTime() != null ? record.getStartTime().format(TIME_FORMATTER) : "-";
+        String endTime = record.getEndTime() != null ? record.getEndTime().format(TIME_FORMATTER) : "-";
         String workHours = formatDuration(record.calculateWorkDuration());
         
         return new DailyAttendanceDto(

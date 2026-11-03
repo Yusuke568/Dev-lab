@@ -1,4 +1,7 @@
-import { collectAttendanceRecords, getMinutes, calculateTotalWorkMinutes } from "./utils.js";
+import {
+  collectAttendanceRecords, collectRowRecord, getMinutes, calculateTotalWorkMinutes,
+  localDateString, currentTimeString, getTimeInput
+} from "./utils.js";
 
 // Get data from the root element's dataset
 const rootEl = document.getElementById("kintai-app-root");
@@ -6,10 +9,24 @@ const staffId = parseInt(rootEl.dataset.staffId, 10);
 const workTypes = JSON.parse(rootEl.dataset.workTypesJson);
 const year = parseInt(rootEl.dataset.year, 10);
 const month = parseInt(rootEl.dataset.month, 10);
+const contextPath = document.body.dataset.contextPath || "";
+
+/** 保存していない変更がある日（YYYY-MM-DD） */
+const dirtyDates = new Set();
+
+function postRecords(records) {
+  return fetch(contextPath + "/kintaiUpdateApi.do", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(records),
+  });
+}
 
 function saveAttendance(isTemporary = false) {
   let records = collectAttendanceRecords(staffId);
-  
+
   if (!isTemporary) {
     for (const r of records) {
       if (r.kintaifrom && r.kintaito) {
@@ -36,15 +53,10 @@ function saveAttendance(isTemporary = false) {
   // add isTemporary to records
   records = records.map(r => Object.assign({}, r, { isTemporary: isTemporary }));
 
-  const contextPath = document.body.dataset.contextPath || "";
-  fetch(contextPath + "/kintaiUpdateApi.do", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(records),
-  }).then((res) => {
+  postRecords(records).then((res) => {
     if (res.ok) {
+      dirtyDates.clear();
+      updateDirtyState();
       alert("保存しました！");
       location.reload(); // Optional: Reload to see updated leave days
     } else {
@@ -60,9 +72,7 @@ window.insertTemplate = insertTemplate;
 window.toggleAllRows = toggleAllRows;
 window.applyBulkInput = applyBulkInput;
 window.toggleRowDetails = toggleRowDetails;
-
-const workStart = "09:00";
-const workEnd = "18:00";
+window.scrollToToday = scrollToToday;
 
 const rows = document.querySelectorAll("#calendar-log tbody tr");
 
@@ -70,6 +80,28 @@ const rows = document.querySelectorAll("#calendar-log tbody tr");
 const holidays = ["2025-09-15", "2025-09-23"];
 
 // -------- Functions --------
+
+function findRow(date) {
+  return Array.from(rows).find((row) => row.dataset.date === date);
+}
+
+function markDirty(row) {
+  if (row && row.dataset.date) {
+    dirtyDates.add(row.dataset.date);
+    updateDirtyState();
+  }
+}
+
+/** 保存していない変更があることを、下の保存バーで知らせる。 */
+function updateDirtyState() {
+  const bar = document.getElementById("save-bar");
+  const indicator = document.getElementById("dirty-indicator");
+  const dirty = dirtyDates.size > 0;
+  if (bar) bar.classList.toggle("dirty", dirty);
+  if (indicator) {
+    indicator.textContent = dirty ? "未保存の変更があります（" + dirtyDates.size + "日分）" : "変更はすべて保存済みです";
+  }
+}
 
 function toggleRowDetails(btn) {
   const tr = btn.closest('tr');
@@ -98,17 +130,18 @@ function applyBulkInput() {
     const cb = row.querySelector(".row-checkbox");
     if (cb && cb.checked) {
       updated = true;
-      if (bulkStart) row.cells[3].textContent = bulkStart;
-      if (bulkEnd) row.cells[4].textContent = bulkEnd;
+      if (bulkStart) getTimeInput(row, "kintaifrom").value = bulkStart;
+      if (bulkEnd) getTimeInput(row, "kintaito").value = bulkEnd;
       if (bulkStatus !== "") {
         const select = row.querySelector("select[name='status']");
         if (select) select.value = bulkStatus;
       }
+      markDirty(row);
     }
   });
 
   if (updated) {
-    updateOvertimePerRow();
+    updateButtonState();
   } else {
     alert("反映する行を選択してください。");
   }
@@ -120,6 +153,7 @@ function insertTemplate(btnEl) {
     const templateText = "【所感】\n本日も滞りなく業務を遂行しました。\n";
     if (input.value.indexOf("【所感】") === -1) {
       input.value = (input.value + " " + templateText).trim();
+      markDirty(input.closest("tr"));
     }
   }
 }
@@ -148,8 +182,8 @@ function applyCorrectionMasterToRow(select) {
 
 function updateOvertimePerRow() {
   rows.forEach((row) => {
-    const start = row.cells[3].textContent.trim();
-    const end = row.cells[4].textContent.trim();
+    const start = getTimeInput(row, "kintaifrom").value;
+    const end = getTimeInput(row, "kintaito").value;
     const workTimeCell = row.cells[5]; // 実働時間（補正後）を表示するセル
 
     if (start && end) {
@@ -165,80 +199,103 @@ function updateOvertimePerRow() {
   });
 }
 
+/** 出勤・退勤ボタンと「今日」欄を、今日の行の入力内容に合わせる。 */
 function updateButtonState() {
-  const today = new Date().toISOString().slice(0, 10);
-  const attendanceRecords = collectAttendanceRecords(staffId);
-  const rec = attendanceRecords.find((r) => r.kintaidate === today);
+  const todayRow = findRow(localDateString());
 
   const clockInBtn = document.getElementById("clock-in-btn");
   const clockOutBtn = document.getElementById("clock-out-btn");
+  const jumpBtn = document.getElementById("today-jump-btn");
+  const todayStart = document.getElementById("today-start");
+  const todayEnd = document.getElementById("today-end");
 
-  const isClockedIn = !!(rec && rec.kintaifrom);
-  const isClockedOut = !!(rec && rec.kintaito);
+  if (!todayRow) {
+    // 表示中の月に今日が含まれない
+    if (clockInBtn) clockInBtn.disabled = true;
+    if (clockOutBtn) clockOutBtn.disabled = true;
+    if (jumpBtn) jumpBtn.hidden = true;
+    const panel = document.getElementById("today-times");
+    if (panel) panel.textContent = "表示中の月に今日は含まれません（打刻は今月の画面で行ってください）";
+    updateOvertimePerRow();
+    return;
+  }
 
-  if (clockInBtn) clockInBtn.disabled = isClockedIn;
-  if (clockOutBtn) clockOutBtn.disabled = isClockedOut;
+  const start = getTimeInput(todayRow, "kintaifrom").value;
+  const end = getTimeInput(todayRow, "kintaito").value;
+  if (todayStart) todayStart.textContent = start || "--:--";
+  if (todayEnd) todayEnd.textContent = end || "--:--";
+  if (clockInBtn) clockInBtn.disabled = !!start;
+  if (clockOutBtn) clockOutBtn.disabled = !start || !!end;
 
   updateOvertimePerRow();
 }
 
-function recordAttendance(type) {
-  const now = new Date();
-  const dateStr = now.toISOString().slice(0, 10);
-
-  const timeStr = now.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  for (const row of rows) {
-    if (row.dataset.date === dateStr) {
-      switch (type) {
-        case "出勤":
-          row.cells[3].textContent = timeStr;
-          break;
-        case "退勤":
-          row.cells[4].textContent = timeStr;
-          break;
-      }
-      break;
-    }
-  }
-  updateButtonState();
+function showTodayMessage(text, isError) {
+  const el = document.getElementById("today-message");
+  if (!el) return;
+  el.textContent = text;
+  el.classList.toggle("error", !!isError);
 }
 
-function renderStatusCell(cell, currentValue, date) {
-  cell.innerHTML = "";
-  const template = document.getElementById("status-template");
-  const select = template.cloneNode(true);
-  select.style.display = "inline";
-  select.value = currentValue || "";
-  select.classList.add("form-input"); // Apply new style
+/**
+ * 出勤・退勤ボタン。今日の行に現在時刻を入れ、その日の分だけすぐに一時保存する。
+ * （月全体の「保存（提出）」は別に行う）
+ */
+function recordAttendance(type) {
+  const now = new Date();
+  const row = findRow(localDateString(now));
+  if (!row) {
+    alert("表示中の月に今日の行がありません。今月の画面で打刻してください。");
+    return;
+  }
+  const timeStr = currentTimeString(now);
+  const input = getTimeInput(row, type === "出勤" ? "kintaifrom" : "kintaito");
+  const previous = input.value;
+  input.value = timeStr;
+  updateButtonState();
 
-  select.addEventListener("change", () => {
-    const newVal = parseInt(select.value, 10);
-    const selectedOption = workTypes.find((opt) => opt.id === newVal);
-    cell.textContent = selectedOption ? selectedOption.name : "";
-    // No need to update a separate array, `collectAttendanceRecords` will get it
-  });
+  const record = Object.assign({}, collectRowRecord(row, staffId), { isTemporary: true });
+  showTodayMessage("保存しています…", false);
+  postRecords([record])
+    .then((res) => {
+      if (!res.ok) throw new Error("save failed");
+      dirtyDates.delete(row.dataset.date);
+      updateDirtyState();
+      showTodayMessage(type + " " + timeStr + " を記録しました（一時保存）", false);
+    })
+    .catch(() => {
+      // 保存できなかったときは画面にだけ残し、下の保存ボタンで保存してもらう
+      markDirty(row);
+      showTodayMessage(type + "の記録を保存できませんでした。通信状態を確かめて「一時保存」を押してください。", true);
+      if (!previous) input.focus();
+    });
+}
 
-  cell.appendChild(select);
+function scrollToToday() {
+  const row = findRow(localDateString());
+  if (row) {
+    row.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 }
 
 // -------- Event Listeners --------
 
 document.addEventListener("DOMContentLoaded", () => {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateString();
+
+  const todayLabel = document.getElementById("today-date");
+  if (todayLabel) {
+    const d = new Date();
+    todayLabel.textContent = (d.getMonth() + 1) + "/" + d.getDate() + "（" + "日月火水木金土"[d.getDay()] + "）";
+  }
 
   rows.forEach((row) => {
     const date = row.dataset.date;
-    const weekText = row.cells[2].textContent.trim();
+    const weekText = row.dataset.week;
     const select = row.querySelector("select[name='status']");
 
     // Apply styles for weekends and holidays
     if (date === today) row.classList.add("today");
-    if (weekText === "SATURDAY") row.classList.add("saturday");
-    else if (weekText === "SUNDAY") row.classList.add("sunday");
     if (holidays.includes(date)) row.classList.add("holiday");
 
     // Set default status for holidays/weekends
@@ -253,74 +310,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Cell click to edit
   const table = document.getElementById("calendar-log");
   if (table) {
-    table.addEventListener("click", (e) => {
-      const cell = e.target;
-      if (
-        cell.tagName !== "TD" ||
-        cell.parentElement.parentElement.tagName !== "TBODY"
-      )
-        return;
-
-      const row = cell.parentElement;
-      const date = row.dataset.date;
-
-      // Non-editable cells (0:選択 1:日 2:曜日 5:時間 6:時間外 9:状態 13:詳細)
-      if ([0, 1, 2, 5, 6, 9, 13].includes(cell.cellIndex) || cell.querySelector("select") || cell.classList.contains("toggle-col"))
-        return;
-
-      // Switch to input for editable cells
-      const isEditableInput = cell.querySelector("input");
-      if (isEditableInput) return; // Already in edit mode
-
-      const originalText = cell.textContent;
-
-      // For status dropdown (勤務区分)
-      if (cell.cellIndex === 7) {
-        const record = collectAttendanceRecords(staffId).find((r) => r.kintaidate === date);
-        const currentVal = record ? record.abstractId : null; // Use null to be explicit
-        renderStatusCell(cell, currentVal || "", date); // Pass empty string if null
-        cell.querySelector("select").focus();
-        return;
-      }
-
-      // For other text/time inputs
-      const input = document.createElement("input");
-      input.type = "text";
-      input.value = originalText;
-      input.classList.add("form-input"); // Use a consistent input style
-
-      cell.textContent = "";
-      cell.appendChild(input);
-      input.focus();
-
-      const handleBlur = () => {
-        cell.textContent = input.value;
-        updateButtonState();
-      };
-
-      input.addEventListener("blur", handleBlur, { once: true });
-      input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          input.blur();
-        } else if (e.key === "Escape") {
-          input.removeEventListener("blur", handleBlur);
-          cell.textContent = originalText;
-        }
-      });
-    });
-
-    // 補正(通)・補正(深)の入力変更で実働時間・時間外労働を再計算
+    // 入力したら、その日を「未保存」にし、時間を計算し直す
     table.addEventListener("input", (e) => {
-      if (e.target.matches("input[name='correctionUsTime'], input[name='correctionMidTime']")) {
-        updateOvertimePerRow();
+      if (e.target.matches(".row-checkbox")) return;
+      markDirty(e.target.closest("tr"));
+      if (e.target.matches("input[name='kintaifrom'], input[name='kintaito'], input[name='correctionUsTime'], input[name='correctionMidTime']")) {
+        updateButtonState();
       }
     });
 
-    // 補正CDを選択したら、マスタ登録済みの補正(通)・補正(深)を自動反映
     table.addEventListener("change", (e) => {
+      if (e.target.matches(".row-checkbox")) return;
+      markDirty(e.target.closest("tr"));
+      // 補正CDを選択したら、マスタ登録済みの補正(通)・補正(深)を自動反映
       if (e.target.matches("select[name='correctionId']")) {
         applyCorrectionMasterToRow(e.target);
         updateOvertimePerRow();
@@ -328,6 +332,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // 保存していない変更があるまま画面を離れようとしたら確認する
+  window.addEventListener("beforeunload", (e) => {
+    if (dirtyDates.size > 0) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+  });
+
   // Initial state update
   updateButtonState();
+  updateDirtyState();
 });

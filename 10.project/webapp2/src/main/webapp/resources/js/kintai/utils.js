@@ -1,4 +1,20 @@
 
+/** 端末の時刻での日付（YYYY-MM-DD）。toISOString() は UTC なので、日本時間の朝9時前は前日になってしまう。 */
+export function localDateString(date = new Date()) {
+  return date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0") + "-" +
+    String(date.getDate()).padStart(2, "0");
+}
+
+/** 端末の時刻での現在時刻（HH:mm）。 */
+export function currentTimeString(date = new Date()) {
+  return String(date.getHours()).padStart(2, "0") + ":" + String(date.getMinutes()).padStart(2, "0");
+}
+
+/** 行の出勤・退勤の入力欄。 */
+export function getTimeInput(row, name) {
+  return row.querySelector(`input[name='${name}']`);
+}
+
 export function getMinutes(t) {
   const [h, m] = t.split(':').map(Number);
   return h * 60 + m;
@@ -52,13 +68,17 @@ export function calculateOvertime(start, end) {
 
 export function collectAttendanceRecords(staffId) {
   const rows = document.querySelectorAll("#calendar-log tbody tr");
-  const records = [];
+  return Array.from(rows).map(row => collectRowRecord(row, staffId));
+}
 
-  rows.forEach(row => {
+/** 1日分（表の1行）の入力内容を、保存APIに送る形にまとめる。 */
+export function collectRowRecord(row, staffId) {
     const kintaidate = row.dataset.date;
-    const week = row.querySelector("td:nth-child(3)").textContent.trim();
-    const kintaifrom = row.querySelector("td:nth-child(4)").textContent.trim();
-    const kintaito = row.querySelector("td:nth-child(5)").textContent.trim();
+    const week = row.dataset.week;
+    const fromInput = getTimeInput(row, "kintaifrom");
+    const toInput = getTimeInput(row, "kintaito");
+    const kintaifrom = fromInput ? fromInput.value : "";
+    const kintaito = toInput ? toInput.value : "";
     const statusSelect = row.querySelector("select[name='status']");
     const abstractId = statusSelect && statusSelect.value ? parseInt(statusSelect.value, 10) : null;
 
@@ -86,7 +106,7 @@ export function collectAttendanceRecords(staffId) {
     const indirectTimeNum = parseNum(indirectTime);
     const totalDirectWorkTime = (totalWorkTime !== null) ? totalWorkTime - (indirectTimeNum || 0) : null;
 
-    records.push({
+    return {
       id: staffId,
       kintaidate,
       week,
@@ -101,8 +121,5 @@ export function collectAttendanceRecords(staffId) {
       indirectTime: indirectTimeNum,
       totalWorkTime,
       totalDirectWorkTime
-    });
-  });
-
-  return records;
+    };
 }

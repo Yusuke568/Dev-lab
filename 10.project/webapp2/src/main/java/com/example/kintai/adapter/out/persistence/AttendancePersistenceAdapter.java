@@ -160,11 +160,12 @@ public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, S
 
         int staffId = Integer.parseInt(record.getEmployeeId().getValue());
         java.sql.Date workDate = java.sql.Date.valueOf(record.getWorkDate());
-        Timestamp fromTime = record.getWorkTime() != null
-                ? Timestamp.valueOf(record.getWorkDate().atTime(record.getWorkTime().getStartTime()))
+        // 出勤だけ打刻した日も、出勤時刻を残す
+        Timestamp fromTime = record.getStartTime() != null
+                ? Timestamp.valueOf(record.getWorkDate().atTime(record.getStartTime()))
                 : null;
-        Timestamp toTime = record.getWorkTime() != null
-                ? Timestamp.valueOf(record.getWorkDate().atTime(record.getWorkTime().getEndTime()))
+        Timestamp toTime = record.getEndTime() != null
+                ? Timestamp.valueOf(record.getWorkDate().atTime(record.getEndTime()))
                 : null;
 
         try (Connection con = ConnectionBase.getConnection();
@@ -234,6 +235,9 @@ public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, S
         WorkTime workTime = (startTime != null && endTime != null) ? new WorkTime(startTime, endTime) : null;
         
         AttendanceRecord record = new AttendanceRecord(employeeId, workDate, workTime);
+        if (workTime == null) {
+            record.setPartialTimes(startTime, endTime);
+        }
         record.setWorkDescription(rs.getString("remarks"));
         
         int abstractId = rs.getInt("abstract_id");

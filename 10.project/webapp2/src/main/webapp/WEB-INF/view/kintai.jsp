@@ -39,6 +39,7 @@
 }
 .actions-card {
 	display: flex;
+	flex-wrap: wrap;
 	justify-content: space-between;
 	align-items: center;
 	padding: 1.5rem;
@@ -58,6 +59,7 @@
 
 .status-banner {
     width: 100%;
+    box-sizing: border-box; /* 余白を幅に含め、スマホで画面からはみ出さないようにする */
     padding: 12px 20px;
     border-radius: 6px;
     font-size: 1.05rem;
@@ -208,8 +210,99 @@
     flex-wrap: wrap;
 }
 
+/* --- 今日の打刻 --- */
+.today-panel {
+    flex: 1 1 260px;
+}
+.today-panel .today-label {
+    font-weight: 800;
+    color: #1a3d6d;
+}
+.today-panel .today-times {
+    font-size: 1.1rem;
+    margin: 4px 0;
+}
+.today-panel .today-times strong {
+    font-size: 1.4rem;
+    font-variant-numeric: tabular-nums;
+}
+.today-message {
+    font-size: 0.9rem;
+    color: #1a7f1a;
+    min-height: 1.4em;
+}
+.today-message.error {
+    color: #c50000;
+    font-weight: 700;
+}
+.clock-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+.clock-buttons .btn {
+    min-width: 7em;
+    padding: 12px 20px;
+    font-size: 1.05rem;
+}
+
+/* --- 画面下に固定する保存バー --- */
+.save-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding: 10px 12px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+}
+.save-bar .dirty-indicator {
+    font-size: 0.9rem;
+    color: #718096;
+}
+.save-bar.dirty {
+    border-color: #f6ad55;
+    background: #fffaf0;
+}
+.save-bar.dirty .dirty-indicator {
+    color: #c05621;
+    font-weight: 700;
+}
+.save-bar .save-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+.save-bar .save-buttons .btn {
+    margin: 0;
+}
+.table-kintai input[type="time"].form-input {
+    min-width: 7em;
+}
+
 /* --- スマートフォン対応 --- */
 @media (max-width: 768px) {
+    /* iPhone は 16px 未満の入力欄をタップすると画面を拡大するので、16px にそろえる */
+    .form-input,
+    .table .form-input {
+        font-size: 16px;
+    }
+    .save-bar .save-buttons {
+        flex: 1 1 100%;
+    }
+    .save-bar .save-buttons .btn {
+        flex: 1 1 0;
+        padding: 12px 8px;
+    }
+    .clock-buttons .btn {
+        flex: 1 1 0;
+    }
     body {
         padding: 12px;
     }
@@ -324,10 +417,6 @@
 
 	<!-- ▼ ステータスエリア ▼ -->
 	<div class="status-area">
-	    <div class="status-banner status-info">
-	        <span class="icon">ℹ️</span>
-	        <span class="msg">勤怠データは最新です</span>
-	    </div>
 	    <c:if test="${attendanceData.totalWorkMinutes > 9600}">
 		    <div class="status-banner status-warning">
 		        <span class="icon">⚠️</span>
@@ -484,19 +573,20 @@
 		</div>
 
 		<div class="card actions-card">
-			<div style="display: flex; gap: 1rem;">
+			<div class="today-panel">
+				<div class="today-label">今日 <span id="today-date"></span></div>
+				<div class="today-times" id="today-times">出勤 <strong id="today-start">--:--</strong> ／ 退勤 <strong id="today-end">--:--</strong></div>
+				<div class="today-message" id="today-message" role="status"></div>
+			</div>
+			<div class="clock-buttons">
 				<button id="clock-in-btn" onclick="recordAttendance('出勤')"
 					class="btn btn-primary">☀️ 出勤</button>
 				<button id="clock-out-btn" onclick="recordAttendance('退勤')"
 					class="btn btn-primary">🌙 退勤</button>
+				<button id="today-jump-btn" type="button" onclick="scrollToToday()"
+					class="btn btn-secondary">📍 今日の行へ</button>
 			</div>
 			<div id="overtime-summary">時間外労働: <c:out value="${attendanceData.totalOvertimeFormatted}" />（保存済みデータに基づく。未保存の変更は反映されません）</div>
-			<div style="display: flex; gap: 1rem;">
-				<button id="temp-save-btn" onclick="saveAttendance(true)"
-					class="btn btn-secondary">📝 一時保存</button>
-				<button id="save-btn" onclick="saveAttendance(false)"
-					class="btn btn-success">💾 保存 (提出)</button>
-			</div>
 		</div>
 
 		<div class="card" style="margin-bottom: 1rem;">
@@ -546,13 +636,15 @@
 			<tbody>
 				<c:forEach var="daily" items="${attendanceData.dailyRecords}">
 					<c:set var="week" value="${daily.date.dayOfWeek.toString()}" />
-					<tr data-date="${daily.date}"
+					<tr data-date="${daily.date}" data-week="${fn:substring(week, 0, 3)}"
 						class="${week == 'SATURDAY' ? 'saturday' : ''} ${week == 'SUNDAY' ? 'sunday' : ''}">
 						<td data-label="選択"><input type="checkbox" class="row-checkbox" value="${daily.date}"></td>
 						<td data-label="日"><c:out value="${daily.date.dayOfMonth}" /></td>
 						<td data-label="曜日">${fn:substring(week, 0, 3)}</td>
-						<td data-label="出勤" class="editable-time"><c:out value="${daily.startTime}" /></td>
-						<td data-label="退勤" class="editable-time"><c:out value="${daily.endTime}" /></td>
+						<td data-label="出勤" class="editable-time"><input type="time" name="kintaifrom" class="form-input"
+							value="${daily.startTime == '-' ? '' : fn:escapeXml(daily.startTime)}" aria-label="${daily.date.dayOfMonth}日の出勤"></td>
+						<td data-label="退勤" class="editable-time"><input type="time" name="kintaito" class="form-input"
+							value="${daily.endTime == '-' ? '' : fn:escapeXml(daily.endTime)}" aria-label="${daily.date.dayOfMonth}日の退勤"></td>
 						<td data-label="時間"><c:out value="${daily.workHours}" /></td>
 						<td data-label="時間外">
 							<c:choose>
@@ -603,6 +695,17 @@
 				</c:forEach>
 			</tbody>
 		</table>
+		</div>
+
+		<%-- 月の途中の日を直しても、すぐ保存できるよう画面の下に固定する --%>
+		<div class="save-bar" id="save-bar">
+			<span class="dirty-indicator" id="dirty-indicator" role="status"></span>
+			<div class="save-buttons">
+				<button id="temp-save-btn" onclick="saveAttendance(true)"
+					class="btn btn-secondary">📝 一時保存</button>
+				<button id="save-btn" onclick="saveAttendance(false)"
+					class="btn btn-success">💾 保存 (提出)</button>
+			</div>
 		</div>
 	</div>
 

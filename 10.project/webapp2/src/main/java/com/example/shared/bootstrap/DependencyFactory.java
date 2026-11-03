@@ -128,7 +128,8 @@ public class DependencyFactory {
 
     // --- Actions ---
     private final Map<String, Action> actionMap = new ConcurrentHashMap<>();
-    private final Map<String, Feature> featureMap = new ConcurrentHashMap<>();
+    /** アクション名 → 必要な機能（どれか1つあれば使える） */
+    private final Map<String, java.util.Set<Feature>> featureMap = new ConcurrentHashMap<>();
     private static final java.util.Set<String> PUBLIC_ACTIONS = java.util.Set.of("Login", "LoginExecute", "Logout");
 
     public DependencyFactory() {
@@ -337,17 +338,27 @@ public class DependencyFactory {
                 "ShainInsertExecute", "ShainDeleteForm", "ShainDeleteExecute", "SearchShainApi",
                 "PasswordResetForm", "PasswordResetExecute");
         requireFeature(Feature.PAID_LEAVE_ADMIN, "PaidLeaveAdmin", "UpdateLeave", "GrantLeaveByYear", "GrantLeaveSelected");
-        requireFeature(Feature.MASTER_ADMIN, "CorrectionMasterList", "CorrectionMasterRegister", "MasterMenu",
-                "MasterJobClass", "MasterPermissionGroup", "MasterDepartment", "MasterAbstract", "MasterLeaveRule",
-                "MasterApprovalRoute");
+        // マスタはマスタごとに権限を分ける。マスタ管理のトップは、どれか1つのマスタを使えれば開ける
+        requireFeature(Feature.MASTER_PERMISSION_GROUP, "MasterPermissionGroup");
+        requireFeature(Feature.MASTER_JOB_CLASS, "MasterJobClass");
+        requireFeature(Feature.MASTER_DEPARTMENT, "MasterDepartment");
+        requireFeature(Feature.MASTER_APPROVAL_ROUTE, "MasterApprovalRoute");
+        requireFeature(Feature.MASTER_ABSTRACT, "MasterAbstract");
+        requireFeature(Feature.MASTER_LEAVE_RULE, "MasterLeaveRule");
+        requireFeature(Feature.MASTER_CORRECTION, "CorrectionMasterList", "CorrectionMasterRegister");
+        requireAnyFeature(Feature.masterFeatures(), "MasterMenu");
     }
 
     private void requireFeature(Feature feature, String... actionNames) {
+        requireAnyFeature(java.util.EnumSet.of(feature), actionNames);
+    }
+
+    private void requireAnyFeature(java.util.Set<Feature> features, String... actionNames) {
         for (String name : actionNames) {
             if (!actionMap.containsKey(name)) {
                 throw new IllegalStateException("No Action configured for name: " + name);
             }
-            featureMap.put(name, feature);
+            featureMap.put(name, features);
         }
     }
 
@@ -356,8 +367,8 @@ public class DependencyFactory {
         return PUBLIC_ACTIONS.contains(actionName);
     }
 
-    /** アクションに必要な機能。ログインしていれば誰でも使えるアクションは null。 */
-    public Feature getRequiredFeature(String actionName) {
+    /** アクションに必要な機能（どれか1つあればよい）。ログインしていれば誰でも使えるアクションは null。 */
+    public java.util.Set<Feature> getRequiredFeatures(String actionName) {
         return featureMap.get(actionName);
     }
 

@@ -56,12 +56,16 @@ public class LoginExecuteAction implements Action {
                 session.setAttribute("loginUserRole", shain.getJobClass());
             });
 
-            // 使える機能: features は権限チェック用、can は JSP の表示切り替え用（${sessionScope.can.MASTER_ADMIN}）
+            // 使える機能: features は権限チェック用、can は JSP の表示切り替え用（${sessionScope.can.MASTER_DEPARTMENT}）。
+            // can.ANY_MASTER は、どれか1つでもマスタを使えるとき（メニューの「マスタ管理」を出す）
             Set<String> features = new HashSet<>();
             Map<String, Boolean> can = new HashMap<>();
             for (Feature feature : getUserFeaturesUseCase.getFeatures(username)) {
                 features.add(feature.name());
                 can.put(feature.name(), Boolean.TRUE);
+                if (feature.isMaster()) {
+                    can.put("ANY_MASTER", Boolean.TRUE);
+                }
             }
             session.setAttribute("features", features);
             session.setAttribute("can", can);

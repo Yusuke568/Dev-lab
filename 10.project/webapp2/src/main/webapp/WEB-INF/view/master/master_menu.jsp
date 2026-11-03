@@ -20,7 +20,7 @@
 <div class="card">
 	<div class="text-center page-title-container">
 		<h1>マスタ管理</h1>
-		<p>権限・組織図・承認ルートと、勤怠で使うマスタを設定します。</p>
+		<p>権限・組織図・承認ルートと、勤怠で使うマスタを設定します。表示されるのは、使う権限があるマスタだけです。</p>
 	</div>
 
 	<div class="page-header-actions">
@@ -28,34 +28,48 @@
 	</div>
 
 	<div class="master-grid">
+		<c:if test="${sessionScope.can.MASTER_PERMISSION_GROUP}">
 		<a class="master-link" href="${pageContext.request.contextPath}/masterPermissionGroup.do">
 			<h3>🔐 権限グループ</h3>
 			<p>グループごとに使える機能（承認・社員管理・マスタ管理など）を設定します。</p>
 		</a>
+		</c:if>
+		<c:if test="${sessionScope.can.MASTER_JOB_CLASS}">
 		<a class="master-link" href="${pageContext.request.contextPath}/masterJobClass.do">
 			<h3>🎖️ 役職</h3>
 			<p>役職を追加し、どの権限グループに置くかを設定します。</p>
 		</a>
+		</c:if>
+		<c:if test="${sessionScope.can.MASTER_DEPARTMENT}">
 		<a class="master-link" href="${pageContext.request.contextPath}/masterDepartment.do">
 			<h3>🏢 組織図</h3>
 			<p>部署の親子関係と承認者、社員の所属部署を設定します。承認ルートはここから作られます。</p>
 		</a>
+		</c:if>
+		<c:if test="${sessionScope.can.MASTER_APPROVAL_ROUTE}">
 		<a class="master-link" href="${pageContext.request.contextPath}/masterApprovalRoute.do">
 			<h3>🔀 承認ルート設定</h3>
 			<p>残業事前申請・休暇申請を、組織図の何段上まで承認するかを設定します。</p>
 		</a>
+		</c:if>
+		<c:if test="${sessionScope.can.MASTER_ABSTRACT}">
 		<a class="master-link" href="${pageContext.request.contextPath}/masterAbstract.do">
 			<h3>📋 適用マスタ</h3>
 			<p>出勤・有給・休日などの勤務区分を設定します。</p>
 		</a>
+		</c:if>
+		<c:if test="${sessionScope.can.MASTER_LEAVE_RULE}">
 		<a class="master-link" href="${pageContext.request.contextPath}/masterLeaveRule.do">
 			<h3>🏖️ 有給付与ルール</h3>
 			<p>勤続年数ごとの有給付与日数を設定します。</p>
 		</a>
+		</c:if>
+		<c:if test="${sessionScope.can.MASTER_CORRECTION}">
 		<a class="master-link" href="${pageContext.request.contextPath}/correctionMasterList.do">
 			<h3>⏱️ 補正CD</h3>
 			<p>派遣先ごとの勤務時間補正ルールを設定します。</p>
 		</a>
+		</c:if>
 	</div>
 </div>
 </body>

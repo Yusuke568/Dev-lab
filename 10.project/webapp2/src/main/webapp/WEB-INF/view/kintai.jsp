@@ -717,7 +717,7 @@
 				<details class="more-actions" id="more-actions">
 					<summary class="btn btn-secondary">その他の操作</summary>
 					<div class="more-actions-menu">
-						<c:if test="${sessionScope.can.MASTER_ADMIN}">
+						<c:if test="${sessionScope.can.MASTER_CORRECTION}">
 							<a href="${pageContext.request.contextPath}/correctionMasterList.do" class="btn btn-secondary">🔧 補正マスタ設定</a>
 						</c:if>
 						<c:if test="${not proxyMode}">

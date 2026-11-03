@@ -24,11 +24,21 @@ public class PermissionGroup {
     public String getName() { return name; }
     public Set<String> getFeatureCodes() { return Collections.unmodifiableSet(featureCodes); }
 
-    /** JSP でチェックボックスの状態を出すため（${group.featureMap.MASTER_ADMIN}）。 */
+    /**
+     * JSP でチェックボックスの状態を出すため（${group.featureMap.MASTER_DEPARTMENT}）。
+     * 以前の「マスタ管理（全マスタ）」が残っているグループは、すべてのマスタにチェックを付ける
+     * （そのまま保存すると、マスタごとの権限に置き換わる）。
+     */
     public Map<String, Boolean> getFeatureMap() {
         Map<String, Boolean> map = new HashMap<>();
         for (String code : featureCodes) {
-            map.put(code, Boolean.TRUE);
+            if (com.example.permission.domain.model.Feature.LEGACY_MASTER_ADMIN.equals(code)) {
+                for (com.example.permission.domain.model.Feature f : com.example.permission.domain.model.Feature.masterFeatures()) {
+                    map.put(f.name(), Boolean.TRUE);
+                }
+            } else {
+                map.put(code, Boolean.TRUE);
+            }
         }
         return map;
     }

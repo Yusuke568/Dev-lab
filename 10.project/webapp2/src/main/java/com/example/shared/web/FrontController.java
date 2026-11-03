@@ -125,18 +125,21 @@ public class FrontController extends HttpServlet {
             return false;
         }
 
-        Feature required = factory.getRequiredFeature(actionName);
+        Set<Feature> required = factory.getRequiredFeatures(actionName);
         if (required == null) {
             return true;
         }
         @SuppressWarnings("unchecked")
         Set<String> features = (Set<String>) session.getAttribute("features");
-        if (features != null && features.contains(required.name())) {
+        if (features != null && required.stream().anyMatch(f -> features.contains(f.name()))) {
             return true;
         }
 
+        String label = required.size() == 1 ? required.iterator().next().getLabel()
+                : required.stream().allMatch(Feature::isMaster) ? Feature.MASTER_GROUP
+                : required.stream().map(Feature::getLabel).collect(java.util.stream.Collectors.joining("・"));
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-        request.setAttribute("errorMessage", "「" + required.getLabel() + "」を使う権限がありません。");
+        request.setAttribute("errorMessage", "「" + label + "」を使う権限がありません。");
         request.getRequestDispatcher("/WEB-INF/view/error.jsp").forward(request, response);
         return false;
     }

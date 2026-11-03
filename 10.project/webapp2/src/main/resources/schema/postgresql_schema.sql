@@ -270,7 +270,9 @@ WHERE g.name = '承認者'
 INSERT INTO permission_group_feature (group_id, feature_code)
 SELECT g.id, f.code FROM permission_group g,
     (VALUES ('ATTENDANCE'), ('OVERTIME_REQUEST'), ('LEAVE_REQUEST'), ('APPROVAL'),
-            ('SHAIN_ADMIN'), ('PAID_LEAVE_ADMIN'), ('MASTER_ADMIN')) AS f(code)
+            ('SHAIN_ADMIN'), ('PAID_LEAVE_ADMIN'),
+            ('MASTER_PERMISSION_GROUP'), ('MASTER_JOB_CLASS'), ('MASTER_DEPARTMENT'), ('MASTER_APPROVAL_ROUTE'),
+            ('MASTER_ABSTRACT'), ('MASTER_LEAVE_RULE'), ('MASTER_CORRECTION')) AS f(code)
 WHERE g.name = '管理者'
   AND NOT EXISTS (SELECT 1 FROM permission_group_feature x WHERE x.group_id = g.id AND x.feature_code = f.code);
 

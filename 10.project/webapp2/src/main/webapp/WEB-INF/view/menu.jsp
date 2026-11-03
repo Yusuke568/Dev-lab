@@ -170,7 +170,7 @@
 			</div>
 		</c:if>
 
-		<c:if test="${sessionScope.can.MASTER_ADMIN}">
+		<c:if test="${sessionScope.can.ANY_MASTER}">
 			<!-- マスタ管理カード -->
 			<div class="menu-card-wrapper">
 				<div class="menu-card" style="cursor: pointer; height: 100%;" onclick="location.href='${pageContext.request.contextPath}/masterMenu.do'">

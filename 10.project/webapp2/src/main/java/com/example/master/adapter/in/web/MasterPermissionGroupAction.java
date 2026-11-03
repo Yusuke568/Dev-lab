@@ -26,6 +26,8 @@ public class MasterPermissionGroupAction extends MasterActionSupport {
     protected String show(HttpServletRequest request) {
         request.setAttribute("groups", masterUseCase.getPermissionGroups());
         request.setAttribute("features", Feature.values());
+        // 列見出しで、マスタ管理の機能を「マスタ管理」の下にまとめるため
+        request.setAttribute("masterFeatureCount", Feature.masterFeatures().size());
         return "/WEB-INF/view/master/master_permission_group.jsp";
     }
 

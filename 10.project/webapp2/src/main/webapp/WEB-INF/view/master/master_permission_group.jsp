@@ -14,6 +14,7 @@
 	<div class="text-center page-title-container">
 		<h1>権限グループ</h1>
 		<p>グループごとに使える機能を設定します。役職をグループに置くと、その役職の社員がこの機能を使えるようになります（次回ログインから反映）。</p>
+		<p>マスタ管理は、マスタごとに使える・使えないを設定できます。1つでも使えるマスタがあれば、メニューに「マスタ管理」が出ます。</p>
 	</div>
 
 	<%@ include file="_header.jspf" %>
@@ -22,12 +23,22 @@
 	<table class="table">
 		<thead>
 			<tr>
-				<th>ID</th>
-				<th>グループ名</th>
+				<th rowspan="2">ID</th>
+				<th rowspan="2">グループ名</th>
 				<c:forEach var="f" items="${features}">
-					<th class="text-center"><c:out value="${f.label}" /></th>
+					<c:if test="${not f.master}">
+						<th class="text-center" rowspan="2"><c:out value="${f.label}" /></th>
+					</c:if>
 				</c:forEach>
-				<th class="text-center">操作</th>
+				<th class="text-center" colspan="${masterFeatureCount}">マスタ管理</th>
+				<th class="text-center" rowspan="2">操作</th>
+			</tr>
+			<tr>
+				<c:forEach var="f" items="${features}">
+					<c:if test="${f.master}">
+						<th class="text-center"><c:out value="${f.shortLabel}" /></th>
+					</c:if>
+				</c:forEach>
 			</tr>
 		</thead>
 		<tbody>
@@ -65,6 +76,7 @@
 	</table>
 	</div>
 	<p style="font-size: 0.85rem; color: #666;">※ 「承認」がある社員でも、組織図でどこかの部署の承認者になっていなければ承認待ちは届きません。</p>
+	<p style="font-size: 0.85rem; color: #666;">※ 「マスタ管理（権限グループ）」を使えるグループが1つもなくなる変更は保存できません（権限を画面から戻せなくなるため）。</p>
 </div>
 </body>
 </html>

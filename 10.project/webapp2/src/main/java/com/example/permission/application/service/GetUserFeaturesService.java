@@ -33,6 +33,11 @@ public class GetUserFeaturesService implements GetUserFeaturesUseCase {
         }
         Set<Feature> features = EnumSet.noneOf(Feature.class);
         for (String code : codes.get()) {
+            if (Feature.LEGACY_MASTER_ADMIN.equals(code)) {
+                // 以前の「マスタ管理（全マスタ）」は、マスタごとの機能すべてとして扱う
+                features.addAll(Feature.masterFeatures());
+                continue;
+            }
             try {
                 features.add(Feature.valueOf(code));
             } catch (IllegalArgumentException ignored) {

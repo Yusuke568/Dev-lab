@@ -58,6 +58,17 @@ public class MasterMaintenanceService implements MasterMaintenanceUseCase {
         for (String code : featureCodes) {
             valid.add(Feature.valueOf(code).name());
         }
+        // 権限グループを設定できる人がいなくなると、画面から権限を戻せなくなるので止める
+        if (id != null && !valid.contains(Feature.MASTER_PERMISSION_GROUP.name())) {
+            boolean otherGroupCanManage = masterPort.findPermissionGroups().stream()
+                    .filter(g -> g.getId() != id)
+                    .anyMatch(g -> g.getFeatureCodes().contains(Feature.MASTER_PERMISSION_GROUP.name())
+                            || g.getFeatureCodes().contains(Feature.LEGACY_MASTER_ADMIN));
+            if (!otherGroupCanManage) {
+                throw new IllegalArgumentException("「" + Feature.MASTER_PERMISSION_GROUP.getLabel()
+                        + "」を使えるグループが1つもなくなるため、このグループから外せません。先にほかのグループに付けてください。");
+            }
+        }
         int groupId = masterPort.savePermissionGroup(id, requireName(name, "権限グループ名"));
         masterPort.replaceGroupFeatures(groupId, valid);
     }

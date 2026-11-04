@@ -41,6 +41,7 @@ public class KintaiDisplayAction implements Action {
     private final com.example.kintai.application.port.in.AttendanceAccessUseCase attendanceAccessUseCase;
     private final com.example.kintai.application.port.in.GetWeeklyWorkSummariesUseCase getWeeklyWorkSummariesUseCase;
     private final com.example.kintai.application.port.in.GetHolidaysUseCase getHolidaysUseCase;
+    private final com.example.notice.application.port.in.NoticeUseCase noticeUseCase;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
@@ -52,8 +53,10 @@ public class KintaiDisplayAction implements Action {
                                 GetWeeklyWorkReportsUseCase getWeeklyWorkReportsUseCase,
                                 com.example.kintai.application.port.in.AttendanceAccessUseCase attendanceAccessUseCase,
                                 com.example.kintai.application.port.in.GetWeeklyWorkSummariesUseCase getWeeklyWorkSummariesUseCase,
-                                com.example.kintai.application.port.in.GetHolidaysUseCase getHolidaysUseCase) {
+                                com.example.kintai.application.port.in.GetHolidaysUseCase getHolidaysUseCase,
+                                com.example.notice.application.port.in.NoticeUseCase noticeUseCase) {
         this.getHolidaysUseCase = getHolidaysUseCase;
+        this.noticeUseCase = noticeUseCase;
         this.attendanceAccessUseCase = attendanceAccessUseCase;
         this.getWeeklyWorkSummariesUseCase = getWeeklyWorkSummariesUseCase;
         this.getMonthlyAttendanceUseCase = getMonthlyAttendanceUseCase;
@@ -87,6 +90,8 @@ public class KintaiDisplayAction implements Action {
                 }
             }
             request.setAttribute("proxyMode", proxyMode);
+            // 上長からのお知らせ（画面を見ている本人あて）
+            request.setAttribute("notices", noticeUseCase.getNoticesFor(loginUser));
             // 休憩時間帯（画面で勤務時間を計算し直すときに、サーバーと同じ休憩を引くため）
             request.setAttribute("breakPeriodsJson", com.example.kintai.domain.model.attendance.BreakSchedule.toJson());
             // 祝日と会社休日（行の色と名前の表示用）

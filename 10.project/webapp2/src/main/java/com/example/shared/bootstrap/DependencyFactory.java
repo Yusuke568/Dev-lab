@@ -79,6 +79,9 @@ public class DependencyFactory {
     private final EmployeePersistenceAdapter employeePersistenceAdapter;
     private final AttendancePersistenceAdapter attendancePersistenceAdapter;
     private final com.example.kintai.application.port.in.AttendanceAccessUseCase attendanceAccessUseCase;
+    private final com.example.notice.application.port.in.NoticeUseCase noticeUseCase =
+            new com.example.notice.application.service.NoticeService(
+                    new com.example.notice.adapter.out.persistence.NoticePersistenceAdapter(), java.time.Clock.systemDefaultZone());
     private final com.example.shain.domain.port.out.ShainPort shainPort;
     private final ClassmasterPort classmasterPort;
     private final TransactionManager transactionManager;
@@ -259,7 +262,8 @@ public class DependencyFactory {
         // KintaiDisplayAction
         actionMap.put("KintaiDisplay", new KintaiDisplayAction(this.getMonthlyAttendanceUseCase, this.getWorkTypesUseCase, this.getCorrectionMastersUseCase, this.getMyOvertimeRequestsUseCase, this.getWeeklyWorkReportsUseCase, this.attendanceAccessUseCase,
                 new com.example.kintai.application.service.WeeklyWorkSummaryService(this.attendancePersistenceAdapter),
-                new com.example.kintai.application.service.HolidayService(this.attendancePersistenceAdapter)));
+                new com.example.kintai.application.service.HolidayService(this.attendancePersistenceAdapter),
+                this.noticeUseCase));
 
         // Shain Actions (New Context)
         actionMap.put("ShainList", new com.example.shain.adapter.in.web.ShainListAction(this.getShainListUseCase, this.getAllClassmastersUseCase));
@@ -287,6 +291,7 @@ public class DependencyFactory {
         actionMap.put("ApprovalExecute", new ApprovalExecuteAction(this.approveAttendanceUseCase));
         actionMap.put("ApprovalHistory", new ApprovalHistoryAction(this.getApprovalHistoryUseCase));
         actionMap.put("SubordinateAttendance", new com.example.kintai.adapter.in.web.SubordinateAttendanceAction(this.attendanceAccessUseCase));
+        actionMap.put("NoticeManage", new com.example.notice.adapter.in.web.NoticeManageAction(this.noticeUseCase));
 
         // Correction Master Actions
         actionMap.put("CorrectionMasterList", new CorrectionMasterListAction(this.getCorrectionMastersUseCase));
@@ -336,7 +341,7 @@ public class DependencyFactory {
                 "WeeklyWorkReportSave");
         requireFeature(Feature.OVERTIME_REQUEST, "OvertimeRequestMenu", "OvertimeRequestSubmit");
         requireFeature(Feature.LEAVE_REQUEST, "LeaveRequestMenu", "LeaveRequestSubmit");
-        requireFeature(Feature.APPROVAL, "ApprovalList", "ApprovalExecute", "ApprovalHistory", "OvertimeRequestExecute", "SubordinateAttendance",
+        requireFeature(Feature.APPROVAL, "ApprovalList", "ApprovalExecute", "ApprovalHistory", "OvertimeRequestExecute", "SubordinateAttendance", "NoticeManage",
                 "LeaveRequestExecute");
         requireFeature(Feature.SHAIN_ADMIN, "ShainList", "ShainUpdateForm", "ShainUpdateExecute", "ShainInsertForm",
                 "ShainInsertExecute", "ShainDeleteForm", "ShainDeleteExecute", "SearchShainApi",

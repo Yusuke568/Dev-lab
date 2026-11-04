@@ -160,6 +160,15 @@
 				</div>
 			</div>
 
+			<!-- 配下へのお知らせカード -->
+			<div class="menu-card-wrapper">
+				<div class="menu-card" style="cursor: pointer; height: 100%;" onclick="location.href='${pageContext.request.contextPath}/noticeManage.do'">
+					<div class="icon">📢</div>
+					<h3>配下へのお知らせ</h3>
+					<p>組織図で自分の配下にいるメンバーの勤怠画面に、お知らせを出します。</p>
+				</div>
+			</div>
+
 			<!-- 配下の勤怠表カード -->
 			<div class="menu-card-wrapper">
 				<div class="menu-card" style="cursor: pointer; height: 100%;" onclick="location.href='${pageContext.request.contextPath}/subordinateAttendance.do'">

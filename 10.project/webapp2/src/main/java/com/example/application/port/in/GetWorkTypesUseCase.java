@@ -4,13 +4,13 @@ import com.example.entity.WorkType;
 import java.util.List;
 
 /**
- * 勤務区刁E��ストを取得するユースケース、E
+ * 勤務区分リストを取得するユースケース。
  */
 public interface GetWorkTypesUseCase {
 
     /**
-     * 利用可能なすべての勤務区刁E��取得します、E
-     * @return 勤務区刁E�EリスチE
+     * 利用可能なすべての勤務区分を取得します。
+     * @return 勤務区分のリスト
      */
     List<WorkType> getWorkTypes();
 }

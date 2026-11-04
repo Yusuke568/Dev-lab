@@ -4,9 +4,9 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * 社員ID�E�値オブジェクト！E
+ * 社員ID（値オブジェクト）。
  *
- * こ�Eオブジェクト�E不変！Emmutable�E�です、E
+ * このオブジェクトは不変（immutable）です。
  */
 public final class EmployeeId implements Serializable {
     private static final long serialVersionUID = 1L;

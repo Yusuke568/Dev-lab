@@ -4,13 +4,13 @@ import com.example.entity.Classmaster;
 import java.util.List;
 
 /**
- * 役職チE�Eタの永続化に関する操作を定義する出力�Eート、E
+ * 役職データの永続化に関する操作を定義する出力ポート。
  */
 public interface ClassmasterPort {
 
     /**
-     * すべての役職エンチE��チE��を永続化層から検索します、E
-     * @return 見つかった役職エンチE��チE��のリスチE
+     * すべての役職エンティティを永続化層から検索します。
+     * @return 見つかった役職エンティティのリスト
      */
     List<Classmaster> findAll();
 }

@@ -3,9 +3,9 @@ package com.example.kintai.domain.model.employee;
 import java.util.Objects;
 
 /**
- * 社員�E�エンチE��チE���E�E
+ * 社員（エンティティ）。
  *
- * ビジネスロジチE��を持つことができますが、ここではシンプルなチE�Eタ保持に留めます、E
+ * ビジネスロジックを持つことができますが、ここではシンプルなデータ保持に留めます。
  */
 public class Employee {
     private final EmployeeId id;

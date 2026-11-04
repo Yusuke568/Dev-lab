@@ -15,7 +15,7 @@ import com.example.entity.Shain;
 public class LeaveDao {
 
     /**
-     * è­›èEEµE¦è‰å€E½¸å¼±Îç¹ï½¼ç¹ï½«ç¹§åµâ˜E¸ºE¹ç¸ºE¦èœ¿é–€E¾åŠ±E ç¸ºE¾ç¸ºå¶Â€ãƒ»
+     * æœ‰çµ¦ä»˜ä¸ãƒ«ãƒ¼ãƒ«ã‚’ã™ã¹ã¦å–å¾—ã—ã¾ã™ã€‚
      */
     public List<LeaveGrantRule> findAllRules(Connection con) throws SQLException, IOException {
         List<LeaveGrantRule> rules = new ArrayList<>();
@@ -36,7 +36,7 @@ public class LeaveDao {
     }
 
     /**
-     * è¬–ãEE®å£¹E ç¸ºæº½E¤E¾èœ©E¡ç¸ºE®è­›èEEµE¦è­Œï½¥è¬¨E°ç¹§å‘ˆå³©è­E½°ç¸ºåŠ±âˆªç¸ºå¶Â€ãƒ»
+     * æŒ‡å®šã—ãŸç¤¾å“¡ã®æœ‰çµ¦æ—¥æ•°ã‚’æ›´æ–°ã—ã¾ã™ã€‚
      */
     public void updateDays(Connection con, int id, int days) throws SQLException, IOException {
         String sql = MyUtil.loadSqlFromClasspath("sql/leave/update_days.sql");
@@ -49,7 +49,7 @@ public class LeaveDao {
     }
 
     /**
-     * è¬–ãEE®å£¹E ç¸ºæº½E¤E¾èœ©E¡ç¸ºE®è­›èEEµE¦è¨ç¬¬åšŠç¹§ãƒ»è­Œï½¥èœ‰ï£°é‚‚åŠ±E ç¸ºE¾ç¸ºå¶Â€ãƒ»
+     * æŒ‡å®šã—ãŸç¤¾å“¡ã®æœ‰çµ¦ä¼‘æš‡ã‚’1æ—¥åŠ ç®—ã—ã¾ã™ã€‚
      */
     public void incrementDays(Connection con, int staffId) throws SQLException, IOException {
         String sql = MyUtil.loadSqlFromClasspath("sql/leave/increment_days.sql");
@@ -61,7 +61,7 @@ public class LeaveDao {
     }
 
     /**
-     * è¬–ãEE®å£¹E ç¸ºæº½E¤E¾èœ©E¡ç¸ºE®è­›èEEµE¦è¨ç¬¬åšŠç¹§ãƒ»è­Œï½¥è²‚å¸·E®åŠ±E ç¸ºE¾ç¸ºå¶Â€ãƒ»
+     * æŒ‡å®šã—ãŸç¤¾å“¡ã®æœ‰çµ¦ä¼‘æš‡ã‚’1æ—¥æ¸›ç®—ã—ã¾ã™ã€‚
      */
     public void decrementDays(Connection con, int staffId) throws SQLException, IOException {
         String sql = MyUtil.loadSqlFromClasspath("sql/leave/decrement_days.sql");
@@ -73,7 +73,7 @@ public class LeaveDao {
     }
 
     /**
-     * é©•ï½¸è¬šæ§­E ç¸ºæº¯E¤ãƒ»ç„šç¸ºE®é‰ï½¾èœ©E¡ç¸ºE«è­›èEEµE¦ç¹§å‰E½¸Â€è«¡E¬ç¸ºE§èœ‰ï£°é‚‚åŠ±E ç¸ºE¾ç¸ºå¶Â€ãƒ»
+     * é¸æŠã—ãŸè¤‡æ•°ã®ç¤¾å“¡ã®æœ‰çµ¦ã‚’ä¸€æ‹¬ã§åŠ ç®—ã—ã¾ã™ã€‚
      */
     public void addDaysToSelected(Connection con, String[] ids, int days) throws SQLException, IOException {
         String sql = MyUtil.loadSqlFromClasspath("sql/leave/add_days.sql");
@@ -89,7 +89,7 @@ public class LeaveDao {
     }
 
     /**
-     * éšãEç„šç¸ºE®é‰ï½¾èœ©E¡ç¸ºE®è­›èEEµE¦è­Œï½¥è¬¨E°ç¹§å‰E½¸Â€è«¡E¬ç¸ºE§è­–ï½´è­E½°ç¸ºåŠ±âˆªç¸ºå¶Â€ãƒ»
+     * è¤‡æ•°ã®ç¤¾å“¡ã®æœ‰çµ¦æ—¥æ•°ã‚’ä¸€æ‹¬ã§æ›´æ–°ã—ã¾ã™ã€‚
      */
     public void batchUpdateDays(Connection con, List<Shain> employees) throws SQLException, IOException {
         String sql = MyUtil.loadSqlFromClasspath("sql/leave/update_days.sql");

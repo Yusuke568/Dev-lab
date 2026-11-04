@@ -4,13 +4,13 @@ import com.example.entity.WorkType;
 import java.util.List;
 
 /**
- * 勤務区刁E��適用マスタ�E�へのアクセスを提供する永続化ポ�Eト、E
+ * 勤務区分（適用マスタ）へのアクセスを提供する永続化ポート。
  */
 public interface WorkTypePort {
 
     /**
-     * 全ての勤務区刁E��取得します、E
-     * @return 勤務区刁E�EリスチE
+     * 全ての勤務区分を取得します。
+     * @return 勤務区分のリスト
      */
     List<WorkType> findAll();
 }

@@ -5,7 +5,7 @@ import java.sql.Date;
 import java.sql.Timestamp;
 
 /**
- * 勤怠惁E��を表すエンチE��チE��クラス、E
+ * 勤怠情報を表すエンティティクラス。
  */
 public class Kintai implements Serializable {
     private static final long serialVersionUID = 1L;

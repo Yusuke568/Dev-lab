@@ -1,7 +1,7 @@
 package com.example.application.port.out;
 
 /**
- * 有給休暇を操作するため�Eポ�Eト、E
+ * 有給休暇を操作するためのポート。
  */
 public interface PaidLeavePort {
     void incrementDays(int staffId);

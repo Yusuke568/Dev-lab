@@ -13,14 +13,14 @@ import com.example.common.MyUtil;
 import com.example.entity.Classmaster;
 
 /**
- * 蠖ｹ閨�E�繝槭せ繧�E�繝ｼ(class_master繝�E・繝悶΁E縺�E�縺�E�繧�E�繧�E�繧�E�繧�E�繧定｡後≧DAO縲・
+ * 役職マスター（class_master テーブル）へのアクセスを行うDAO。
  */
 public class ClassmasterDao {
 
     /**
-     * 縺吶∋縺�E�縺�E�蠖ｹ閨�E�諠・�E��E�繧貞叙蠕励�E�縺�E�縺吶・
-     * @param con 繝�E・繧�E�繝吶・繧�E�謗･邯・
-     * @return 蜈ｨ蠖ｹ閨�E�縺�E�諠・�E��E�縺梧�E��E�邏阪�E�E��後◆ArrayList
+     * すべての役職情報を取得します。
+     * @param con データベース接続
+     * @return 全役職の情報が格納されたArrayList
      * @throws SQLException
      * @throws IOException
      */
@@ -28,13 +28,13 @@ public class ClassmasterDao {
 
         List<Classmaster> classmasterList = new ArrayList<>();
 
-        // 蠖ｹ閨�E�繧貞叙蠕励☁E��鬼QL
+        // 役職を取得するSQL
         String sql = MyUtil.loadSqlFromClasspath("sql/classmaster/get_all_class.sql");
 
         try (PreparedStatement pstmt = con.prepareStatement(sql)) {
-            // SQL譁�E�E�繧�E�繝ｳ繧�E�繝ｼ繝ｫ陦�E�遉ｺ
+            // SQL文をコンソールに表示
             System.out.println(pstmt.toString());
-            // SQL螳溯�E�・
+            // SQL実行
             ResultSet rs = pstmt.executeQuery();
             
             while (rs.next()) {

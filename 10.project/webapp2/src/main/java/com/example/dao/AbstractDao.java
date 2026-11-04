@@ -14,9 +14,9 @@ import com.example.entity.WorkType;
 public class AbstractDao {
 
     /**
-     * 驕ｩ逕ｨ繝槭せ繧�E�繧貞�E莉ｶ蜿門�E�励�E�縺�E�縺吶・
-     * @param con 繝�E・繧�E�繝吶・繧�E�謗･邯・
-     * @return 驕ｩ逕ｨ繝槭せ繧�E�(WorkType)縺�E�繝ｪ繧�E�繝�E
+     * 適用マスタを全件取得します。
+     * @param con データベース接続
+     * @return 適用マスタ(WorkType)のリスト
      * @throws SQLException
      * @throws IOException
      */

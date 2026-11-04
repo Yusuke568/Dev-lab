@@ -3,7 +3,7 @@ package com.example.entity;
 import java.io.Serializable;
 
 /**
- * 社員惁E��を表すエンチE��チE��クラス、E
+ * 社員情報を表すエンティティクラス。
  */
 public class Shain implements Serializable {
     private static final long serialVersionUID = 1L;

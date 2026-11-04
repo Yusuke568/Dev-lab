@@ -7,7 +7,7 @@ import com.example.entity.Classmaster;
 import java.util.List;
 
 /**
- * 全役職惁E��取得ユースケースの実裁E��E
+ * 全役職情報取得ユースケースの実装。
  */
 public class GetAllClassmastersService implements GetAllClassmastersUseCase {
 

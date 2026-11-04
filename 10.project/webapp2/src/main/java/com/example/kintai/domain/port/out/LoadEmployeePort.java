@@ -7,17 +7,17 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 社員惁E��を読み込むためのポ�Eト（インターフェース�E�、E
+ * 社員情報を読み込むためのポート（インターフェース）。
  *
- * こ�Eインターフェースの実裁E�E、インフラストラクチャ層�E�アダプタ�E�が拁E��します、E
+ * このインターフェースの実装は、インフラストラクチャ層（アダプタ）が担当します。
  */
 public interface LoadEmployeePort {
 
     /**
-     * 持E��されたIDの社員を検索します、E
+     * 指定されたIDの社員を検索します。
      *
      * @param employeeId 検索する社員のID
-     * @return 見つかった場合�E社員のOptional、見つからなぁE��合�EOptional.empty()
+     * @return 見つかった場合は社員のOptional、見つからない場合はOptional.empty()
      */
     Optional<Employee> load(EmployeeId employeeId);
 

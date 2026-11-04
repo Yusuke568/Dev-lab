@@ -14,31 +14,31 @@ import com.example.entity.Shain;
 public class ShainDao {
 
     /**
-     * 蜈ｨ遉ｾ蜩�E�縺�E�諠・�E��E�繧貞叙蠕励�E�縺�E�縺吶・
-     * @param con 繝�E・繧�E�繝吶・繧�E�謗･邯・
-     * @return 蜈ｨ遉ｾ蜩�E�縺�E�諠・�E��E�縺梧�E��E�邏阪�E�E��後◆ArrayList
+     * 全社員の情報を取得します。
+     * @param con データベース接続
+     * @return 全社員の情報が格納されたArrayList
      * @throws SQLException
      * @throws IOException
      */
     public List<Shain> findAll(Connection con) throws SQLException, IOException {
 
-        // ArrayList縺�E�蛻晁E��蛹・
+        // ArrayListの初期化
         List<Shain> shainList = new ArrayList<>();
 
-        // 遉ｾ蜩�E�繧貞叙蠕励☁E��鬼QL
+        // 社員を取得するSQL
         String sql = MyUtil.loadSqlFromClasspath("sql/shainlist/get_all_shain.sql");
 
-        // SQL螳溯�E�後�E貁E���E�E
+        // SQL実行の準備
         try (PreparedStatement pstmt = con.prepareStatement(sql)) {
-            // SQL譁�E�E�繧�E�繝ｳ繧�E�繝ｼ繝ｫ陦�E�遉ｺ
+            // SQL文をコンソールに表示
             System.out.println(pstmt.toString());
-            // SQL螳溯�E�・
+            // SQL実行
             ResultSet rs = pstmt.executeQuery();
-            // 蜿門�E�励�E�縺溯�E�梧焚繧堤�E��E�繧願ｿ斐�E
+            // 取得した行を順に読む
             while (rs.next()) {
                 Shain shain = new Shain();
 
-                // 蛟､繧定ｨ�E�螳・
+                // 値を設定
                 shain.setId(rs.getInt("id"));
                 shain.setName(rs.getString("name"));
                 shain.setNamekana(rs.getString("namekana"));
@@ -53,19 +53,19 @@ public class ShainDao {
     }
 
     /**
-     * 遉ｾ蜩�E�諠・�E��E�繧堤匳骭�E�縺励∪縺吶・
-     * @param con 繝�E・繧�E�繝吶・繧�E�謗･邯・
-     * @param shain 逋ｻ骭�E�縺吶�E�遉�E�蜩�E�諠・�E��E�
+     * 社員情報を登録します。
+     * @param con データベース接続
+     * @param shain 登録する社員情報
      * @throws SQLException
      * @throws IOException
      */
     public void create(Connection con, Shain shain) throws SQLException, IOException {
-        //遉ｾ蜩�E�繧堤匳骭�E�縺吶�E�SQL
+        //社員を登録するSQL
         String sql = MyUtil.loadSqlFromClasspath("sql/shainlist/insert_shain.sql");
 
         try (PreparedStatement pstmt = con.prepareStatement(sql)) {
 
-            //繝代Λ繝｡繝ｼ繧�E�繧拁EL縺�E�繧�E�繝�Eヨ
+            //パラメータをSQLにセット
             pstmt.setInt(1, shain.getId());
             pstmt.setString(2, shain.getName());
             pstmt.setString(3, shain.getNamekana());
@@ -74,40 +74,40 @@ public class ShainDao {
             pstmt.setBigDecimal(6, java.math.BigDecimal.valueOf(shain.getPaidLeaveDays()));
             pstmt.setString(7, shain.getJobclass());
 
-            //SQL譁�E�E�陦�E�遉ｺ
+            //SQL文を表示
             System.out.println(pstmt.toString());
 
-            //SQL螳溯�E�・
+            //SQL実行
             pstmt.executeUpdate();
         }
     }
 
     /**
-     * ID繧偵く繝ｼ縺�E�遉ｾ蜩�E�諠・�E��E�繧・莉ｶ蜿門�E�励�E�縺�E�縺吶・
-     * @param con 繝�E・繧�E�繝吶・繧�E�謗･邯・
-     * @param id 蜿門�E�励☁E��狗､�E�蜩�E�縺�E�ID
-     * @return 蜿門�E�励�E�縺溽�E��E�蜩�E�縺�E�諠・�E��E�縲りｦ九▽縺九ｉ縺�E�縺・�E��E�蜷医・null縲・
+     * IDをキーに社員情報を1件取得します。
+     * @param con データベース接続
+     * @param id 取得する社員のID
+     * @return 取得した社員の情報。見つからない場合はnull。
      * @throws SQLException
      * @throws IOException
      */
     public Shain findById(Connection con, int id) throws SQLException, IOException {
         Shain shain = null;
 
-        //遉ｾ蜩�E�繧貞叙蠕励☁E��鬼QL
+        //社員を取得するSQL
         String sql = MyUtil.loadSqlFromClasspath("sql/shainlist/select_shain.sql");
 
-        //SQL螳溯�E�後�E貁E���E�E
+        //SQL実行の準備
         try (PreparedStatement pstmt = con.prepareStatement(sql)) {
-            //繝代Λ繝｡繝ｼ繧�E�繧拁EL縺�E�繧�E�繝�Eヨ
+            //パラメータをSQLにセット
             pstmt.setInt(1, id);
-            //SQL譁�E�E�陦�E�遉ｺ
+            //SQL文を表示
             System.out.println(pstmt.toString());
-            //SQL螳溯�E�・
+            //SQL実行
             ResultSet rs = pstmt.executeQuery();
-            // 蜿門�E�励�E�縺溯�E�後′縺めE��縺�E�
+            // 取得した行があれば
             if (rs.next()) {
                 shain = new Shain();
-                //蛟､繧貞叙蠕�E
+                //値を取得
                 shain.setId(id);
                 shain.setName(rs.getString("name"));
                 shain.setNamekana(rs.getString("namekana"));
@@ -121,17 +121,17 @@ public class ShainDao {
     }
 
     /**
-     * 遉ｾ蜩�E�諠・�E��E�繧呈峩譁E��縺励∪縺吶・
-     * @param con 繝�E・繧�E�繝吶・繧�E�謗･邯・
-     * @param shain 譖ｴ譁E��縺吶�E�遉�E�蜩�E�諠・�E��E�
+     * 社員情報を更新します。
+     * @param con データベース接続
+     * @param shain 更新する社員情報
      * @throws SQLException
      * @throws IOException
      */
     public void update(Connection con, Shain shain) throws SQLException, IOException {
-        //遉ｾ蜩�E�繧呈峩譁E��縺吶�E�SQL
+        //社員を更新するSQL
         String sql = MyUtil.loadSqlFromClasspath("sql/shainlist/update_shain.sql");
         try (PreparedStatement pstmt = con.prepareStatement(sql)) {
-            //繝代Λ繝｡繝ｼ繧�E�繧拁EL縺�E�繧�E�繝�Eヨ
+            //パラメータをSQLにセット
             pstmt.setString(1, shain.getName());
             pstmt.setString(2, shain.getNamekana());
             pstmt.setInt(3, shain.getEntryyear());
@@ -139,45 +139,45 @@ public class ShainDao {
             pstmt.setBigDecimal(5, java.math.BigDecimal.valueOf(shain.getPaidLeaveDays()));
             pstmt.setString(6, shain.getJobclass());
             pstmt.setInt(7, shain.getId());
-            //SQL譁�E�E�陦�E�遉ｺ
+            //SQL文を表示
             System.out.println(pstmt.toString());
-            //SQL螳溯�E�・
+            //SQL実行
             pstmt.executeUpdate();
         }
     }
 
     /**
-     * ID繧偵く繝ｼ縺�E�遉ｾ蜩�E�諠・�E��E�繧貞炎髯�E�縺励∪縺吶・
-     * @param con 繝�E・繧�E�繝吶・繧�E�謗･邯・
-     * @param id 蜑企勁縺吶�E�遉�E�蜩�E�縺�E�ID
+     * IDをキーに社員情報を削除します。
+     * @param con データベース接続
+     * @param id 削除する社員のID
      * @throws SQLException
      * @throws IOException
      */
     public void deleteById(Connection con, int id) throws SQLException, IOException {
-        //遉ｾ蜩�E�繧貞炎髯�E�縺吶�E�SQL
+        //社員を削除するSQL
         String sql = MyUtil.loadSqlFromClasspath("sql/shainlist/delete_shain.sql");
-        //SQL螳溯�E�後�E貁E���E�E
+        //SQL実行の準備
         try (PreparedStatement pstmt = con.prepareStatement(sql)) {
-            //繝代Λ繝｡繝ｼ繧�E�繧拁EL縺�E�繧�E�繝�Eヨ
+            //パラメータをSQLにセット
             pstmt.setInt(1, id);
-            //SQL譁�E�E�陦�E�遉ｺ
+            //SQL文を表示
             System.out.println(pstmt.toString());
-            //SQL螳溯�E�・
+            //SQL実行
             pstmt.executeUpdate();
         }
     }
 
     /**
-     * 蜷榊��繧偵く繝ｼ縺�E�遉ｾ蜩�E�諠・�E��E�繧呈､懁E���E�縺励∪縺呻�E�磯Κ蛻・�E�閾�E�・峨・
-     * @param con 繝�E・繧�E�繝吶・繧�E�謗･邯・
-     * @param name 讀懁E���E�縺吶�E�蜷榊��
-     * @return 蜿門�E�励�E�縺溽�E��E�蜩�E�縺�E�諠・�E��E�繝ｪ繧�E�繝�E
+     * 名前をキーに社員情報を検索します（部分一致）。
+     * @param con データベース接続
+     * @param name 検索する名前
+     * @return 取得した社員の情報のリスト
      * @throws SQLException
      * @throws IOException
      */
     public List<Shain> searchByName(Connection con, String name) throws SQLException, IOException {
         List<Shain> shainList = new ArrayList<>();
-        // get_all_shain.sql繧呈ｵ∫畑縺励仝HERE蜿�E�繧定ｿ�E�蜉縺吶�E�E
+        // get_all_shain.sql を流用し、WHERE 句を追加する
         String sql = MyUtil.loadSqlFromClasspath("sql/shainlist/get_all_shain.sql") + " WHERE name LIKE ?";
 
         try (PreparedStatement pstmt = con.prepareStatement(sql)) {

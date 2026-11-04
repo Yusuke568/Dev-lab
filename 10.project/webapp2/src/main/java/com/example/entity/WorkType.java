@@ -3,7 +3,7 @@ package com.example.entity;
 import java.io.Serializable;
 
 /**
- * 適用マスタ�E�勤務形態）�E惁E��を表すエンチE��チE��クラス、E
+ * 適用マスタ（勤務形態）の情報を表すエンティティクラス。
  */
 public class WorkType implements Serializable {
     private static final long serialVersionUID = 1L;

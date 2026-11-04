@@ -7,7 +7,7 @@ import com.example.entity.WorkType;
 import java.util.List;
 
 /**
- * 勤務区刁E��ストを取得するユースケースの実裁E��E
+ * 勤務区分リストを取得するユースケースの実装。
  */
 public class GetWorkTypesService implements GetWorkTypesUseCase {
 

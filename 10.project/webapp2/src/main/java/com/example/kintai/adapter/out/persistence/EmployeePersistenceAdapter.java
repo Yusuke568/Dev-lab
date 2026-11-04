@@ -21,8 +21,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * 社員惁E��の永続化を担当するアダプタ、E
- * JDBCを使用してチE�Eタベ�Eスと直接通信します、E
+ * 社員情報の永続化を担当するアダプタ。
+ * JDBCを使用してデータベースと直接通信します。
  */
 public class EmployeePersistenceAdapter implements LoadEmployeePort, SaveEmployeePort {
 
@@ -42,7 +42,7 @@ public class EmployeePersistenceAdapter implements LoadEmployeePort, SaveEmploye
                 }
             }
         } catch (Exception e) {
-            // 実際にはより詳細な例外�E琁Eロギングを行う
+            // 実際にはより詳細な例外処理やロギングを行う
             throw new RuntimeException("Failed to load employee.", e);
         }
         return Optional.empty();
@@ -67,7 +67,7 @@ public class EmployeePersistenceAdapter implements LoadEmployeePort, SaveEmploye
 
     @Override
     public void save(Employee employee) {
-        // 既存か新規かでINSERT/UPDATEを�E岁E
+        // 既存か新規かでINSERT/UPDATEを分岐
         boolean exists = load(employee.getId()).isPresent();
         
         String sqlFileName = exists ? "update_shain.sql" : "insert_shain.sql";
@@ -84,7 +84,7 @@ public class EmployeePersistenceAdapter implements LoadEmployeePort, SaveEmploye
                 // INSERT
                 ps.setInt(1, Integer.parseInt(employee.getId().getValue()));
                 ps.setString(2, employee.getName());
-                // 他�E忁E��カラムがあれ�E設宁E
+                // 他の必要なカラムがあれば設定
             }
             ps.executeUpdate();
         } catch (Exception e) {
@@ -98,7 +98,7 @@ public class EmployeePersistenceAdapter implements LoadEmployeePort, SaveEmploye
     private Employee mapToEmployee(ResultSet rs) throws SQLException {
         String id = String.valueOf(rs.getInt("id"));
         String name = rs.getString("name");
-        // entryyearなど、他�Eプロパティも忁E��に応じてマッピング
+        // entryyearなど、他のプロパティも必要に応じてマッピング
         Employee employee = new Employee(new EmployeeId(id), name);
         // 有給の残日数（SQL に列がなければ読まない）
         try {

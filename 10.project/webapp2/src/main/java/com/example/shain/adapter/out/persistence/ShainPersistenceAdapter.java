@@ -89,6 +89,60 @@ public class ShainPersistenceAdapter implements ShainPort {
         }
     }
 
+    /**
+     * 社員IDを持つ列（テーブル名, 列名）。社員IDを変えるときにすべて書き換える。
+     * テーブルや列を追加したら、ここにも足すこと。
+     */
+    private static final String[][] STAFF_ID_COLUMNS = {
+            {"staff_table", "id"},
+            {"work_month_table", "staff_id"},
+            {"kintai_approval_history", "staff_id"},
+            {"kintai_approval_history", "decided_by"},
+            {"overtime_request", "staff_id"},
+            {"overtime_request", "decided_by"},
+            {"weekly_work_report", "staff_id"},
+            {"department", "approver_staff_id"},
+            {"leave_request", "staff_id"},
+            {"approval_step", "approver_staff_id"},
+            {"notice", "author_staff_id"},
+    };
+
+    @Override
+    public void changeId(ShainId from, ShainId to) {
+        try (Connection con = ConnectionBase.getConnection()) {
+            for (String[] tc : STAFF_ID_COLUMNS) {
+                // マイグレーション前でまだないテーブルは飛ばす
+                if (!tableExists(con, tc[0])) {
+                    continue;
+                }
+                // テーブル名・列名は上の固定の一覧から組み立てる（外からの入力は入らない）
+                try (PreparedStatement ps = con.prepareStatement(
+                        "UPDATE " + tc[0] + " SET " + tc[1] + " = ? WHERE " + tc[1] + " = ?")) {
+                    ps.setInt(1, to.getIntValue());
+                    ps.setInt(2, from.getIntValue());
+                    ps.executeUpdate();
+                }
+            }
+            // ログインのユーザー名は社員IDと同じ文字列
+            try (PreparedStatement ps = con.prepareStatement("UPDATE login_table SET username = ? WHERE username = ?")) {
+                ps.setString(1, to.getValue());
+                ps.setString(2, from.getValue());
+                ps.executeUpdate();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to change shain id: " + from + " -> " + to, e);
+        }
+    }
+
+    private static boolean tableExists(Connection con, String table) throws java.sql.SQLException {
+        try (PreparedStatement ps = con.prepareStatement("SELECT to_regclass(?) IS NOT NULL")) {
+            ps.setString(1, table);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getBoolean(1);
+            }
+        }
+    }
+
     @Override
     public ShainId nextId() {
         // IDの自動採番ロジック（実際にはDBのシーケンス等を利用）

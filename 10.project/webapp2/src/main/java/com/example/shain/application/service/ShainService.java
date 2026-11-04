@@ -5,6 +5,7 @@ import com.example.auth.domain.port.out.LoginPort;
 import com.example.auth.domain.service.InitialPasswordResolver;
 import com.example.auth.domain.service.PasswordHasher;
 import com.example.shain.application.port.in.*;
+import com.example.shain.domain.model.InvalidShainIdException;
 import com.example.shain.domain.model.Shain;
 import com.example.shain.domain.model.ShainId;
 import com.example.shain.domain.port.out.ShainPort;
@@ -82,22 +83,60 @@ public class ShainService implements
     }
 
     @Override
-    public void updateShain(UpdateShainCommand command) {
-        ShainId id = new ShainId(command.getId());
-        Shain existingShain = shainPort.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Shain not found: " + id));
+    public ShainId updateShain(UpdateShainCommand command) {
+        ShainId currentId = new ShainId(command.getId());
+        String requested = command.getNewId() == null ? null : command.getNewId().strip();
+        boolean changing = requested != null && !requested.isEmpty() && !requested.equals(currentId.getValue());
 
-        Shain updatedShain = new Shain(
-                id,
-                command.getName(),
-                command.getNamekana(),
-                command.getEntryYear(),
-                command.getGender(),
-                command.getJobClass(),
-                existingShain.getPaidLeaveDays(),
-                existingShain.getYearsOfService()
-        );
-        shainPort.update(updatedShain);
+        return transactionManager.executeInTransaction(() -> {
+            Shain existingShain = shainPort.findById(currentId)
+                    .orElseThrow(() -> new IllegalArgumentException("Shain not found: " + currentId));
+            ShainId id = currentId;
+            if (changing) {
+                // 画面でのチェックのあとに別の人が同じIDを使った場合に備え、トランザクションの中でもう一度調べる
+                Optional<String> error = checkNewId(currentId.getValue(), requested);
+                if (error.isPresent()) {
+                    throw new InvalidShainIdException(error.get());
+                }
+                id = new ShainId(requested);
+                shainPort.changeId(currentId, id);
+            }
+            shainPort.update(new Shain(
+                    id,
+                    command.getName(),
+                    command.getNamekana(),
+                    command.getEntryYear(),
+                    command.getGender(),
+                    command.getJobClass(),
+                    existingShain.getPaidLeaveDays(),
+                    existingShain.getYearsOfService()
+            ));
+            return id;
+        });
+    }
+
+    /** 社員IDに使える形式：1〜9桁の数字（先頭は0以外）。ログインのユーザー名にもなる */
+    private static final java.util.regex.Pattern ID_FORMAT = java.util.regex.Pattern.compile("[1-9][0-9]{0,8}");
+
+    @Override
+    public Optional<String> checkNewId(String currentId, String newId) {
+        String value = newId == null ? "" : newId.strip();
+        if (value.isEmpty()) {
+            return Optional.of("社員IDを入力してください。");
+        }
+        if (value.equals(currentId)) {
+            return Optional.empty();
+        }
+        if (!ID_FORMAT.matcher(value).matches()) {
+            return Optional.of("社員IDは1〜9桁の数字で入力してください（先頭に0は付けられません）。");
+        }
+        if (shainPort.findById(new ShainId(value)).isPresent()) {
+            return Optional.of("社員ID " + value + " はすでにほかの社員が使っています。");
+        }
+        if (loginPort.exists(value)) {
+            return Optional.of("社員ID " + value + " はすでにログインアカウントとして使われています。");
+        }
+        return Optional.empty();
     }
 
     @Override

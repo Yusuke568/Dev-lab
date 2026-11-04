@@ -267,8 +267,11 @@ public class DependencyFactory {
 
         // Shain Actions (New Context)
         actionMap.put("ShainList", new com.example.shain.adapter.in.web.ShainListAction(this.getShainListUseCase, this.getAllClassmastersUseCase));
-        actionMap.put("ShainUpdateForm", new com.example.shain.adapter.in.web.ShainUpdateFormAction(this.getShainByIdUseCase, this.getAllClassmastersUseCase, this.masterMaintenanceUseCase));
-        actionMap.put("ShainUpdateExecute", new com.example.shain.adapter.in.web.ShainUpdateExecuteAction(this.updateShainUseCase, this.masterMaintenanceUseCase));
+        com.example.shain.adapter.in.web.ShainUpdateFormAction shainUpdateFormAction =
+                new com.example.shain.adapter.in.web.ShainUpdateFormAction(this.getShainByIdUseCase, this.getAllClassmastersUseCase, this.masterMaintenanceUseCase);
+        actionMap.put("ShainUpdateForm", shainUpdateFormAction);
+        actionMap.put("ShainUpdateExecute", new com.example.shain.adapter.in.web.ShainUpdateExecuteAction(this.updateShainUseCase, this.masterMaintenanceUseCase, shainUpdateFormAction));
+        actionMap.put("ShainIdCheckApi", new com.example.shain.adapter.in.web.ShainIdCheckApiAction(this.updateShainUseCase));
         com.example.shain.adapter.in.web.ShainInsertFormAction shainInsertFormAction =
                 new com.example.shain.adapter.in.web.ShainInsertFormAction(this.getAllClassmastersUseCase, this.getNextShainIdUseCase, this.masterMaintenanceUseCase);
         actionMap.put("ShainInsertForm", shainInsertFormAction);
@@ -344,7 +347,7 @@ public class DependencyFactory {
         requireFeature(Feature.APPROVAL, "ApprovalList", "ApprovalExecute", "ApprovalHistory", "OvertimeRequestExecute", "SubordinateAttendance", "NoticeManage",
                 "LeaveRequestExecute");
         requireFeature(Feature.SHAIN_ADMIN, "ShainList", "ShainUpdateForm", "ShainUpdateExecute", "ShainInsertForm",
-                "ShainInsertExecute", "ShainDeleteForm", "ShainDeleteExecute", "SearchShainApi",
+                "ShainInsertExecute", "ShainDeleteForm", "ShainDeleteExecute", "SearchShainApi", "ShainIdCheckApi",
                 "PasswordResetForm", "PasswordResetExecute");
         requireFeature(Feature.PAID_LEAVE_ADMIN, "PaidLeaveAdmin", "UpdateLeave", "GrantLeaveByYear", "GrantLeaveSelected");
         // マスタはマスタごとに権限を分ける。マスタ管理のトップは、どれか1つのマスタを使えれば開ける

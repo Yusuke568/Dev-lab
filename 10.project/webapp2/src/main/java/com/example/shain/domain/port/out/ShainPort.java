@@ -44,4 +44,11 @@ public interface ShainPort {
      * 社員の所属部署を設定します（null なら未所属）。
      */
     void assignDepartment(ShainId id, Integer departmentId);
+
+    /**
+     * 社員IDを from から to に変える。社員マスタだけでなく、ログインアカウントや
+     * 勤怠・申請・承認・お知らせなど、社員IDを持つすべてのデータを書き換える。
+     * 呼び出し側でトランザクションに入れること。
+     */
+    void changeId(ShainId from, ShainId to);
 }

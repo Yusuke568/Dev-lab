@@ -42,6 +42,7 @@ public class ShainUpdateFormAction implements Action {
                     request.setAttribute("jobList", getAllClassmastersUseCase.getAllClassmasters());
                     request.setAttribute("departments", masterUseCase.getDepartmentTree());
                     request.setAttribute("currentDepartmentId", masterUseCase.getDepartmentIdOfStaff(id.getIntValue()));
+                    com.example.shared.web.CsrfToken.getOrCreate(request.getSession());
                     return new View("/WEB-INF/view/shainupdate.jsp");
                 })
                 .orElse(new View("/WEB-INF/view/error.jsp"));

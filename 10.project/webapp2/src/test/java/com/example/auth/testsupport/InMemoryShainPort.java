@@ -66,6 +66,24 @@ public class InMemoryShainPort implements ShainPort, FakeTransactionManager.Snap
     }
 
     @Override
+    public void changeId(ShainId from, ShainId to) {
+        if (shains.containsKey(to)) {
+            throw new RuntimeException("duplicate key");
+        }
+        Shain old = shains.remove(from);
+        if (old != null) {
+            shains.put(to, old);
+        }
+        if (departments.containsKey(from)) {
+            departments.put(to, departments.remove(from));
+        }
+        changedIds.add(from + "->" + to);
+    }
+
+    /** changeId が呼ばれた記録（"旧->新"） */
+    public final List<String> changedIds = new ArrayList<>();
+
+    @Override
     public void takeSnapshot() {
         shainSnapshot = new HashMap<>(shains);
         departmentSnapshot = new HashMap<>(departments);

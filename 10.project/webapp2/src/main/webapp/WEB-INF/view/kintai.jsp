@@ -152,7 +152,7 @@
     padding: 1rem 1.5rem;
     border-radius: 8px;
     box-shadow: var(--card-shadow);
-    max-height: 360px; /* 上長からのお知らせが入るので少し高くする。超えたらスクロール */
+    max-height: 250px;
     overflow-y: auto;
     position: sticky;
     top: 20px;
@@ -253,7 +253,57 @@
     font-weight: 700;
 }
 
-/* --- 上長からのお知らせ --- */
+/* --- 勤務区分一覧（参照用なので小さく） --- */
+.worktype-card h2 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+.worktype-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.75rem;
+}
+.worktype-list li {
+    padding: 2px 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    background: #f7fafc;
+    white-space: nowrap;
+}
+.worktype-list .worktype-id {
+    color: #718096;
+    margin-right: 4px;
+}
+
+/* --- 上長からのお知らせ（ステータス通知とは別の枠） --- */
+.notice-card {
+    background: #ffffff;
+    border: 2px solid #2b6cb0;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    max-height: 320px; /* 件数が多いときは枠の中でスクロール */
+    overflow-y: auto;
+}
+.notice-card h2 {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #2b6cb0;
+    margin: 0 0 8px;
+}
+.notice-card .notice-count {
+    display: inline-block;
+    font-size: 0.8rem;
+    color: #ffffff;
+    background: #2b6cb0;
+    border-radius: 999px;
+    padding: 1px 8px;
+    vertical-align: middle;
+}
 .notice-item {
     padding: 8px 10px;
     border-left: 4px solid #2b6cb0;
@@ -714,15 +764,6 @@
 		        <span class="msg">36協定：時間外労働が上限に近づいています（目安160H超）</span>
 		    </div>
 	    </c:if>
-	    <c:if test="${not empty notices}">
-		    <div class="status-banner status-info">
-		        <span class="icon">📢</span>
-		        <span class="msg">
-		            上長からのお知らせが <c:out value="${fn:length(notices)}" /> 件あります。
-		            <a href="#notice-list" onclick="openInfoSection(); return true;">お知らせを見る</a>
-		        </span>
-		    </div>
-	    </c:if>
 	    <c:if test="${proxyMode}">
 		    <div class="status-banner status-warning">
 		        <span class="icon">👀</span>
@@ -830,6 +871,19 @@
 			</div>
 		</div>
 
+		<%-- 上長からのお知らせ。見落とさないよう、ステータス通知とは別の枠で常に表示する --%>
+		<c:if test="${not empty notices}">
+			<section class="notice-card" id="notice-list" aria-labelledby="notice-title">
+				<h2 id="notice-title">📢 上長からのお知らせ <span class="notice-count"><c:out value="${fn:length(notices)}" />件</span></h2>
+				<c:forEach var="n" items="${notices}">
+					<div class="notice-item">
+						<div class="notice-meta"><c:out value="${n.authorName}" />（<c:out value="${n.departmentName}" />あて）<c:out value="${n.createdAtLabel}" /><c:if test="${not empty n.expiresOn}">　<c:out value="${n.expiresOn}" />まで</c:if></div>
+						<div class="notice-body"><c:out value="${n.body}" /></div>
+					</div>
+				</c:forEach>
+			</section>
+		</c:if>
+
 		<div class="info-section" id="info-section">
 			<div class="info-grid">
 				<!-- 労働基準法チェック -->
@@ -862,31 +916,13 @@
 					</div>
 				</div>
 
-				<!-- 勤務区分一覧 -->
+				<!-- 勤務区分一覧（参照用なので小さく表示） -->
 				<div class="worktype-card">
 					<h2>勤務区分一覧</h2>
-					<table class="worktype-table" style="width: 100%; font-size: 0.9rem;">
+					<ul class="worktype-list">
 						<c:forEach var="opt" items="${workTypes}">
-							<tr>
-								<th><c:out value="${opt.name}"/></th>
-								<td>ID: <c:out value="${opt.id}"/></td>
-							</tr>
+							<li><span class="worktype-id"><c:out value="${opt.id}"/></span><c:out value="${opt.name}"/></li>
 						</c:forEach>
-					</table>
-				</div>
-
-				<!-- 勤務入力の注意事項（作業報告書の注記と同じ内容） -->
-				<div class="rules-card">
-					<h2>勤務入力の注意事項</h2>
-					<ul class="rules-list">
-						<li>※1. チェック結果がOKではない場合、その内容を必ず確認すること。</li>
-						<li>※2. 開始・終了時刻は、総勤務時間の開始・終了時刻を記入する。</li>
-						<li>※3. 勤務時間（直接）は、各プロジェクトでの作業時間（時間外を含む）。</li>
-						<li>※4. 勤務時間（間接）は、社内会議・教育全般の時間。</li>
-						<li>※ 次の時間帯は休憩時間（勤務時間から自動で引きます）：<br>
-							5:00〜5:30、8:30〜9:00、12:00〜13:00、18:00〜18:30、22:00〜22:30、2:00〜3:00</li>
-						<li class="rules-important">※ 18:30以降の稼働は事前申請が必要。</li>
-						<li class="rules-important">※ 22:00以降の稼働は原則禁止。</li>
 					</ul>
 				</div>
 
@@ -894,16 +930,6 @@
 				<div class="status-wrapper">
 					<div class="status-card">
 						<h2>ステータス通知</h2>
-						<c:if test="${not empty notices}">
-							<div id="notice-list">
-								<c:forEach var="n" items="${notices}">
-									<div class="notice-item">
-										<div class="notice-meta">📢 <c:out value="${n.authorName}" />（<c:out value="${n.departmentName}" />あて）<c:out value="${n.createdAtLabel}" /></div>
-										<div class="notice-body"><c:out value="${n.body}" /></div>
-									</div>
-								</c:forEach>
-							</div>
-						</c:if>
 						<div class="status-item status-success">✔ 勤怠システム稼働中</div>
 						<div class="status-item status-info">ℹ 提出期限：毎月3営業日以内</div>
 
@@ -930,6 +956,21 @@
 							</div>
 						</c:if>
 					</div>
+				</div>
+
+				<!-- 勤務入力の注意事項（作業報告書の注記と同じ内容） -->
+				<div class="rules-card">
+					<h2>勤務入力の注意事項</h2>
+					<ul class="rules-list">
+						<li>※1. チェック結果がOKではない場合、その内容を必ず確認すること。</li>
+						<li>※2. 開始・終了時刻は、総勤務時間の開始・終了時刻を記入する。</li>
+						<li>※3. 勤務時間（直接）は、各プロジェクトでの作業時間（時間外を含む）。</li>
+						<li>※4. 勤務時間（間接）は、社内会議・教育全般の時間。</li>
+						<li>※ 次の時間帯は休憩時間（勤務時間から自動で引きます）：<br>
+							5:00〜5:30、8:30〜9:00、12:00〜13:00、18:00〜18:30、22:00〜22:30、2:00〜3:00</li>
+						<li class="rules-important">※ 18:30以降の稼働は事前申請が必要。</li>
+						<li class="rules-important">※ 22:00以降の稼働は原則禁止。</li>
+					</ul>
 				</div>
 			</div>
 		</div>
@@ -1252,14 +1293,6 @@
 	</script>
 
 	<script>
-	/** 勤務情報一覧を開く（お知らせへのリンク用。閉じはしない） */
-	function openInfoSection() {
-	    const section = document.getElementById("info-section");
-	    if (section.style.display !== "block") {
-	        toggleInfo();
-	    }
-	}
-
 	function toggleInfo() {
 	    const section = document.getElementById("info-section");
 	    const arrow = document.getElementById("info-arrow");

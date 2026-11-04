@@ -79,6 +79,17 @@ public class MonthlyAttendanceDto {
         return employeeName;
     }
 
+    /** 有給休暇の残日数（保存済みの勤怠に基づく）。分からなければ null */
+    private Integer paidLeaveDays;
+
+    public Integer getPaidLeaveDays() {
+        return paidLeaveDays;
+    }
+
+    public void setPaidLeaveDays(Integer paidLeaveDays) {
+        this.paidLeaveDays = paidLeaveDays;
+    }
+
     private static String formatMinutes(long totalMinutes) {
         long hours = totalMinutes / 60;
         long minutes = totalMinutes % 60;

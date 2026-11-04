@@ -10,6 +10,8 @@ import java.util.Objects;
 public class Employee {
     private final EmployeeId id;
     private String name;
+    /** 有給休暇の残日数（読み込んでいなければ null） */
+    private Integer paidLeaveDays;
 
     public Employee(EmployeeId id, String name) {
         this.id = Objects.requireNonNull(id, "id must not be null");
@@ -22,6 +24,14 @@ public class Employee {
 
     public String getName() {
         return name;
+    }
+
+    public Integer getPaidLeaveDays() {
+        return paidLeaveDays;
+    }
+
+    public void setPaidLeaveDays(Integer paidLeaveDays) {
+        this.paidLeaveDays = paidLeaveDays;
     }
 
     public void setName(String name) {

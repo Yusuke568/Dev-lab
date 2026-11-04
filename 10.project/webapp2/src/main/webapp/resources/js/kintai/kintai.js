@@ -14,6 +14,36 @@ const contextPath = document.body.dataset.contextPath || "";
 /** 保存していない変更がある日（YYYY-MM-DD） */
 const dirtyDates = new Set();
 
+/** 有給として扱う勤務区分（サーバーの残日数の増減と同じく、「有給」か有給扱いの最初の区分） */
+const paidLeaveType = workTypes.find((w) => w.name === "有給" || w.paid);
+
+/**
+ * 有給残日数の表示を、保存していない勤務区分の変更に合わせる。
+ * 保存すると、有給にした日は1日減り、有給から外した日は1日戻る（サーバーと同じ考え方）。
+ */
+function updatePaidLeavePreview() {
+  const card = document.getElementById("paid-leave-card");
+  if (!card || !paidLeaveType) return;
+  const saved = Number(card.dataset.savedDays);
+  const paidId = String(paidLeaveType.id);
+  let delta = 0;
+  rows.forEach((row) => {
+    const select = row.querySelector("select[name='status']");
+    if (!select) return;
+    const wasPaid = select.dataset.initial === paidId;
+    const isPaid = select.value === paidId;
+    if (!wasPaid && isPaid) delta--;
+    if (wasPaid && !isPaid) delta++;
+  });
+  const after = saved + delta;
+  const note = document.getElementById("paid-leave-note");
+  if (note) {
+    note.textContent = delta === 0 ? "" : "保存すると " + after + "日（未保存の有給 " + (delta < 0 ? -delta + "日" : "取消 " + delta + "日") + "）";
+  }
+  card.classList.toggle("short", after < 0);
+  if (after < 0 && note) note.textContent += " 残日数が足りません";
+}
+
 function postRecords(records) {
   return fetch(contextPath + "/kintaiUpdateApi.do", {
     method: "POST",
@@ -221,6 +251,7 @@ function applyBulkInput() {
   const message = document.getElementById("bulk-message");
   if (updated) {
     updateButtonState();
+    updatePaidLeavePreview();
     if (message) {
       message.className = "inline-message success";
       message.textContent = "選んだ日に反映しました。下の「保存」で保存してください。";
@@ -476,6 +507,15 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       e.returnValue = "";
     }
+  });
+
+  // 有給残日数：読み込んだ時点の勤務区分を覚えておき、変更に合わせて保存後の日数を出す
+  rows.forEach((row) => {
+    const select = row.querySelector("select[name='status']");
+    if (select) select.dataset.initial = select.value;
+  });
+  document.getElementById("calendar-log")?.addEventListener("change", (e) => {
+    if (e.target.matches("select[name='status']")) updatePaidLeavePreview();
   });
 
   // Initial state update

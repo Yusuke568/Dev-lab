@@ -63,8 +63,10 @@ public class GetMonthlyAttendanceService implements GetMonthlyAttendanceUseCase 
                 command.getEmployeeId(), command.getYearMonth().getYear());
 
         // 4. 最終的なDTOを絁E立てて返す
-        return new MonthlyAttendanceDto(command.getYearMonth(), dailyDtos, totalWorkHours, totalWorkMinutes,
+        MonthlyAttendanceDto dto = new MonthlyAttendanceDto(command.getYearMonth(), dailyDtos, totalWorkHours, totalWorkMinutes,
                 totalOvertimeMinutes, annualOvertimeMinutes, employee.getName());
+        dto.setPaidLeaveDays(employee.getPaidLeaveDays());
+        return dto;
         }
 
 

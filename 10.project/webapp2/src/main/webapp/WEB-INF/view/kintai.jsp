@@ -210,6 +210,24 @@
     flex-wrap: wrap;
 }
 
+/* --- 有給残日数 --- */
+.stat-card .unit {
+    font-size: 1rem;
+    margin-left: 2px;
+}
+.paid-leave-note {
+    font-size: 0.8rem;
+    color: #c05621;
+    font-weight: 700;
+}
+.paid-leave-note:empty {
+    display: none;
+}
+#paid-leave-card.short .value,
+#paid-leave-card.short .paid-leave-note {
+    color: #c50000;
+}
+
 /* --- 祝日 --- */
 .holiday-name {
     display: block;
@@ -715,6 +733,14 @@
 						<c:out value="${attendanceData.totalWorkHours}" />
 					</div>
 				</div>
+				<c:if test="${not empty attendanceData.paidLeaveDays}">
+					<%-- 有給の残日数。保存していない「有給」の変更があれば、保存後の日数も出す（kintai.js） --%>
+					<div class="stat-card" id="paid-leave-card" data-saved-days="${attendanceData.paidLeaveDays}">
+						<div class="label">有給残日数</div>
+						<div class="value"><span id="paid-leave-days"><c:out value="${attendanceData.paidLeaveDays}" /></span><span class="unit">日</span></div>
+						<div class="paid-leave-note" id="paid-leave-note" role="status"></div>
+					</div>
+				</c:if>
 				<a href="${pageContext.request.contextPath}/menu.do" class="btn btn-secondary">メニュー</a>
 				<c:if test="${sessionScope.can.OVERTIME_REQUEST and not proxyMode}">
 					<a href="${pageContext.request.contextPath}/overtimeRequestMenu.do" class="btn btn-secondary">🕐 残業事前申請</a>

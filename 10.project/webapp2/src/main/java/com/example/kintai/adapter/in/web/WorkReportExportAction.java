@@ -43,7 +43,13 @@ public class WorkReportExportAction implements Action {
             month = Integer.parseInt(request.getParameter("month"));
             YearMonth yearMonth = YearMonth.of(year, month);
 
-            byte[] fileBytes = exportWorkReportUseCase.exportMonth(new EmployeeId(employeeId), yearMonth);
+            ExportWorkReportUseCase.ExportedWorkReport exported = exportWorkReportUseCase.exportMonth(new EmployeeId(employeeId), yearMonth);
+            byte[] fileBytes = exported.getContent();
+            if (exported.getArchiveError() != null) {
+                // ダウンロードは続ける。次に勤怠画面を開いたときに知らせる
+                session.setAttribute("kintaiErrorMessage",
+                        "作業報告書はダウンロードしましたが、サーバーのフォルダに置けませんでした: " + exported.getArchiveError());
+            }
 
             String fileName = String.format("作業報告書%d%02d.xlsm", year, month);
             String asciiFallbackFileName = String.format("work_report_%d%02d.xlsm", year, month);

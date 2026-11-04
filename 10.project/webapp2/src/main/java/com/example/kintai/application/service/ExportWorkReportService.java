@@ -22,11 +22,14 @@ public class ExportWorkReportService implements ExportWorkReportUseCase {
     private final GetWorkTypesUseCase getWorkTypesUseCase;
     private final GetWeeklyWorkReportsUseCase getWeeklyWorkReportsUseCase;
     private final WorkReportExportPort workReportExportPort;
+    private final com.example.kintai.domain.port.out.WorkReportArchivePort workReportArchivePort;
 
     public ExportWorkReportService(GetMonthlyAttendanceUseCase getMonthlyAttendanceUseCase,
                                     GetWorkTypesUseCase getWorkTypesUseCase,
                                     GetWeeklyWorkReportsUseCase getWeeklyWorkReportsUseCase,
-                                    WorkReportExportPort workReportExportPort) {
+                                    WorkReportExportPort workReportExportPort,
+                                    com.example.kintai.domain.port.out.WorkReportArchivePort workReportArchivePort) {
+        this.workReportArchivePort = workReportArchivePort;
         this.getMonthlyAttendanceUseCase = getMonthlyAttendanceUseCase;
         this.getWorkTypesUseCase = getWorkTypesUseCase;
         this.getWeeklyWorkReportsUseCase = getWeeklyWorkReportsUseCase;
@@ -34,7 +37,7 @@ public class ExportWorkReportService implements ExportWorkReportUseCase {
     }
 
     @Override
-    public byte[] exportMonth(EmployeeId employeeId, YearMonth yearMonth) {
+    public ExportedWorkReport exportMonth(EmployeeId employeeId, YearMonth yearMonth) {
         MonthlyAttendanceDto monthlyData = getMonthlyAttendanceUseCase.getMonthlyAttendance(
                 new GetMonthlyAttendanceUseCase.GetMonthlyAttendanceCommand(employeeId, yearMonth));
 
@@ -42,6 +45,18 @@ public class ExportWorkReportService implements ExportWorkReportUseCase {
 
         List<WeeklyWorkReport> weeklyWorkReports = getWeeklyWorkReportsUseCase.getWeeklyWorkReports(employeeId, yearMonth);
 
-        return workReportExportPort.generate(monthlyData, monthlyData.getEmployeeName(), workTypes, weeklyWorkReports);
+        byte[] content = workReportExportPort.generate(monthlyData, monthlyData.getEmployeeName(), workTypes, weeklyWorkReports);
+
+        // サーバーの所定フォルダにも置く。置けなくてもダウンロードは止めない
+        if (workReportArchivePort == null || !workReportArchivePort.isEnabled()) {
+            return new ExportedWorkReport(content, null, null);
+        }
+        try {
+            String path = workReportArchivePort.archive(employeeId.getValue(), monthlyData.getEmployeeName(), yearMonth, content);
+            return new ExportedWorkReport(content, path, null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ExportedWorkReport(content, null, e.getMessage() != null ? e.getMessage() : e.toString());
+        }
     }
 }

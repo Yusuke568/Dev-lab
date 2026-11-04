@@ -198,11 +198,13 @@ public class DependencyFactory {
         WeeklyWorkReportService weeklyWorkReportService = new WeeklyWorkReportService(this.weeklyWorkReportPort);
         this.getWeeklyWorkReportsUseCase = weeklyWorkReportService;
         this.saveWeeklyWorkReportsUseCase = weeklyWorkReportService;
+        // 作業報告書の置き場所（-Dkintai.workReport.archiveDir か 環境変数 KINTAI_WORK_REPORT_DIR。なければ置かない）
         this.exportWorkReportUseCase = new ExportWorkReportService(
                 this.getMonthlyAttendanceUseCase,
                 this.getWorkTypesUseCase,
                 this.getWeeklyWorkReportsUseCase,
-                this.workReportExportPort
+                this.workReportExportPort,
+                com.example.kintai.adapter.out.export.FileSystemWorkReportArchiveAdapter.fromSystemSettings()
         );
         this.updateAttendanceUseCase = new UpdateAttendanceService(
                 this.attendancePersistenceAdapter,

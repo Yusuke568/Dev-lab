@@ -89,7 +89,7 @@ public class KintaiDisplayAction implements Action {
 
             // ログイン中のユーザー惁E��をセチE��ョンから取得する方が望ましいが、ここではパラメータを維持E
             EmployeeId employeeId = new EmployeeId(idParam);
-            YearMonth yearMonth = YearMonth.of(Integer.parseInt(yearParam), Integer.parseInt(monthParam));
+            YearMonth yearMonth = parseYearMonth(yearParam, monthParam);
             
             GetMonthlyAttendanceUseCase.GetMonthlyAttendanceCommand command =
                     new GetMonthlyAttendanceUseCase.GetMonthlyAttendanceCommand(employeeId, yearMonth);
@@ -164,5 +164,21 @@ public class KintaiDisplayAction implements Action {
             request.setAttribute("errorMessage", "勤怠惁E��の表示中にエラーが発生しました: " + e.getMessage());
             return new View("/WEB-INF/view/error.jsp");
         }
+    }
+
+    /**
+     * 表示する年月。URL に年・月がない（ブックマークや直接入力など）か正しくなければ、今月にする。
+     */
+    static YearMonth parseYearMonth(String yearParam, String monthParam) {
+        try {
+            int year = Integer.parseInt(yearParam.trim());
+            int month = Integer.parseInt(monthParam.trim());
+            if (year >= 2000 && year <= 2100 && month >= 1 && month <= 12) {
+                return YearMonth.of(year, month);
+            }
+        } catch (RuntimeException e) {
+            // 年・月がない、または数字でないときは今月
+        }
+        return YearMonth.now();
     }
 }

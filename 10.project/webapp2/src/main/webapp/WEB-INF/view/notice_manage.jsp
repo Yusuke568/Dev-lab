@@ -20,6 +20,7 @@
 .notice-list .expired { color: #a0aec0; }
 .notice-list form { margin-top: 6px; text-align: right; }
 </style>
+<%@ include file="_icons.jspf" %>
 </head>
 <body>
 <div class="card">

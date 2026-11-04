@@ -1,0 +1,5 @@
+<%-- ブラウザのタブ・ブックマーク・スマホのホーム画面に出すアイコン。各画面の <head> から include する --%>
+<link rel="icon" href="${pageContext.request.contextPath}/images/favicon.ico" sizes="any">
+<link rel="icon" href="${pageContext.request.contextPath}/images/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="${pageContext.request.contextPath}/images/apple-touch-icon.png">
+<meta name="theme-color" content="#1a3d6d">

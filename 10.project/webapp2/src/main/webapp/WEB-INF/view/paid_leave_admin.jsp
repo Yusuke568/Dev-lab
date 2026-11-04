@@ -8,6 +8,7 @@
 <title>有給休暇管理</title>
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/style.css">
+<%@ include file="_icons.jspf" %>
 </head>
 <body data-context-path="${pageContext.request.contextPath}">
 

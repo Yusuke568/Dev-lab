@@ -47,6 +47,7 @@
 	}
 }
 </style>
+<%@ include file="_icons.jspf" %>
 </head>
 <body>
 	<div class="card">

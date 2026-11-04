@@ -20,6 +20,7 @@
 	.national-list { columns: 1; }
 }
 </style>
+<%@ include file="../_icons.jspf" %>
 </head>
 <body>
 <div class="card">

@@ -8,6 +8,7 @@
 <title>勤怠承認履歴</title>
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/style.css">
+<%@ include file="_icons.jspf" %>
 </head>
 <body>
 

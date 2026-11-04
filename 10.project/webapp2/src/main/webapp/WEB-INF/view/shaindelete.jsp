@@ -9,6 +9,7 @@
 <title>社員削除画面</title>
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/style.css">
+<%@ include file="_icons.jspf" %>
 </head>
 
 <body>

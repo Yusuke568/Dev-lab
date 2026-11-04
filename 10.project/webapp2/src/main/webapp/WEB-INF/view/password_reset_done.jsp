@@ -8,6 +8,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>パスワード初期化完了</title>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
+<%@ include file="_icons.jspf" %>
 </head>
 <body>
 	<div class="card password-card">

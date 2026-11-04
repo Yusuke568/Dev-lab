@@ -7,6 +7,7 @@
 <title>社員登録画面</title>
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/style.css">
+<%@ include file="_icons.jspf" %>
 </head>
 <body>
 	<div class="card" style="max-width: 600px;">

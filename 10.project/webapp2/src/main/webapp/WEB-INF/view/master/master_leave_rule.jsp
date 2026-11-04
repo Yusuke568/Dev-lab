@@ -8,6 +8,7 @@
 <title>有給付与ルール</title>
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/style.css">
+<%@ include file="../_icons.jspf" %>
 </head>
 <body>
 <div class="card">

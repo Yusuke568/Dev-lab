@@ -16,6 +16,7 @@
 .id-note { font-size: 0.8rem; color: #718096; margin-top: 2px; }
 .form-input.invalid { border-color: #c50000; background: #fff5f5; }
 </style>
+<%@ include file="_icons.jspf" %>
 </head>
 <body>
 	<%-- 入力エラーで戻ってきたときは、入力した値を表示する --%>

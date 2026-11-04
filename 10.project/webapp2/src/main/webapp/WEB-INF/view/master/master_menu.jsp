@@ -15,6 +15,7 @@
 .master-link h3 { margin: 0 0 0.5rem; }
 .master-link p { margin: 0; font-size: 0.9rem; color: #666; }
 </style>
+<%@ include file="../_icons.jspf" %>
 </head>
 <body>
 <div class="card">

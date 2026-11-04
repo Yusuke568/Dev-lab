@@ -8,6 +8,7 @@
 <title>休暇申請</title>
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/style.css">
+<%@ include file="_icons.jspf" %>
 </head>
 <body>
 

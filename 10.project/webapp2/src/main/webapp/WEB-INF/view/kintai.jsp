@@ -753,6 +753,7 @@
     }
 }
 </style>
+<%@ include file="_icons.jspf" %>
 </head>
 <body data-context-path="${pageContext.request.contextPath}">
 

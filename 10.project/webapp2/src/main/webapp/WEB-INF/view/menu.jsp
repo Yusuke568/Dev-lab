@@ -64,6 +64,7 @@
 	margin-bottom: 1.5rem;
 }
 </style>
+<%@ include file="_icons.jspf" %>
 </head>
 <body>
 <div class="card">

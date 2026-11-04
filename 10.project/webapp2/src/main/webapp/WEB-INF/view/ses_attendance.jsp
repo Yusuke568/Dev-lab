@@ -36,6 +36,7 @@
       padding-bottom: env(safe-area-inset-bottom, 1rem);
     }
   </style>
+<%@ include file="_icons.jspf" %>
 </head>
 <body class="min-h-screen pb-20 md:pb-8">
   <%

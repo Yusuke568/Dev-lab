@@ -22,7 +22,8 @@ public enum Feature {
     MASTER_APPROVAL_ROUTE("承認ルート設定", Feature.MASTER_GROUP),
     MASTER_ABSTRACT("適用マスタ", Feature.MASTER_GROUP),
     MASTER_LEAVE_RULE("有給付与ルール", Feature.MASTER_GROUP),
-    MASTER_CORRECTION("補正CD", Feature.MASTER_GROUP);
+    MASTER_CORRECTION("補正CD", Feature.MASTER_GROUP),
+    MASTER_COMPANY_HOLIDAY("会社休日", Feature.MASTER_GROUP);
 
     /** マスタ管理の機能をまとめる見出し */
     public static final String MASTER_GROUP = "マスタ管理";

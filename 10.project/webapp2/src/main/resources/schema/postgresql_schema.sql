@@ -272,7 +272,7 @@ SELECT g.id, f.code FROM permission_group g,
     (VALUES ('ATTENDANCE'), ('OVERTIME_REQUEST'), ('LEAVE_REQUEST'), ('APPROVAL'),
             ('SHAIN_ADMIN'), ('PAID_LEAVE_ADMIN'),
             ('MASTER_PERMISSION_GROUP'), ('MASTER_JOB_CLASS'), ('MASTER_DEPARTMENT'), ('MASTER_APPROVAL_ROUTE'),
-            ('MASTER_ABSTRACT'), ('MASTER_LEAVE_RULE'), ('MASTER_CORRECTION')) AS f(code)
+            ('MASTER_ABSTRACT'), ('MASTER_LEAVE_RULE'), ('MASTER_CORRECTION'), ('MASTER_COMPANY_HOLIDAY')) AS f(code)
 WHERE g.name = '管理者'
   AND NOT EXISTS (SELECT 1 FROM permission_group_feature x WHERE x.group_id = g.id AND x.feature_code = f.code);
 
@@ -287,3 +287,12 @@ INSERT INTO approval_route_setting (request_type, max_levels) SELECT 'LEAVE', 2
 WHERE NOT EXISTS (SELECT 1 FROM approval_route_setting WHERE request_type = 'LEAVE');
 
 -- 初期の役職はすべて「一般」。自分の役職を管理者にする手順は migrations/20261103_org_permission_approval.sql の末尾を参照
+
+-- ----------------------------------------------------------------------------
+-- 会社休日（年末年始・創立記念日など、国民の祝日以外の会社の休日）
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS company_holiday (
+    holiday_date  date PRIMARY KEY,
+    name          varchar(100) NOT NULL,
+    created_at    timestamp DEFAULT CURRENT_TIMESTAMP
+);

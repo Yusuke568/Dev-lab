@@ -258,7 +258,8 @@ public class DependencyFactory {
 
         // KintaiDisplayAction
         actionMap.put("KintaiDisplay", new KintaiDisplayAction(this.getMonthlyAttendanceUseCase, this.getWorkTypesUseCase, this.getCorrectionMastersUseCase, this.getMyOvertimeRequestsUseCase, this.getWeeklyWorkReportsUseCase, this.attendanceAccessUseCase,
-                new com.example.kintai.application.service.WeeklyWorkSummaryService(this.attendancePersistenceAdapter)));
+                new com.example.kintai.application.service.WeeklyWorkSummaryService(this.attendancePersistenceAdapter),
+                new com.example.kintai.application.service.HolidayService(this.attendancePersistenceAdapter)));
 
         // Shain Actions (New Context)
         actionMap.put("ShainList", new com.example.shain.adapter.in.web.ShainListAction(this.getShainListUseCase, this.getAllClassmastersUseCase));
@@ -317,6 +318,7 @@ public class DependencyFactory {
         actionMap.put("MasterAbstract", new com.example.master.adapter.in.web.MasterAbstractAction(this.masterMaintenanceUseCase));
         actionMap.put("MasterLeaveRule", new com.example.master.adapter.in.web.MasterLeaveRuleAction(this.masterMaintenanceUseCase));
         actionMap.put("MasterApprovalRoute", new com.example.master.adapter.in.web.MasterApprovalRouteAction(this.masterMaintenanceUseCase));
+        actionMap.put("MasterCompanyHoliday", new com.example.master.adapter.in.web.MasterCompanyHolidayAction(this.masterMaintenanceUseCase));
 
         initializeFeatureMap();
     }
@@ -348,6 +350,7 @@ public class DependencyFactory {
         requireFeature(Feature.MASTER_ABSTRACT, "MasterAbstract");
         requireFeature(Feature.MASTER_LEAVE_RULE, "MasterLeaveRule");
         requireFeature(Feature.MASTER_CORRECTION, "CorrectionMasterList", "CorrectionMasterRegister");
+        requireFeature(Feature.MASTER_COMPANY_HOLIDAY, "MasterCompanyHoliday");
         requireAnyFeature(Feature.masterFeatures(), "MasterMenu");
     }
 

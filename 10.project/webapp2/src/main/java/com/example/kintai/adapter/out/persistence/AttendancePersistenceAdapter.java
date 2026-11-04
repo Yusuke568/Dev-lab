@@ -29,7 +29,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, SaveAttendanceRecordPort, LoadPendingApprovalsPort,
-        com.example.kintai.domain.port.out.SubordinatePort, com.example.kintai.domain.port.out.LoadAttendancePeriodPort {
+        com.example.kintai.domain.port.out.SubordinatePort, com.example.kintai.domain.port.out.LoadAttendancePeriodPort,
+        com.example.kintai.domain.port.out.CompanyHolidayPort {
 
     private static final java.time.format.DateTimeFormatter TIME_FORMATTER = java.time.format.DateTimeFormatter.ofPattern("HH:mm");
 
@@ -87,6 +88,7 @@ public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, S
                 .collect(Collectors.toList());
 
         String insertSql = "INSERT INTO work_month_table(STAFF_ID, WORK_DATE, WORK_WEEK, ABSTRACT_ID, OVERTIME, APPROVAL_STATUS) VALUES(?, ?, ?, ?, 0, 0)";
+        java.util.Map<LocalDate, String> companyHolidays = findCompanyHolidays(yearMonth.atDay(1), yearMonth.atEndOfMonth());
         try (Connection con = ConnectionBase.getConnection();
              PreparedStatement ps = con.prepareStatement(insertSql)) {
             
@@ -98,9 +100,10 @@ public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, S
                     ps.setDate(2, java.sql.Date.valueOf(date));
                     ps.setString(3, date.getDayOfWeek().name());
                     
-                    // 土日・祝日 -> 休日(10)、今日までの平日 -> 出勤(1)、未到来の平日 -> 未設定(NULL)
+                    // 土日・祝日・会社休日 -> 休日(10)、今日までの平日 -> 出勤(1)、未到来の平日 -> 未設定(NULL)
                     boolean weekend = date.getDayOfWeek() == java.time.DayOfWeek.SATURDAY || date.getDayOfWeek() == java.time.DayOfWeek.SUNDAY
-                            || com.example.kintai.domain.service.JapaneseHolidayCalendar.isHoliday(date);
+                            || com.example.kintai.domain.service.JapaneseHolidayCalendar.isHoliday(date)
+                            || companyHolidays.containsKey(date);
                     if (weekend) {
                         ps.setInt(4, 10);
                     } else if (date.isAfter(LocalDate.now())) {
@@ -385,6 +388,25 @@ public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, S
             throw new RuntimeException("Failed to find managed staff of: " + approverId, e);
         }
         return result;
+    }
+
+    @Override
+    public java.util.Map<LocalDate, String> findCompanyHolidays(LocalDate from, LocalDate to) {
+        java.util.Map<LocalDate, String> holidays = new java.util.TreeMap<>();
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(readSqlFile("find_company_holidays.sql"))) {
+            ps.setDate(1, java.sql.Date.valueOf(from));
+            ps.setDate(2, java.sql.Date.valueOf(to));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    holidays.put(rs.getDate("holiday_date").toLocalDate(), rs.getString("name"));
+                }
+            }
+        } catch (Exception e) {
+            // 会社休日のテーブルがまだない（マイグレーション前）などでも、勤怠画面は開けるようにする
+            System.err.println("Warning: Failed to load company holidays. " + e.getMessage());
+        }
+        return holidays;
     }
 
     private String readSqlFile(String fileName) {

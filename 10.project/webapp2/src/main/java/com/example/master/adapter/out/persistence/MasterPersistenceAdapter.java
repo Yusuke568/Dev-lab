@@ -386,6 +386,60 @@ public class MasterPersistenceAdapter implements MasterPort, OrganizationPort {
         }
     }
 
+    // ------------------------------------------------------------------ 会社休日
+
+    @Override
+    public List<com.example.master.domain.model.CompanyHoliday> findCompanyHolidays(int year) {
+        List<com.example.master.domain.model.CompanyHoliday> list = new ArrayList<>();
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "SELECT holiday_date, name FROM company_holiday WHERE holiday_date >= ? AND holiday_date < ? ORDER BY holiday_date")) {
+            ps.setDate(1, java.sql.Date.valueOf(java.time.LocalDate.of(year, 1, 1)));
+            ps.setDate(2, java.sql.Date.valueOf(java.time.LocalDate.of(year + 1, 1, 1)));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new com.example.master.domain.model.CompanyHoliday(
+                            rs.getDate("holiday_date").toLocalDate(), rs.getString("name")));
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load company holidays.", e);
+        }
+        return list;
+    }
+
+    @Override
+    public void saveCompanyHoliday(java.time.LocalDate date, String name) {
+        try (Connection con = ConnectionBase.getConnection()) {
+            int updated;
+            try (PreparedStatement ps = con.prepareStatement("UPDATE company_holiday SET name = ? WHERE holiday_date = ?")) {
+                ps.setString(1, name);
+                ps.setDate(2, java.sql.Date.valueOf(date));
+                updated = ps.executeUpdate();
+            }
+            if (updated == 0) {
+                try (PreparedStatement ps = con.prepareStatement("INSERT INTO company_holiday (holiday_date, name) VALUES (?, ?)")) {
+                    ps.setDate(1, java.sql.Date.valueOf(date));
+                    ps.setString(2, name);
+                    ps.executeUpdate();
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to save company holiday.", e);
+        }
+    }
+
+    @Override
+    public void deleteCompanyHoliday(java.time.LocalDate date) {
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement("DELETE FROM company_holiday WHERE holiday_date = ?")) {
+            ps.setDate(1, java.sql.Date.valueOf(date));
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete company holiday.", e);
+        }
+    }
+
     // ------------------------------------------------------------------ 承認ルート設定
 
     @Override

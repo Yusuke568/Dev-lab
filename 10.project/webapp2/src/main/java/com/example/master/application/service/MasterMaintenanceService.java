@@ -173,6 +173,39 @@ public class MasterMaintenanceService implements MasterMaintenanceUseCase {
         masterPort.saveApprovalRouteSetting(requestType, maxLevels);
     }
 
+    // ------------------------------------------------------------------ 会社休日
+
+    @Override
+    public List<com.example.master.domain.model.CompanyHoliday> getCompanyHolidays(int year) {
+        return masterPort.findCompanyHolidays(year);
+    }
+
+    @Override
+    public int addCompanyHolidays(java.time.LocalDate from, java.time.LocalDate to, String name) {
+        String validName = requireName(name, "休日の名前");
+        if (from == null) {
+            throw new IllegalArgumentException("日付を入力してください。");
+        }
+        java.time.LocalDate end = to == null ? from : to;
+        if (end.isBefore(from)) {
+            throw new IllegalArgumentException("終了日は開始日以降の日付にしてください。");
+        }
+        if (java.time.temporal.ChronoUnit.DAYS.between(from, end) >= 31) {
+            throw new IllegalArgumentException("一度に登録できるのは31日までです。");
+        }
+        int count = 0;
+        for (java.time.LocalDate d = from; !d.isAfter(end); d = d.plusDays(1)) {
+            masterPort.saveCompanyHoliday(d, validName);
+            count++;
+        }
+        return count;
+    }
+
+    @Override
+    public void deleteCompanyHoliday(java.time.LocalDate date) {
+        masterPort.deleteCompanyHoliday(date);
+    }
+
     // ------------------------------------------------------------------ helpers
 
     private static String requireName(String name, String label) {

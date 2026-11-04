@@ -64,6 +64,12 @@
 			<p>勤続年数ごとの有給付与日数を設定します。</p>
 		</a>
 		</c:if>
+		<c:if test="${sessionScope.can.MASTER_COMPANY_HOLIDAY}">
+		<a class="master-link" href="${pageContext.request.contextPath}/masterCompanyHoliday.do">
+			<h3>📅 会社休日</h3>
+			<p>年末年始・創立記念日など、祝日以外の会社の休日を登録します。</p>
+		</a>
+		</c:if>
 		<c:if test="${sessionScope.can.MASTER_CORRECTION}">
 		<a class="master-link" href="${pageContext.request.contextPath}/correctionMasterList.do">
 			<h3>⏱️ 補正CD</h3>

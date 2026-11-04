@@ -28,6 +28,11 @@ public abstract class MasterActionSupport implements Action {
     /** 画面のパス（例: /masterDepartment.do）。保存後のリダイレクト先。 */
     protected abstract String selfPath();
 
+    /** 保存後に戻る先。既定は selfPath()。表示中の条件（年など）を引き継ぎたい画面で上書きする。 */
+    protected String redirectPath(HttpServletRequest request) {
+        return selfPath();
+    }
+
     /** 一覧に必要な属性を request に入れ、表示する JSP を返す。 */
     protected abstract String show(HttpServletRequest request);
 
@@ -46,7 +51,7 @@ public abstract class MasterActionSupport implements Action {
             } catch (Exception e) {
                 session.setAttribute(ERROR, e.getMessage());
             }
-            return new View(selfPath(), true);
+            return new View(redirectPath(request), true);
         }
 
         moveFlash(session, request, MESSAGE, "message");

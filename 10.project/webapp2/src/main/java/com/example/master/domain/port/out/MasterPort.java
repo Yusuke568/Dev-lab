@@ -50,4 +50,10 @@ public interface MasterPort {
     // --- 承認ルート設定 ---
     List<ApprovalRouteSetting> findApprovalRouteSettings();
     void saveApprovalRouteSetting(RequestType requestType, int maxLevels);
+
+    // --- 会社休日（日付ごとに1件） ---
+    List<com.example.master.domain.model.CompanyHoliday> findCompanyHolidays(int year);
+    /** 同じ日付があれば名前を更新する。 */
+    void saveCompanyHoliday(java.time.LocalDate date, String name);
+    void deleteCompanyHoliday(java.time.LocalDate date);
 }

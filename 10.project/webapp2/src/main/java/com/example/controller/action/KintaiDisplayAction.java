@@ -40,6 +40,7 @@ public class KintaiDisplayAction implements Action {
     private final GetWeeklyWorkReportsUseCase getWeeklyWorkReportsUseCase;
     private final com.example.kintai.application.port.in.AttendanceAccessUseCase attendanceAccessUseCase;
     private final com.example.kintai.application.port.in.GetWeeklyWorkSummariesUseCase getWeeklyWorkSummariesUseCase;
+    private final com.example.kintai.application.port.in.GetHolidaysUseCase getHolidaysUseCase;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
@@ -50,7 +51,9 @@ public class KintaiDisplayAction implements Action {
                                 GetCorrectionMastersUseCase getCorrectionMastersUseCase, GetMyOvertimeRequestsUseCase getMyOvertimeRequestsUseCase,
                                 GetWeeklyWorkReportsUseCase getWeeklyWorkReportsUseCase,
                                 com.example.kintai.application.port.in.AttendanceAccessUseCase attendanceAccessUseCase,
-                                com.example.kintai.application.port.in.GetWeeklyWorkSummariesUseCase getWeeklyWorkSummariesUseCase) {
+                                com.example.kintai.application.port.in.GetWeeklyWorkSummariesUseCase getWeeklyWorkSummariesUseCase,
+                                com.example.kintai.application.port.in.GetHolidaysUseCase getHolidaysUseCase) {
+        this.getHolidaysUseCase = getHolidaysUseCase;
         this.attendanceAccessUseCase = attendanceAccessUseCase;
         this.getWeeklyWorkSummariesUseCase = getWeeklyWorkSummariesUseCase;
         this.getMonthlyAttendanceUseCase = getMonthlyAttendanceUseCase;
@@ -84,9 +87,9 @@ public class KintaiDisplayAction implements Action {
                 }
             }
             request.setAttribute("proxyMode", proxyMode);
-            request.setAttribute("holidayNames",
-                    com.example.kintai.domain.service.JapaneseHolidayCalendar.holidaysOf(parseYearMonth(
-                            request.getParameter("year"), request.getParameter("month"))));
+            // 祝日と会社休日（行の色と名前の表示用）
+            request.setAttribute("holidayNames", getHolidaysUseCase.getHolidays(parseYearMonth(
+                    request.getParameter("year"), request.getParameter("month"))));
             String yearParam = request.getParameter("year");
             String monthParam = request.getParameter("month");
 

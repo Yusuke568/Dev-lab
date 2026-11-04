@@ -42,4 +42,12 @@ public interface MasterMaintenanceUseCase {
 
     List<ApprovalRouteSetting> getApprovalRouteSettings();
     void saveApprovalRouteSetting(RequestType requestType, int maxLevels);
+
+    List<com.example.master.domain.model.CompanyHoliday> getCompanyHolidays(int year);
+    /**
+     * 開始日〜終了日（終了日が null なら開始日だけ）を会社休日にする。
+     * @return 登録した日数
+     */
+    int addCompanyHolidays(java.time.LocalDate from, java.time.LocalDate to, String name);
+    void deleteCompanyHoliday(java.time.LocalDate date);
 }

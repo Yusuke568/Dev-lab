@@ -26,10 +26,10 @@ class MasterPermissionTest {
 
     private static final Set<Feature> ALL_MASTERS = EnumSet.of(Feature.MASTER_PERMISSION_GROUP, Feature.MASTER_JOB_CLASS,
             Feature.MASTER_DEPARTMENT, Feature.MASTER_APPROVAL_ROUTE, Feature.MASTER_ABSTRACT,
-            Feature.MASTER_LEAVE_RULE, Feature.MASTER_CORRECTION);
+            Feature.MASTER_LEAVE_RULE, Feature.MASTER_CORRECTION, Feature.MASTER_COMPANY_HOLIDAY);
 
     @Test
-    void マスタ管理はマスタごとの7つの機能に分かれる() {
+    void マスタ管理はマスタごとの機能に分かれる() {
         assertEquals(ALL_MASTERS, Feature.masterFeatures());
         assertEquals("マスタ管理（組織図）", Feature.MASTER_DEPARTMENT.getLabel());
         assertEquals("組織図", Feature.MASTER_DEPARTMENT.getShortLabel());

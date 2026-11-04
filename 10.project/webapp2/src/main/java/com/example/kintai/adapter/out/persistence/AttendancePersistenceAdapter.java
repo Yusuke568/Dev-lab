@@ -98,8 +98,9 @@ public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, S
                     ps.setDate(2, java.sql.Date.valueOf(date));
                     ps.setString(3, date.getDayOfWeek().name());
                     
-                    // 土日 -> 休日(10)、今日までの平日 -> 出勤(1)、未到来の平日 -> 未設定(NULL)
-                    boolean weekend = date.getDayOfWeek() == java.time.DayOfWeek.SATURDAY || date.getDayOfWeek() == java.time.DayOfWeek.SUNDAY;
+                    // 土日・祝日 -> 休日(10)、今日までの平日 -> 出勤(1)、未到来の平日 -> 未設定(NULL)
+                    boolean weekend = date.getDayOfWeek() == java.time.DayOfWeek.SATURDAY || date.getDayOfWeek() == java.time.DayOfWeek.SUNDAY
+                            || com.example.kintai.domain.service.JapaneseHolidayCalendar.isHoliday(date);
                     if (weekend) {
                         ps.setInt(4, 10);
                     } else if (date.isAfter(LocalDate.now())) {

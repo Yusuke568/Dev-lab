@@ -200,7 +200,7 @@ h3, h4 {
 /* Weekend/Holiday colors (Refined Tones) */
 .saturday { background-color: #ebf8ff !important; color: #2b6cb0; }
 .sunday { background-color: #fff5f5 !important; color: #c53030; }
-.holiday { background-color: #fefcbf !important; }
+.holiday { background-color: #fff5f5 !important; color: #c53030; }
 .today { box-shadow: inset 0 0 0 2px #38a169 !important; }
 
 /* Status Area & Banners */

@@ -125,8 +125,6 @@ window.selectWeekdays = selectWeekdays;
 
 const rows = document.querySelectorAll("#calendar-log tbody tr");
 
-// Holidays - this should ideally come from the server as well
-const holidays = ["2025-09-15", "2025-09-23"];
 
 // -------- Functions --------
 
@@ -440,24 +438,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   rows.forEach((row) => {
-    const date = row.dataset.date;
-    const weekText = row.dataset.week;
-    const select = row.querySelector("select[name='status']");
-
-    // Apply styles for weekends and holidays
-    if (date === today) row.classList.add("today");
-    if (holidays.includes(date)) row.classList.add("holiday");
-
-    // Set default status for holidays/weekends
-    const holidayOption = workTypes.find((opt) => opt.name === "休日");
-    if (
-      holidayOption &&
-      (weekText === "SATURDAY" ||
-        weekText === "SUNDAY" ||
-        holidays.includes(date))
-    ) {
-      if (select) select.value = holidayOption.id;
-    }
+    // 土日・祝日の色はサーバーが付ける（祝日は JapaneseHolidayCalendar で計算）。ここでは今日の行だけ
+    if (row.dataset.date === today) row.classList.add("today");
   });
 
   const table = document.getElementById("calendar-log");

@@ -84,6 +84,9 @@ public class KintaiDisplayAction implements Action {
                 }
             }
             request.setAttribute("proxyMode", proxyMode);
+            request.setAttribute("holidayNames",
+                    com.example.kintai.domain.service.JapaneseHolidayCalendar.holidaysOf(parseYearMonth(
+                            request.getParameter("year"), request.getParameter("month"))));
             String yearParam = request.getParameter("year");
             String monthParam = request.getParameter("month");
 

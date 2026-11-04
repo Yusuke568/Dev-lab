@@ -210,6 +210,15 @@
     flex-wrap: wrap;
 }
 
+/* --- 祝日 --- */
+.holiday-name {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #c53030;
+    white-space: nowrap;
+}
+
 /* --- 日をまたいだ退勤の印 --- */
 .next-day-badge {
     display: inline-block;
@@ -905,11 +914,12 @@
 			<tbody>
 				<c:forEach var="daily" items="${attendanceData.dailyRecords}">
 					<c:set var="week" value="${daily.date.dayOfWeek.toString()}" />
+					<c:set var="holidayName" value="${holidayNames[daily.date]}" />
 					<tr data-date="${daily.date}" data-week="${fn:substring(week, 0, 3)}"
-						class="${week == 'SATURDAY' ? 'saturday' : ''} ${week == 'SUNDAY' ? 'sunday' : ''}">
+						class="${week == 'SATURDAY' ? 'saturday' : ''} ${week == 'SUNDAY' ? 'sunday' : ''} ${not empty holidayName ? 'holiday' : ''}">
 						<td data-label="選択"><input type="checkbox" class="row-checkbox" value="${daily.date}"></td>
 						<td data-label="日"><c:out value="${daily.date.dayOfMonth}" /></td>
-						<td data-label="曜日">${fn:substring(week, 0, 3)}</td>
+						<td data-label="曜日">${fn:substring(week, 0, 3)}<c:if test="${not empty holidayName}"><span class="holiday-name"><c:out value="${holidayName}" /></span></c:if></td>
 						<td data-label="出勤" class="editable-time"><input type="time" name="kintaifrom" class="form-input"
 							value="${daily.startTime == '-' ? '' : fn:escapeXml(daily.startTime)}" aria-label="${daily.date.dayOfMonth}日の出勤"></td>
 						<td data-label="退勤" class="editable-time"><input type="time" name="kintaito" class="form-input"

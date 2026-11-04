@@ -12,10 +12,10 @@ public class Shain {
     private int entryYear;
     private String gender;
     private String jobClass;
-    private int paidLeaveDays;
+    private double paidLeaveDays;
     private int yearsOfService;
 
-    public Shain(ShainId id, String name, String namekana, int entryYear, String gender, String jobClass, int paidLeaveDays, int yearsOfService) {
+    public Shain(ShainId id, String name, String namekana, int entryYear, String gender, String jobClass, double paidLeaveDays, int yearsOfService) {
         this.id = Objects.requireNonNull(id, "id must not be null");
         this.setName(name);
         this.setNamekana(namekana);
@@ -63,7 +63,7 @@ public class Shain {
         return jobClass;
     }
 
-    public int getPaidLeaveDays() {
+    public double getPaidLeaveDays() {
         return paidLeaveDays;
     }
 
@@ -71,7 +71,7 @@ public class Shain {
         return yearsOfService;
     }
 
-    public void setPaidLeaveDays(int paidLeaveDays) {
+    public void setPaidLeaveDays(double paidLeaveDays) {
         this.paidLeaveDays = paidLeaveDays;
     }
 

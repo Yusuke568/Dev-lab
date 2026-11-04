@@ -29,7 +29,14 @@ public class MasterAbstractAction extends MasterActionSupport {
         boolean isNew = "new".equals(request.getParameter("mode"));
         masterUseCase.saveAbstract(isNew, requiredInt(request, "id"), request.getParameter("name"),
                 checked(request, "isWork"), checked(request, "isPaid"),
-                checked(request, "isLegalHoliday"), checked(request, "isPrescribedHoliday"));
+                checked(request, "isLegalHoliday"), checked(request, "isPrescribedHoliday"),
+                paidLeaveDays(request));
         return isNew ? "区分を追加しました。" : "区分を更新しました。";
+    }
+
+    /** 有給消費日数（未指定なら 0）。 */
+    private static double paidLeaveDays(HttpServletRequest request) {
+        String value = request.getParameter("paidLeaveDays");
+        return value == null || value.isBlank() ? 0 : Double.parseDouble(value.trim());
     }
 }

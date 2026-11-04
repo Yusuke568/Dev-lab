@@ -7,8 +7,8 @@ import java.util.List;
  * 有給休暇関連の永続化操作を定義するポート。
  */
 public interface PaidLeavePort {
-    void incrementDays(int staffId);
-    void decrementDays(int staffId);
+    /** 有給残日数を増減する（減らすときは負の値。半休は 0.5 日）。 */
+    void adjustDays(int staffId, double delta);
     List<LeaveGrantRule> findAllRules();
-    void updateDays(int staffId, int days);
+    void updateDays(int staffId, double days);
 }

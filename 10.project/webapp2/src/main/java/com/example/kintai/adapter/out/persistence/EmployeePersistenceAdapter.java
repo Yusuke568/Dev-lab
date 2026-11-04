@@ -102,7 +102,7 @@ public class EmployeePersistenceAdapter implements LoadEmployeePort, SaveEmploye
         Employee employee = new Employee(new EmployeeId(id), name);
         // 有給の残日数（SQL に列がなければ読まない）
         try {
-            int days = rs.getInt("paid_leave_days");
+            double days = rs.getDouble("paid_leave_days");
             employee.setPaidLeaveDays(rs.wasNull() ? null : days);
         } catch (SQLException e) {
             employee.setPaidLeaveDays(null);

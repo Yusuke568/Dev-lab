@@ -32,9 +32,12 @@ public interface MasterMaintenanceUseCase {
     Integer getDepartmentIdOfStaff(int staffId);
 
     List<WorkType> getAbstracts();
-    /** isNew が true なら追加（ID の重複は不可）、false なら更新。 */
+    /**
+     * isNew が true なら追加（ID の重複は不可）、false なら更新。
+     * paidLeaveDays は有給消費日数（0・0.5・1）。勤怠を保存すると、この日数だけ有給残日数が減る。
+     */
     void saveAbstract(boolean isNew, int id, String name, boolean isWork, boolean isPaid,
-                      boolean isLegalHoliday, boolean isPrescribedHoliday);
+                      boolean isLegalHoliday, boolean isPrescribedHoliday, double paidLeaveDays);
 
     List<LeaveGrantRule> getLeaveGrantRules();
     void saveLeaveGrantRule(int yearsOfService, int grantDays);

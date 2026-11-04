@@ -29,7 +29,10 @@ public class PaidLeaveService implements
     }
 
     @Override
-    public void updatePaidLeaveDays(ShainId shainId, int days) {
+    public void updatePaidLeaveDays(ShainId shainId, double days) {
+        if (days < 0 || days * 2 != Math.floor(days * 2)) {
+            throw new IllegalArgumentException("有給残日数は 0 以上・0.5 日単位で入力してください。");
+        }
         paidLeavePort.updateDays(shainId.getIntValue(), days);
     }
 
@@ -42,7 +45,7 @@ public class PaidLeaveService implements
             for (Shain shain : shains) {
                 for (LeaveGrantRule rule : rules) {
                     if (shain.getYearsOfService() == rule.getYearsOfService()) {
-                        int newDays = shain.getPaidLeaveDays() + rule.getGrantDays();
+                        double newDays = shain.getPaidLeaveDays() + rule.getGrantDays();
                         paidLeavePort.updateDays(shain.getId().getIntValue(), newDays);
                         break;
                     }
@@ -56,7 +59,7 @@ public class PaidLeaveService implements
         transactionManager.executeInTransaction(() -> {
             for (ShainId id : shainIds) {
                 shainPort.findById(id).ifPresent(shain -> {
-                    int newDays = shain.getPaidLeaveDays() + days;
+                    double newDays = shain.getPaidLeaveDays() + days;
                     paidLeavePort.updateDays(id.getIntValue(), newDays);
                 });
             }

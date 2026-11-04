@@ -58,10 +58,11 @@ public class UpdateAttendanceService implements UpdateAttendanceUseCase {
 
         transactionManager.executeInTransaction(() -> {
             List<WorkType> workTypes = workTypePort.findAll();
-            Optional<WorkType> paidLeaveWorkType = workTypes.stream()
-                    .filter(wt -> "有給".equals(wt.getName()) || wt.isPaid())
-                    .findFirst();
-            int paidLeaveId = paidLeaveWorkType.map(WorkType::getId).orElse(-1);
+            // 勤務区分ごとの有給消費日数（有給 1 日、半休 0.5 日、それ以外 0 日。適用マスタで設定）
+            java.util.Map<Integer, Double> paidLeaveUse = new java.util.HashMap<>();
+            for (WorkType wt : workTypes) {
+                paidLeaveUse.put(wt.getId(), wt.getPaidLeaveDays());
+            }
 
             for (AttendanceUpdateCommand cmd : commands) {
                 EmployeeId employeeId = new EmployeeId(cmd.getEmployeeId());
@@ -85,7 +86,8 @@ public class UpdateAttendanceService implements UpdateAttendanceUseCase {
                             throw new IllegalArgumentException("実働時間が24時間を超えています: " + date);
                         }
                     }
-                    if (paidLeaveId != -1 && cmd.getAbstractId() != null && cmd.getAbstractId() == paidLeaveId) {
+                    // 1日まるごとの有給の日に出退勤があるのは入力ミス（半休は出退勤があってよい）
+                    if (cmd.getAbstractId() != null && paidLeaveUse.getOrDefault(cmd.getAbstractId(), 0.0) >= 1) {
                         if (hasFrom || hasTo) {
                             throw new IllegalArgumentException("有給申請日に勤務実績が入力されています: " + date);
                         }
@@ -96,13 +98,12 @@ public class UpdateAttendanceService implements UpdateAttendanceUseCase {
                 int oldStatusId = oldRecord.map(AttendanceRecord::getAbstractId).filter(id -> id != null).orElse(-1);
                 int newStatusId = cmd.getAbstractId() != null ? cmd.getAbstractId() : -1;
 
-                if (paidLeaveId != -1) {
-                    int staffId = Integer.parseInt(cmd.getEmployeeId());
-                    if (oldStatusId != paidLeaveId && newStatusId == paidLeaveId) {
-                        paidLeavePort.decrementDays(staffId);
-                    } else if (oldStatusId == paidLeaveId && newStatusId != paidLeaveId) {
-                        paidLeavePort.incrementDays(staffId);
-                    }
+                // 有給残日数：前の勤務区分で使っていた日数を戻し、新しい勤務区分で使う日数を引く
+                // （例：出勤 → 半休 で 0.5 日減る、有給 → 半休 で 0.5 日戻る）
+                double oldUse = paidLeaveUse.getOrDefault(oldStatusId, 0.0);
+                double newUse = paidLeaveUse.getOrDefault(newStatusId, 0.0);
+                if (oldUse != newUse) {
+                    paidLeavePort.adjustDays(Integer.parseInt(cmd.getEmployeeId()), oldUse - newUse);
                 }
 
                 WorkTime workTime = (hasFrom && hasTo)
@@ -151,7 +152,7 @@ public class UpdateAttendanceService implements UpdateAttendanceUseCase {
                         && overtimeRequestPort.findByEmployeeAndDate(employeeId, date)
                                 .map(r -> r.isApproved())
                                 .orElse(false);
-                boolean isPaidLeave = paidLeaveId != -1 && newStatusId == paidLeaveId;
+                boolean isPaidLeave = newUse > 0; // 有給・半休は承認待ちにする
                 boolean needsApproval = isPaidLeave || (isOvertime && !hasApprovedOvertimeRequest);
 
                 if (cmd.isTemporary()) {

@@ -14,6 +14,8 @@ public class WorkType implements Serializable {
     private boolean isPaid;
     private boolean isLegalHoliday;
     private boolean isPrescribedHoliday;
+    /** 有給消費日数（有給 1、半休 0.5、それ以外 0） */
+    private double paidLeaveDays;
 
     public int getId() {
         return id;
@@ -61,5 +63,25 @@ public class WorkType implements Serializable {
 
     public void setPrescribedHoliday(boolean isPrescribedHoliday) {
         this.isPrescribedHoliday = isPrescribedHoliday;
+    }
+
+    public double getPaidLeaveDays() {
+        return paidLeaveDays;
+    }
+
+    public void setPaidLeaveDays(double paidLeaveDays) {
+        this.paidLeaveDays = paidLeaveDays;
+    }
+
+    /**
+     * DB の行から有給消費日数を読む。列がまだない（マイグレーション 20261109 の前）なら、
+     * 有給扱いの区分は 1 日、それ以外は 0 日とする（これまでの数え方）。
+     */
+    public static double readPaidLeaveDays(java.sql.ResultSet rs, boolean isPaid) {
+        try {
+            return rs.getDouble("paid_leave_days");
+        } catch (java.sql.SQLException e) {
+            return isPaid ? 1 : 0;
+        }
     }
 }

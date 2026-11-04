@@ -32,6 +32,7 @@ public class WorkTypePersistenceAdapter implements WorkTypePort {
                     workType.setPaid(rs.getBoolean("IS_PAID"));
                     workType.setLegalHoliday(rs.getBoolean("IS_LEGAL_HOLIDAY"));
                     workType.setPrescribedHoliday(rs.getBoolean("IS_PRESCRIBED_HOLIDAY"));
+                    workType.setPaidLeaveDays(WorkType.readPaidLeaveDays(rs, workType.isPaid()));
                     workTypes.add(workType);
                 }
             }

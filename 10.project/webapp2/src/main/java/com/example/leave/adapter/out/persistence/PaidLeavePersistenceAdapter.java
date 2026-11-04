@@ -16,19 +16,22 @@ import java.util.List;
  */
 public class PaidLeavePersistenceAdapter implements PaidLeavePort {
 
-    private static final String INCREMENT_SQL = "sql/leave/increment_days.sql";
-    private static final String DECREMENT_SQL = "sql/leave/decrement_days.sql";
+    private static final String ADD_DAYS_SQL = "sql/leave/add_days.sql";
     private static final String FIND_ALL_RULES_SQL = "sql/leave/find_all_rules.sql";
     private static final String UPDATE_DAYS_SQL = "sql/leave/update_days.sql";
 
     @Override
-    public void incrementDays(int staffId) {
-        executeUpdate(INCREMENT_SQL, staffId);
-    }
-
-    @Override
-    public void decrementDays(int staffId) {
-        executeUpdate(DECREMENT_SQL, staffId);
+    public void adjustDays(int staffId, double delta) {
+        try (Connection con = ConnectionBase.getConnection()) {
+            String sql = MyUtil.loadSqlFromClasspath(ADD_DAYS_SQL);
+            try (PreparedStatement pstmt = con.prepareStatement(sql)) {
+                pstmt.setBigDecimal(1, java.math.BigDecimal.valueOf(delta));
+                pstmt.setInt(2, staffId);
+                pstmt.executeUpdate();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to adjust leave days", e);
+        }
     }
 
     @Override
@@ -52,11 +55,11 @@ public class PaidLeavePersistenceAdapter implements PaidLeavePort {
     }
 
     @Override
-    public void updateDays(int staffId, int days) {
+    public void updateDays(int staffId, double days) {
         try (Connection con = ConnectionBase.getConnection()) {
             String sql = MyUtil.loadSqlFromClasspath(UPDATE_DAYS_SQL);
             try (PreparedStatement pstmt = con.prepareStatement(sql)) {
-                pstmt.setInt(1, days);
+                pstmt.setBigDecimal(1, java.math.BigDecimal.valueOf(days));
                 pstmt.setInt(2, staffId);
                 pstmt.executeUpdate();
             }
@@ -65,15 +68,4 @@ public class PaidLeavePersistenceAdapter implements PaidLeavePort {
         }
     }
 
-    private void executeUpdate(String sqlPath, int staffId) {
-        try (Connection con = ConnectionBase.getConnection()) {
-            String sql = MyUtil.loadSqlFromClasspath(sqlPath);
-            try (PreparedStatement pstmt = con.prepareStatement(sql)) {
-                pstmt.setInt(1, staffId);
-                pstmt.executeUpdate();
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to execute update: " + sqlPath, e);
-        }
-    }
 }

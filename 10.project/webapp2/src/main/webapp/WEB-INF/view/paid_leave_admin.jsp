@@ -64,11 +64,11 @@
 					<td><c:out value="${shain.id}" /></td>
 					<td><c:out value="${shain.name}" /></td>
 					<td><c:out value="${shain.yearsOfService}" /> 年</td>
-					<td class="paid-leave-days"><c:out value="${shain.paidLeaveDays}" /> 日</td>
+					<td class="paid-leave-days"><c:out value="${shain.paidLeaveDaysLabel}" /> 日</td>
 					<td>
 						<div class="individual-update-form">
 							<input type="number" name="individual_days"
-								min="0" value="${shain.paidLeaveDays}" class="form-input">
+								min="0" step="0.5" value="${shain.paidLeaveDaysLabel}" class="form-input">
 							<button type="button" class="btn btn-secondary individual-update-btn">✓</button>
 						</div>
 					</td>

@@ -15,7 +15,7 @@ public class Shain implements Serializable {
     private int entryyear;
     private String gender;
     private String jobclass;
-    private int paidLeaveDays;
+    private double paidLeaveDays;
     private int yearsOfService;
 
     public int getYearsOfService() {
@@ -26,11 +26,11 @@ public class Shain implements Serializable {
         this.yearsOfService = yearsOfService;
     }
 
-    public int getPaidLeaveDays() {
+    public double getPaidLeaveDays() {
         return paidLeaveDays;
     }
 
-    public void setPaidLeaveDays(int paidLeaveDays) {
+    public void setPaidLeaveDays(double paidLeaveDays) {
         this.paidLeaveDays = paidLeaveDays;
     }
 

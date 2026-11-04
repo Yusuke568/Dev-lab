@@ -27,7 +27,7 @@ public class UpdateLeaveAction implements Action {
         String daysStr = request.getParameter("days");
 
         if (idStr != null && daysStr != null) {
-            updatePaidLeaveDaysUseCase.updatePaidLeaveDays(new ShainId(idStr), Integer.parseInt(daysStr));
+            updatePaidLeaveDaysUseCase.updatePaidLeaveDays(new ShainId(idStr), Double.parseDouble(daysStr.trim()));
         }
 
         return new View("/paidLeaveAdmin.do", true);

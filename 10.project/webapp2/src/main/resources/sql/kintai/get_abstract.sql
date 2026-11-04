@@ -1,8 +1,4 @@
-select 
-ID
-,NAME
-,IS_WORK
-,IS_PAID
-,IS_LEGAL_HOLIDAY
-,IS_PRESCRIBED_HOLIDAY
-from abstract_master;
+-- 勤務区分（適用マスタ）。有給消費日数（paid_leave_days）はマイグレーション前にないこともあるので * で読む
+select *
+from abstract_master
+order by id;

@@ -45,7 +45,7 @@ public class ShainDao {
                 shain.setEntryyear(rs.getInt("entry_year"));
                 shain.setGender(rs.getString("gender"));
                 shain.setJobclass(rs.getString("jobclass"));
-                shain.setPaidLeaveDays(rs.getInt("paid_leave_days"));
+                shain.setPaidLeaveDays(rs.getDouble("paid_leave_days"));
                 shainList.add(shain);
             }
         }
@@ -71,7 +71,7 @@ public class ShainDao {
             pstmt.setString(3, shain.getNamekana());
             pstmt.setInt(4, shain.getEntryyear());
             pstmt.setString(5, shain.getGender());
-            pstmt.setInt(6, shain.getPaidLeaveDays());
+            pstmt.setBigDecimal(6, java.math.BigDecimal.valueOf(shain.getPaidLeaveDays()));
             pstmt.setString(7, shain.getJobclass());
 
             //SQL隴√・・帝勗・ｨ驕会ｽｺ
@@ -114,7 +114,7 @@ public class ShainDao {
                 shain.setGender(rs.getString("gender"));
                 shain.setEntryyear(rs.getInt("entry_year"));
                 shain.setJobclass(rs.getString("jobclass"));
-                shain.setPaidLeaveDays(rs.getInt("paid_leave_days"));
+                shain.setPaidLeaveDays(rs.getDouble("paid_leave_days"));
             }
         }
         return shain;
@@ -136,7 +136,7 @@ public class ShainDao {
             pstmt.setString(2, shain.getNamekana());
             pstmt.setInt(3, shain.getEntryyear());
             pstmt.setString(4, shain.getGender());
-            pstmt.setInt(5, shain.getPaidLeaveDays());
+            pstmt.setBigDecimal(5, java.math.BigDecimal.valueOf(shain.getPaidLeaveDays()));
             pstmt.setString(6, shain.getJobclass());
             pstmt.setInt(7, shain.getId());
             //SQL隴√・・帝勗・ｨ驕会ｽｺ
@@ -192,7 +192,7 @@ public class ShainDao {
                 shain.setEntryyear(rs.getInt("entry_year"));
                 shain.setGender(rs.getString("gender"));
                 shain.setJobclass(rs.getString("jobclass"));
-                shain.setPaidLeaveDays(rs.getInt("paid_leave_days"));
+                shain.setPaidLeaveDays(rs.getDouble("paid_leave_days"));
                 shainList.add(shain);
             }
         }

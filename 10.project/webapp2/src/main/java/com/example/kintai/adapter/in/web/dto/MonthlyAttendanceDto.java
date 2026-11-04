@@ -80,14 +80,19 @@ public class MonthlyAttendanceDto {
     }
 
     /** 有給休暇の残日数（保存済みの勤怠に基づく）。分からなければ null */
-    private Integer paidLeaveDays;
+    private Double paidLeaveDays;
 
-    public Integer getPaidLeaveDays() {
+    public Double getPaidLeaveDays() {
         return paidLeaveDays;
     }
 
-    public void setPaidLeaveDays(Integer paidLeaveDays) {
+    public void setPaidLeaveDays(Double paidLeaveDays) {
         this.paidLeaveDays = paidLeaveDays;
+    }
+
+    /** 画面表示用（12.0 → "12"、11.5 → "11.5"）。 */
+    public String getPaidLeaveDaysLabel() {
+        return paidLeaveDays == null ? null : com.example.leave.domain.model.PaidLeaveDays.format(paidLeaveDays);
     }
 
     private static String formatMinutes(long totalMinutes) {

@@ -39,8 +39,10 @@ public interface MasterPort {
     // --- 適用マスタ ---
     List<WorkType> findAbstracts();
     boolean existsAbstract(int id);
-    void insertAbstract(int id, String name, boolean isWork, boolean isPaid, boolean isLegalHoliday, boolean isPrescribedHoliday);
-    void updateAbstract(int id, String name, boolean isWork, boolean isPaid, boolean isLegalHoliday, boolean isPrescribedHoliday);
+    void insertAbstract(int id, String name, boolean isWork, boolean isPaid, boolean isLegalHoliday, boolean isPrescribedHoliday,
+                        double paidLeaveDays);
+    void updateAbstract(int id, String name, boolean isWork, boolean isPaid, boolean isLegalHoliday, boolean isPrescribedHoliday,
+                        double paidLeaveDays);
 
     // --- 有給付与ルール（勤続年数ごとに1件） ---
     List<LeaveGrantRule> findLeaveGrantRules();

@@ -270,7 +270,8 @@ public class MasterPersistenceAdapter implements MasterPort, OrganizationPort {
 
     @Override
     public List<WorkType> findAbstracts() {
-        String sql = "SELECT id, name, is_work, is_paid, is_legal_holiday, is_prescribed_holiday FROM abstract_master ORDER BY id";
+        // 有給消費日数（paid_leave_days）はマイグレーション前にないこともあるので * で読む
+        String sql = "SELECT * FROM abstract_master ORDER BY id";
         List<WorkType> list = new ArrayList<>();
         try (Connection con = ConnectionBase.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
@@ -283,6 +284,7 @@ public class MasterPersistenceAdapter implements MasterPort, OrganizationPort {
                 w.setPaid(rs.getBoolean("is_paid"));
                 w.setLegalHoliday(rs.getBoolean("is_legal_holiday"));
                 w.setPrescribedHoliday(rs.getBoolean("is_prescribed_holiday"));
+                w.setPaidLeaveDays(WorkType.readPaidLeaveDays(rs, w.isPaid()));
                 list.add(w);
             }
         } catch (Exception e) {
@@ -305,21 +307,23 @@ public class MasterPersistenceAdapter implements MasterPort, OrganizationPort {
     }
 
     @Override
-    public void insertAbstract(int id, String name, boolean isWork, boolean isPaid, boolean isLegalHoliday, boolean isPrescribedHoliday) {
-        String sql = "INSERT INTO abstract_master (name, is_work, is_paid, is_legal_holiday, is_prescribed_holiday, id) " +
-                "VALUES (?, ?, ?, ?, ?, ?)";
-        saveAbstract(sql, id, name, isWork, isPaid, isLegalHoliday, isPrescribedHoliday);
+    public void insertAbstract(int id, String name, boolean isWork, boolean isPaid, boolean isLegalHoliday, boolean isPrescribedHoliday,
+                               double paidLeaveDays) {
+        String sql = "INSERT INTO abstract_master (name, is_work, is_paid, is_legal_holiday, is_prescribed_holiday, paid_leave_days, id) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        saveAbstract(sql, id, name, isWork, isPaid, isLegalHoliday, isPrescribedHoliday, paidLeaveDays);
     }
 
     @Override
-    public void updateAbstract(int id, String name, boolean isWork, boolean isPaid, boolean isLegalHoliday, boolean isPrescribedHoliday) {
+    public void updateAbstract(int id, String name, boolean isWork, boolean isPaid, boolean isLegalHoliday, boolean isPrescribedHoliday,
+                               double paidLeaveDays) {
         String sql = "UPDATE abstract_master SET name = ?, is_work = ?, is_paid = ?, is_legal_holiday = ?, " +
-                "is_prescribed_holiday = ? WHERE id = ?";
-        saveAbstract(sql, id, name, isWork, isPaid, isLegalHoliday, isPrescribedHoliday);
+                "is_prescribed_holiday = ?, paid_leave_days = ? WHERE id = ?";
+        saveAbstract(sql, id, name, isWork, isPaid, isLegalHoliday, isPrescribedHoliday, paidLeaveDays);
     }
 
     private void saveAbstract(String sql, int id, String name, boolean isWork, boolean isPaid,
-                              boolean isLegalHoliday, boolean isPrescribedHoliday) {
+                              boolean isLegalHoliday, boolean isPrescribedHoliday, double paidLeaveDays) {
         try (Connection con = ConnectionBase.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, name);
@@ -327,7 +331,8 @@ public class MasterPersistenceAdapter implements MasterPort, OrganizationPort {
             setFlag(ps, 3, isPaid);
             setFlag(ps, 4, isLegalHoliday);
             setFlag(ps, 5, isPrescribedHoliday);
-            ps.setInt(6, id);
+            ps.setBigDecimal(6, java.math.BigDecimal.valueOf(paidLeaveDays));
+            ps.setInt(7, id);
             ps.executeUpdate();
         } catch (Exception e) {
             throw new RuntimeException("Failed to save abstract master.", e);

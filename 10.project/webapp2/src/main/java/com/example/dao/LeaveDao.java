@@ -96,7 +96,7 @@ public class LeaveDao {
         
         try (PreparedStatement pstmt = con.prepareStatement(sql)) {
             for (Shain employee : employees) {
-                pstmt.setInt(1, employee.getPaidLeaveDays());
+                pstmt.setBigDecimal(1, java.math.BigDecimal.valueOf(employee.getPaidLeaveDays()));
                 pstmt.setInt(2, employee.getId());
                 pstmt.addBatch();
             }

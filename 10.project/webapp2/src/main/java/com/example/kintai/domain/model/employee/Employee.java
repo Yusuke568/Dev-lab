@@ -11,7 +11,7 @@ public class Employee {
     private final EmployeeId id;
     private String name;
     /** 有給休暇の残日数（読み込んでいなければ null） */
-    private Integer paidLeaveDays;
+    private Double paidLeaveDays;
 
     public Employee(EmployeeId id, String name) {
         this.id = Objects.requireNonNull(id, "id must not be null");
@@ -26,11 +26,11 @@ public class Employee {
         return name;
     }
 
-    public Integer getPaidLeaveDays() {
+    public Double getPaidLeaveDays() {
         return paidLeaveDays;
     }
 
-    public void setPaidLeaveDays(Integer paidLeaveDays) {
+    public void setPaidLeaveDays(Double paidLeaveDays) {
         this.paidLeaveDays = paidLeaveDays;
     }
 

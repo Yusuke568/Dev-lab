@@ -126,15 +126,18 @@ public class MasterMaintenanceService implements MasterMaintenanceUseCase {
 
     @Override
     public void saveAbstract(boolean isNew, int id, String name, boolean isWork, boolean isPaid,
-                             boolean isLegalHoliday, boolean isPrescribedHoliday) {
+                             boolean isLegalHoliday, boolean isPrescribedHoliday, double paidLeaveDays) {
         String validName = requireName(name, "区分名");
+        if (paidLeaveDays != 0 && paidLeaveDays != 0.5 && paidLeaveDays != 1) {
+            throw new IllegalArgumentException("有給消費日数は 0・0.5・1 のどれかにしてください。");
+        }
         if (isNew) {
             if (masterPort.existsAbstract(id)) {
                 throw new IllegalArgumentException("ID " + id + " はすでに使われています。");
             }
-            masterPort.insertAbstract(id, validName, isWork, isPaid, isLegalHoliday, isPrescribedHoliday);
+            masterPort.insertAbstract(id, validName, isWork, isPaid, isLegalHoliday, isPrescribedHoliday, paidLeaveDays);
         } else {
-            masterPort.updateAbstract(id, validName, isWork, isPaid, isLegalHoliday, isPrescribedHoliday);
+            masterPort.updateAbstract(id, validName, isWork, isPaid, isLegalHoliday, isPrescribedHoliday, paidLeaveDays);
         }
     }
 

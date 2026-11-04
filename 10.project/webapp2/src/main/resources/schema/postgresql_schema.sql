@@ -22,7 +22,7 @@ CREATE TABLE staff_table (
     namekana         varchar(100),
     entry_year       integer,
     gender           varchar(10),
-    paid_leave_days  integer DEFAULT 0,
+    paid_leave_days  numeric(5,1) DEFAULT 0,  -- 有給残日数（半休を 0.5 日として数える）
     class_id         integer
 );
 
@@ -43,7 +43,8 @@ CREATE TABLE abstract_master (
     is_work                 boolean DEFAULT false,
     is_paid                 boolean DEFAULT false,
     is_legal_holiday        boolean DEFAULT false,
-    is_prescribed_holiday   boolean DEFAULT false
+    is_prescribed_holiday   boolean DEFAULT false,
+    paid_leave_days         numeric(2,1) NOT NULL DEFAULT 0  -- 有給消費日数（有給 1、半休 0.5、それ以外 0）
 );
 
 -- ----------------------------------------------------------------------------

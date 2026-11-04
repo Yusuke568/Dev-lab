@@ -13,7 +13,7 @@ public class ShainDto {
     private final int entryyear;
     private final String gender;
     private final String jobclass;
-    private final int paidLeaveDays;
+    private final double paidLeaveDays;
     private final int yearsOfService;
 
     public ShainDto(Shain domain) {
@@ -33,6 +33,9 @@ public class ShainDto {
     public int getEntryyear() { return entryyear; }
     public String getGender() { return gender; }
     public String getJobclass() { return jobclass; }
-    public int getPaidLeaveDays() { return paidLeaveDays; }
+    public double getPaidLeaveDays() { return paidLeaveDays; }
+
+    /** 画面表示用（12.0 → "12"、11.5 → "11.5"）。 */
+    public String getPaidLeaveDaysLabel() { return com.example.leave.domain.model.PaidLeaveDays.format(paidLeaveDays); }
     public int getYearsOfService() { return yearsOfService; }
 }

@@ -27,6 +27,7 @@
 				<th class="text-center">有給</th>
 				<th class="text-center">法定休日</th>
 				<th class="text-center">所定休日</th>
+				<th class="text-center">有給消費日数</th>
 				<th class="text-center">操作</th>
 			</tr>
 		</thead>
@@ -39,6 +40,13 @@
 					<td class="text-center"><input type="checkbox" name="isPaid" form="a${a.id}" <c:if test="${a.paid}">checked</c:if>></td>
 					<td class="text-center"><input type="checkbox" name="isLegalHoliday" form="a${a.id}" <c:if test="${a.legalHoliday}">checked</c:if>></td>
 					<td class="text-center"><input type="checkbox" name="isPrescribedHoliday" form="a${a.id}" <c:if test="${a.prescribedHoliday}">checked</c:if>></td>
+					<td class="text-center">
+						<select name="paidLeaveDays" form="a${a.id}" class="form-input" style="width: 5rem;">
+							<option value="0" <c:if test="${a.paidLeaveDays == 0}">selected</c:if>>0</option>
+							<option value="0.5" <c:if test="${a.paidLeaveDays == 0.5}">selected</c:if>>0.5</option>
+							<option value="1" <c:if test="${a.paidLeaveDays == 1}">selected</c:if>>1</option>
+						</select>
+					</td>
 					<td class="text-center">
 						<form id="a${a.id}" action="${pageContext.request.contextPath}/masterAbstract.do" method="post">
 							<input type="hidden" name="id" value="${a.id}">
@@ -55,6 +63,13 @@
 				<td class="text-center"><input type="checkbox" name="isLegalHoliday" form="aNew"></td>
 				<td class="text-center"><input type="checkbox" name="isPrescribedHoliday" form="aNew"></td>
 				<td class="text-center">
+						<select name="paidLeaveDays" form="aNew" class="form-input" style="width: 5rem;">
+							<option value="0" selected>0</option>
+							<option value="0.5" >0.5</option>
+							<option value="1" >1</option>
+						</select>
+				</td>
+				<td class="text-center">
 					<form id="aNew" action="${pageContext.request.contextPath}/masterAbstract.do" method="post">
 						<input type="hidden" name="mode" value="new">
 						<button type="submit" class="btn btn-secondary">追加</button>
@@ -63,6 +78,7 @@
 			</tr>
 		</tbody>
 	</table>
+	<p style="font-size: 0.85rem; color: #666;">※ 有給消費日数：勤怠をこの区分で保存すると、社員の有給残日数がこの日数だけ減ります（有給 1、半休 0.5、それ以外 0）。区分を変えて保存し直すと戻ります。</p>
 	<p style="font-size: 0.85rem; color: #666;">※ ID は勤怠データに保存されるため、追加後は変更できません。勤怠計算では ID 1=出勤、10=休日 などを前提にしている箇所があるので、既存の ID の意味は変えないでください。</p>
 </div>
 </body>

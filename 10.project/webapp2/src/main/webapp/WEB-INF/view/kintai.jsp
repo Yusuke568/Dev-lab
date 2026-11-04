@@ -737,7 +737,7 @@
 					<%-- 有給の残日数。保存していない「有給」の変更があれば、保存後の日数も出す（kintai.js） --%>
 					<div class="stat-card" id="paid-leave-card" data-saved-days="${attendanceData.paidLeaveDays}">
 						<div class="label">有給残日数</div>
-						<div class="value"><span id="paid-leave-days"><c:out value="${attendanceData.paidLeaveDays}" /></span><span class="unit">日</span></div>
+						<div class="value"><span id="paid-leave-days"><c:out value="${attendanceData.paidLeaveDaysLabel}" /></span><span class="unit">日</span></div>
 						<div class="paid-leave-note" id="paid-leave-note" role="status"></div>
 					</div>
 				</c:if>

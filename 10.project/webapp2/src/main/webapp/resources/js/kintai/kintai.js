@@ -14,31 +14,33 @@ const contextPath = document.body.dataset.contextPath || "";
 /** 保存していない変更がある日（YYYY-MM-DD） */
 const dirtyDates = new Set();
 
-/** 有給として扱う勤務区分（サーバーの残日数の増減と同じく、「有給」か有給扱いの最初の区分） */
-const paidLeaveType = workTypes.find((w) => w.name === "有給" || w.paid);
+/** 勤務区分ごとの有給消費日数（適用マスタの設定。有給 1、半休 0.5、それ以外 0） */
+const paidLeaveUse = new Map(workTypes.map((w) => [String(w.id), Number(w.paidLeaveDays) || 0]));
+
+/** 12 → "12"、11.5 → "11.5" */
+function formatDays(days) {
+  return String(Math.round(days * 10) / 10);
+}
 
 /**
  * 有給残日数の表示を、保存していない勤務区分の変更に合わせる。
- * 保存すると、有給にした日は1日減り、有給から外した日は1日戻る（サーバーと同じ考え方）。
+ * 保存すると、前の区分で使っていた日数が戻り、新しい区分の日数が引かれる（サーバーと同じ考え方）。
  */
 function updatePaidLeavePreview() {
   const card = document.getElementById("paid-leave-card");
-  if (!card || !paidLeaveType) return;
+  if (!card) return;
   const saved = Number(card.dataset.savedDays);
-  const paidId = String(paidLeaveType.id);
   let delta = 0;
   rows.forEach((row) => {
     const select = row.querySelector("select[name='status']");
     if (!select) return;
-    const wasPaid = select.dataset.initial === paidId;
-    const isPaid = select.value === paidId;
-    if (!wasPaid && isPaid) delta--;
-    if (wasPaid && !isPaid) delta++;
+    delta += (paidLeaveUse.get(select.dataset.initial) || 0) - (paidLeaveUse.get(select.value) || 0);
   });
   const after = saved + delta;
   const note = document.getElementById("paid-leave-note");
   if (note) {
-    note.textContent = delta === 0 ? "" : "保存すると " + after + "日（未保存の有給 " + (delta < 0 ? -delta + "日" : "取消 " + delta + "日") + "）";
+    note.textContent = delta === 0 ? "" : "保存すると " + formatDays(after) + "日（未保存の有給 "
+      + (delta < 0 ? formatDays(-delta) + "日" : "取消 " + formatDays(delta) + "日") + "）";
   }
   card.classList.toggle("short", after < 0);
   if (after < 0 && note) note.textContent += " 残日数が足りません";

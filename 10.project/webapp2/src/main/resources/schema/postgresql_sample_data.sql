@@ -18,6 +18,10 @@ INSERT INTO abstract_master (id, name, is_work, is_paid, is_legal_holiday, is_pr
     (8, '振休', false, false, false, false),    -- 振替休日
     (9, 'その他', false, false, false, false);
 
+-- 有給消費日数（勤怠を保存すると、この日数だけ有給残日数が減る）
+UPDATE abstract_master SET paid_leave_days = 1 WHERE id = 3;    -- 有給
+UPDATE abstract_master SET paid_leave_days = 0.5 WHERE id = 5;  -- 半休
+
 -- 役職マスタ
 INSERT INTO class_master (id, name) VALUES
     ('0', '一般'),

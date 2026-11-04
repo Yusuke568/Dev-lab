@@ -87,6 +87,8 @@ public class KintaiDisplayAction implements Action {
                 }
             }
             request.setAttribute("proxyMode", proxyMode);
+            // 休憩時間帯（画面で勤務時間を計算し直すときに、サーバーと同じ休憩を引くため）
+            request.setAttribute("breakPeriodsJson", com.example.kintai.domain.model.attendance.BreakSchedule.toJson());
             // 祝日と会社休日（行の色と名前の表示用）
             request.setAttribute("holidayNames", getHolidaysUseCase.getHolidays(parseYearMonth(
                     request.getParameter("year"), request.getParameter("month"))));

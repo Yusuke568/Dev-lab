@@ -33,7 +33,7 @@ class WeeklyWorkSummaryCalculatorTest {
     private final List<AttendanceRecord> records = List.of(
             day(10, 1, "09:00", "18:00", 0),    // 前月（第1週の外）
             day(10, 30, "09:00", "18:00", 0),   // 前月だが第1週（10/29〜11/4）に入る
-            day(11, 2, "09:00", "20:00", 120),  // 休憩1時間を引いて10:00、残業2:00
+            day(11, 2, "09:00", "20:00", 90),   // 休憩1時間30分（12:00〜13:00・18:00〜18:30）を引いて9:30、残業1:30
             day(11, 4, "09:00", "18:00", 0),
             day(11, 5, "09:00", "18:00", 0));   // 第2週
 
@@ -42,7 +42,7 @@ class WeeklyWorkSummaryCalculatorTest {
         WeeklyWorkSummary first = calculate(records).get(0);
 
         assertEquals("・10/29-11/4の累計/残業時間", first.getHeadingLine());
-        assertEquals("週26:00/2:00,月18:00/2:00", first.getTotalsLine());
+        assertEquals("週25:30/1:30,月17:30/1:30", first.getTotalsLine());
         assertEquals("(前月16:00/0:00)", first.getPreviousMonthLine());
     }
 
@@ -50,7 +50,7 @@ class WeeklyWorkSummaryCalculatorTest {
     void 月の累計はその週の水曜日までを足していく() {
         List<WeeklyWorkSummary> summaries = calculate(records);
 
-        assertEquals("週8:00/0:00,月26:00/2:00", summaries.get(1).getTotalsLine());
+        assertEquals("週8:00/0:00,月25:30/1:30", summaries.get(1).getTotalsLine());
         assertEquals("・11/5-11/11の累計/残業時間", summaries.get(1).getHeadingLine());
     }
 
@@ -62,7 +62,7 @@ class WeeklyWorkSummaryCalculatorTest {
         WeeklyWorkSummary last = calculate(withDecember).get(4);
 
         assertEquals("・11/26-12/2の累計/残業時間", last.getHeadingLine());
-        assertEquals("週8:00/0:00,月26:00/2:00", last.getTotalsLine());
+        assertEquals("週8:00/0:00,月25:30/1:30", last.getTotalsLine());
     }
 
     @Test

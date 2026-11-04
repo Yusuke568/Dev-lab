@@ -21,8 +21,25 @@ export function getMinutes(t) {
 }
 
 const STANDARD_WORK_MINUTES = 480; // 8時間
-const BREAK_START = "12:00";
-const BREAK_END = "13:00";
+/**
+ * 休憩時間帯。サーバー（BreakSchedule）から勤怠画面の data-break-periods で受け取る。
+ * 受け取れないときは同じ値を使う。
+ */
+const DEFAULT_BREAK_PERIODS = [
+  ["05:00", "05:30"], ["08:30", "09:00"], ["12:00", "13:00"],
+  ["18:00", "18:30"], ["22:00", "22:30"], ["02:00", "03:00"]
+];
+
+function breakPeriods() {
+  const root = typeof document !== "undefined" ? document.getElementById("kintai-app-root") : null;
+  try {
+    const periods = root && root.dataset.breakPeriods ? JSON.parse(root.dataset.breakPeriods) : null;
+    if (Array.isArray(periods) && periods.length > 0) return periods;
+  } catch (e) {
+    // 読めなければ既定の休憩時間帯
+  }
+  return DEFAULT_BREAK_PERIODS;
+}
 
 /** 退勤が出勤より前の時刻なら、日をまたいで翌日に退勤したとみなす（例：9:00〜翌1:00）。 */
 export function isNextDayEnd(start, end) {
@@ -41,14 +58,14 @@ function calculateRawWorkMinutes(start, end) {
 
   let total = e - s;
 
-  // 当日と翌日の昼休み（12:00〜13:00）のうち、勤務時間に重なる分を引く
-  const breakStart = getMinutes(BREAK_START);
-  const breakEnd = getMinutes(BREAK_END);
+  // 当日と翌日の休憩時間帯のうち、勤務時間に重なる分を引く
   for (const offset of [0, 24 * 60]) {
-    const overlapStart = Math.max(s, breakStart + offset);
-    const overlapEnd = Math.min(e, breakEnd + offset);
-    if (overlapStart < overlapEnd) {
-      total -= (overlapEnd - overlapStart);
+    for (const [breakFrom, breakTo] of breakPeriods()) {
+      const overlapStart = Math.max(s, getMinutes(breakFrom) + offset);
+      const overlapEnd = Math.min(e, getMinutes(breakTo) + offset);
+      if (overlapStart < overlapEnd) {
+        total -= (overlapEnd - overlapStart);
+      }
     }
   }
 

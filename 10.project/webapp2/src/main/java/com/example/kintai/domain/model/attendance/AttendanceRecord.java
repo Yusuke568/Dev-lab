@@ -13,8 +13,6 @@ import java.util.Objects;
  * こ�EエンチE��チE��の識別子�E、社員IDと日付�E絁E��合わせです、E
  */
 public class AttendanceRecord {
-    private static final LocalTime BREAK_START = LocalTime.of(12, 0);
-    private static final LocalTime BREAK_END = LocalTime.of(13, 0);
 
     private final EmployeeId employeeId;
     private final LocalDate workDate;
@@ -42,7 +40,7 @@ public class AttendanceRecord {
 
     /**
      * 勤務時間を計算します。
-     * 出退勤時刻から求めた実働時間から休憩時間（12:00-13:00 と重なる分）を控除し、
+     * 出退勤時刻から求めた実働時間から休憩時間（BreakSchedule の時間帯と重なる分）を控除し、
      * 派遣先ごとに勤務時間の計上ルールが異なるため、補正CDで登録された補正時間
      * （補正(通)＋補正(深)）を加算した値を最終的な勤務時間とする。
      * @return 休憩控除・補正後の勤務時間。未勤務の場合は Duration.ZERO。
@@ -74,22 +72,11 @@ public class AttendanceRecord {
     }
 
     /**
-     * 勤務時間と昼休み（12:00〜13:00）の重なり。日をまたぐ勤務は翌日の昼休みとの重なりも見る。
+     * 勤務時間と休憩時間帯（BreakSchedule）の重なり。日をまたぐ勤務は翌日の休憩時間帯との重なりも見る。
      */
     private static Duration calculateBreakDeduction(WorkTime workTime) {
-        int start = workTime.getStartMinuteOfDay();
-        int end = workTime.getEndMinuteFromStartDay();
-        int breakStart = BREAK_START.getHour() * 60 + BREAK_START.getMinute();
-        int breakEnd = BREAK_END.getHour() * 60 + BREAK_END.getMinute();
-        long minutes = 0;
-        for (int dayOffset = 0; dayOffset <= 24 * 60; dayOffset += 24 * 60) {
-            int overlapStart = Math.max(start, breakStart + dayOffset);
-            int overlapEnd = Math.min(end, breakEnd + dayOffset);
-            if (overlapStart < overlapEnd) {
-                minutes += overlapEnd - overlapStart;
-            }
-        }
-        return Duration.ofMinutes(minutes);
+        return Duration.ofMinutes(BreakSchedule.overlapMinutes(
+                workTime.getStartMinuteOfDay(), workTime.getEndMinuteFromStartDay()));
     }
 
     // --- Getters and Setters ---

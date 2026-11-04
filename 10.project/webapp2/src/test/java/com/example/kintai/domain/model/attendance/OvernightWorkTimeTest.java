@@ -40,25 +40,27 @@ class OvernightWorkTimeTest {
     }
 
     @Test
-    void 日またぎでも昼休みを引き_時間外は8時間を超えた分() {
-        // 9:00〜翌1:00 は16時間。昼休み1時間を引いて15時間
+    void 日またぎでも休憩時間帯を引く() {
+        // 9:00〜翌1:00 は16時間。12:00〜13:00、18:00〜18:30、22:00〜22:30 の休憩2時間を引いて14時間
         AttendanceRecord record = record("09:00", "01:00");
 
-        assertEquals(Duration.ofHours(15), record.calculateRawWorkDuration());
+        assertEquals(Duration.ofHours(14), record.calculateRawWorkDuration());
     }
 
     @Test
-    void 夜勤は昼休みに重ならないので引かない() {
+    void 夜勤は夜の休憩時間帯を引く() {
+        // 22:00〜翌6:00 は8時間。22:00〜22:30、2:00〜3:00、5:00〜5:30 の休憩2時間を引いて6時間
         AttendanceRecord record = record("22:00", "06:00");
 
-        assertEquals(Duration.ofHours(8), record.calculateRawWorkDuration());
+        assertEquals(Duration.ofHours(6), record.calculateRawWorkDuration());
     }
 
     @Test
-    void 翌日の昼休みに重なる分も引く() {
-        // 13:00〜翌13:00 ではなく 13:00〜翌12:30（23時間30分）。翌日の12:00〜12:30が昼休みに重なる
+    void 翌日の休憩時間帯に重なる分も引く() {
+        // 13:00〜翌12:30（23時間30分）。18:00〜18:30、22:00〜22:30、2:00〜3:00、5:00〜5:30、8:30〜9:00、
+        // 翌日の12:00〜12:30 の休憩3時間30分を引いて20時間
         AttendanceRecord record = record("13:00", "12:30");
 
-        assertEquals(Duration.ofMinutes(23 * 60 + 30 - 30), record.calculateRawWorkDuration());
+        assertEquals(Duration.ofHours(20), record.calculateRawWorkDuration());
     }
 }

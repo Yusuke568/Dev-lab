@@ -700,6 +700,7 @@
 	<div id="kintai-app-root" class="card" style="max-width: 98%; margin: 0 auto;"
 		data-staff-id="${staffId}"
 		data-work-types-json='${workTypesJson}'
+		data-break-periods='${breakPeriodsJson}'
 		data-year="${attendanceData.yearMonth.year}"
 		data-month="${attendanceData.yearMonth.monthValue}">
 		<div class="kintai-header">

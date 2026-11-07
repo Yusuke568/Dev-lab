@@ -112,6 +112,13 @@
 .as-dl-sel .as-dl-item { flex: 1; min-width: 0; }
 .as-dl-main { flex: none; padding: 0 6px; border-radius: 999px; background: #1a3d6d; color: #fff; font-size: 0.7rem; font-weight: 700; }
 .as-dl-tomain { flex: none; font-size: 0.75rem; }
+.as-rl-condcell { flex-direction: column; align-items: stretch; gap: 4px; width: 11em; }
+.as-rl-row:has(.as-rl-condcell) { grid-template-columns: 11em 1fr auto; }
+.as-rl-cond, .as-rl-hours { font: inherit; font-size: 0.8rem; padding: 3px 4px; border: 1px solid #cbd5e0; border-radius: 4px; background: #fff; max-width: 100%; }
+.as-rl-hours { width: 5em; }
+.as-rl-hourswrap { display: flex; align-items: center; gap: 4px; font-weight: 400; font-size: 0.8rem; }
+.as-rl-hourswrap[hidden] { display: none; }
+.as-extra { font-size: 0.8rem; color: #744210; margin-top: 2px; }
 .as-dl-empty { padding: 6px 8px; font-size: 0.8rem; color: #a0aec0; }
 @media (max-width: 768px) {
     /* 表をカードにする */
@@ -127,7 +134,8 @@
     .as-dialog form { max-height: 90dvh; }
     .as-dialog.wide { width: 100vw; }
     /* 段の編集：選択済と未選択を縦に並べる */
-    .as-rl-row { grid-template-columns: 1fr auto; }
+    .as-rl-row, .as-rl-row:has(.as-rl-condcell) { grid-template-columns: 1fr auto; }
+    .as-rl-condcell { width: auto; }
     .as-rl-no { grid-column: 1 / -1; padding: 6px 8px; }
     .as-rl-ctrl { padding: 8px 6px 8px 0; }
     .as-dl { grid-template-columns: minmax(0, 1fr); }
@@ -155,6 +163,6 @@
 
 <%-- 画面に表示するデータ（MasterApprovalSettingsAction が作る） --%>
 <script type="application/json" id="settings-data">${settingsJson}</script>
-<script src="${pageContext.request.contextPath}/resources/js/master/approval-settings.js?v=20261113"></script><%-- 中身を変えたら v を変える（ブラウザに古い版が残らないように） --%>
+<script src="${pageContext.request.contextPath}/resources/js/master/approval-settings.js?v=20261114"></script><%-- 中身を変えたら v を変える（ブラウザに古い版が残らないように） --%>
 </body>
 </html>

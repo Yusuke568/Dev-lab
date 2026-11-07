@@ -1,7 +1,9 @@
 package com.example.approval.domain.service;
 
 import com.example.approval.domain.model.ApprovalRoute;
+import com.example.approval.domain.model.ExtraLevel;
 import com.example.approval.domain.model.OrganizationSnapshot;
+import com.example.approval.domain.model.RequestFacts;
 import com.example.approval.domain.model.RequestType;
 import com.example.approval.domain.model.ResolvedRoute;
 import com.example.approval.domain.model.RouteAssignment;
@@ -21,6 +23,7 @@ import java.util.Set;
  * 決め方（上から順に、最初に見つかったもの）
  *   1. 申請者に割り当てた承認ルート
  *   2. 申請の部署（兼任なら申請時に選んだ部署、なければ主所属）に割り当てた承認ルート。なければ上位部署の割り当てを使う
+ *   承認ルートで決まったときは、残業事前申請なら条件つきの段（当月の時間外が○時間以上・深夜）を、条件に当たる分だけ後ろに足す
  *   3. 組織図：申請の部署から上位部署へたどり、各部署の主承認者と副承認者をその段の候補者にする（承認ルート設定の段数まで）
  *
  * 共通の決まり
@@ -33,10 +36,19 @@ public class ApprovalRouteResolver {
 
     public ResolvedRoute resolve(int applicantStaffId, Integer departmentId, RequestType requestType,
                                  OrganizationSnapshot org) {
+        return resolve(applicantStaffId, departmentId, requestType, org, null);
+    }
+
+    /**
+     * @param facts 申請の中身（条件つきの段を足すかの判定に使う）。null なら条件つきの段は足さない
+     */
+    public ResolvedRoute resolve(int applicantStaffId, Integer departmentId, RequestType requestType,
+                                 OrganizationSnapshot org, RequestFacts facts) {
+        RequestFacts usedFacts = requestType == RequestType.OVERTIME ? facts : null;
         // 1. 申請者に割り当てたルート
         Optional<ApprovalRoute> staffRoute = findRoute(org, requestType, RouteAssignment.STAFF, applicantStaffId);
         if (staffRoute.isPresent()) {
-            return fromRoute(staffRoute.get(), applicantStaffId, "（社員に割り当て）");
+            return fromRoute(staffRoute.get(), applicantStaffId, "（社員に割り当て）", usedFacts);
         }
 
         if (departmentId == null) {
@@ -51,7 +63,7 @@ public class ApprovalRouteResolver {
             if (deptRoute.isPresent()) {
                 Department dept = org.departments().get(current);
                 String where = dept != null ? dept.getName() : String.valueOf(current);
-                return fromRoute(deptRoute.get(), applicantStaffId, "（部署「" + where + "」に割り当て）");
+                return fromRoute(deptRoute.get(), applicantStaffId, "（部署「" + where + "」に割り当て）", usedFacts);
             }
             Department dept = org.departments().get(current);
             current = dept != null ? dept.getParentId() : null;
@@ -69,11 +81,23 @@ public class ApprovalRouteResolver {
                         .thenComparing(r -> r.getId() != null ? r.getId() : Integer.MAX_VALUE));
     }
 
-    private static ResolvedRoute fromRoute(ApprovalRoute route, int applicant, String how) {
+    private static ResolvedRoute fromRoute(ApprovalRoute route, int applicant, String how, RequestFacts facts) {
         String source = "承認ルート「" + route.getName() + "」" + how;
+        List<List<Integer>> rawLevels = new ArrayList<>(route.getLevels());
+        // 条件に当たる追加の段を、ふだんの段のあとに足す（登録した順）
+        List<String> added = new ArrayList<>();
+        for (ExtraLevel extra : route.getExtraLevels()) {
+            if (extra.matches(facts) && !extra.getApprovers().isEmpty()) {
+                rawLevels.add(extra.getApprovers());
+                added.add(extra.getConditionLabel());
+            }
+        }
+        if (!added.isEmpty()) {
+            source += "＋追加の段（" + String.join("・", added) + "）";
+        }
         // 段の先頭の人をその段の主承認者とみなす。主承認者本人の申請は、同じ段のほかの人（副承認者・部下）に回さず次の段へ
         List<List<Integer>> levels = new ArrayList<>();
-        for (List<Integer> level : route.getLevels()) {
+        for (List<Integer> level : rawLevels) {
             boolean applicantIsMain = !level.isEmpty() && level.get(0) != null && level.get(0) == applicant;
             levels.add(applicantIsMain ? List.of(applicant) : level);
         }

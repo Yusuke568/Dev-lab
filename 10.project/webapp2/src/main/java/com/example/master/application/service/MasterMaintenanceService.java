@@ -2,6 +2,7 @@ package com.example.master.application.service;
 
 import com.example.approval.domain.model.ApprovalRoute;
 import com.example.approval.domain.model.RequestType;
+import com.example.approval.domain.model.ExtraLevel;
 import com.example.approval.domain.model.RouteAssignment;
 import com.example.entity.WorkType;
 import com.example.leave.domain.model.LeaveGrantRule;
@@ -144,6 +145,13 @@ public class MasterMaintenanceService implements MasterMaintenanceUseCase {
     @Override
     public void saveApprovalRoute(Integer id, String name, RequestType requestType, String note,
                                   List<List<Integer>> levels, List<RouteAssignment> assignments) {
+        saveApprovalRoute(id, name, requestType, note, levels, List.of(), assignments);
+    }
+
+    @Override
+    public void saveApprovalRoute(Integer id, String name, RequestType requestType, String note,
+                                  List<List<Integer>> levels, List<ExtraLevel> extraLevels,
+                                  List<RouteAssignment> assignments) {
         String validName = requireName(name, "ルート名");
         // 空の段を詰め、同じ段の重複を除く
         List<List<Integer>> validLevels = new ArrayList<>();
@@ -175,8 +183,20 @@ public class MasterMaintenanceService implements MasterMaintenanceUseCase {
                 }
             }
         }
+        // 条件つきの段：承認者のいない段は捨てる。休暇だけのルートには付けられない
+        List<ExtraLevel> validExtras = new ArrayList<>();
+        for (ExtraLevel extra : extraLevels == null ? List.<ExtraLevel>of() : extraLevels) {
+            List<Integer> approvers = new ArrayList<>(new LinkedHashSet<>(extra.getApprovers()));
+            approvers.removeIf(Objects::isNull);
+            if (!approvers.isEmpty()) {
+                validExtras.add(new ExtraLevel(extra.getCondition(), extra.getThresholdMinutes(), approvers));
+            }
+        }
+        if (!validExtras.isEmpty() && requestType == RequestType.LEAVE) {
+            throw new IllegalArgumentException("条件つきの段（時間外・深夜）は残業事前申請だけに使えます。休暇申請だけのルートには付けられません。");
+        }
         masterPort.saveApprovalRoute(new ApprovalRoute(id, validName, requestType,
-                note == null || note.isBlank() ? null : note.strip(), validLevels, assignments));
+                note == null || note.isBlank() ? null : note.strip(), validLevels, validExtras, assignments));
     }
 
     @Override

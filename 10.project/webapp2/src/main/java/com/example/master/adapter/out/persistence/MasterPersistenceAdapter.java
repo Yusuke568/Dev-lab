@@ -2,6 +2,7 @@ package com.example.master.adapter.out.persistence;
 
 import com.example.approval.domain.model.ApprovalRoute;
 import com.example.approval.domain.model.RequestType;
+import com.example.approval.domain.model.ExtraLevel;
 import com.example.approval.domain.model.RouteAssignment;
 import com.example.approval.domain.port.out.OrganizationPort;
 import com.example.entity.WorkType;
@@ -591,6 +592,8 @@ public class MasterPersistenceAdapter implements MasterPort, OrganizationPort {
         Map<Integer, String[]> heads = new LinkedHashMap<>();
         Map<Integer, Map<Integer, List<Integer>>> steps = new LinkedHashMap<>();
         Map<Integer, List<RouteAssignment>> assignments = new LinkedHashMap<>();
+        // ルートID → 追加の段の番号 → [条件, 時間（分）, 承認者]
+        Map<Integer, Map<Integer, Object[]>> extras = new LinkedHashMap<>();
         try (Connection con = ConnectionBase.getConnection()) {
             try (PreparedStatement ps = con.prepareStatement(
                     "SELECT id, name, request_type, note FROM approval_route ORDER BY id");
@@ -606,6 +609,22 @@ public class MasterPersistenceAdapter implements MasterPort, OrganizationPort {
                     steps.computeIfAbsent(rs.getInt("route_id"), k -> new java.util.TreeMap<>())
                             .computeIfAbsent(rs.getInt("level"), k -> new ArrayList<>())
                             .add(rs.getInt("staff_id"));
+                }
+            }
+            try (PreparedStatement ps = con.prepareStatement(
+                    "SELECT route_id, seq, condition_type, threshold_minutes, staff_id FROM approval_route_extra_step " +
+                    "ORDER BY route_id, seq, sort_order, staff_id");
+                 ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Object[] extra = extras.computeIfAbsent(rs.getInt("route_id"), k -> new java.util.TreeMap<>())
+                            .computeIfAbsent(rs.getInt("seq"), k -> new Object[3]);
+                    if (extra[2] == null) {
+                        extra[0] = rs.getString("condition_type");
+                        extra[1] = nullableInt(rs, "threshold_minutes");
+                        extra[2] = new ArrayList<Integer>();
+                    }
+                    @SuppressWarnings("unchecked") List<Integer> approvers = (List<Integer>) extra[2];
+                    approvers.add(rs.getInt("staff_id"));
                 }
             }
             try (PreparedStatement ps = con.prepareStatement(
@@ -635,7 +654,16 @@ public class MasterPersistenceAdapter implements MasterPort, OrganizationPort {
                 }
             }
             List<List<Integer>> levels = new ArrayList<>(steps.getOrDefault(id, Map.of()).values());
-            routes.add(new ApprovalRoute(id, head[0], type, head[2], levels, assignments.getOrDefault(id, new ArrayList<>())));
+            List<ExtraLevel> extraLevels = new ArrayList<>();
+            for (Object[] e : extras.getOrDefault(id, Map.of()).values()) {
+                @SuppressWarnings("unchecked") List<Integer> approvers = (List<Integer>) e[2];
+                try {
+                    extraLevels.add(new ExtraLevel((String) e[0], (Integer) e[1], approvers));
+                } catch (IllegalArgumentException ignored) {
+                    // 分からない条件の段は使わない
+                }
+            }
+            routes.add(new ApprovalRoute(id, head[0], type, head[2], levels, extraLevels, assignments.getOrDefault(id, new ArrayList<>())));
         });
         return routes;
     }
@@ -703,6 +731,33 @@ public class MasterPersistenceAdapter implements MasterPort, OrganizationPort {
                         ps.addBatch();
                     }
                     level++;
+                }
+                ps.executeBatch();
+            }
+            try (PreparedStatement ps = con.prepareStatement("DELETE FROM approval_route_extra_step WHERE route_id = ?")) {
+                ps.setInt(1, id);
+                ps.executeUpdate();
+            }
+            try (PreparedStatement ps = con.prepareStatement(
+                    "INSERT INTO approval_route_extra_step (route_id, seq, condition_type, threshold_minutes, staff_id, sort_order) " +
+                    "VALUES (?, ?, ?, ?, ?, ?)")) {
+                int seq = 1;
+                for (ExtraLevel extra : route.getExtraLevels()) {
+                    int order = 0;
+                    for (Integer staffId : extra.getApprovers()) {
+                        ps.setInt(1, id);
+                        ps.setInt(2, seq);
+                        ps.setString(3, extra.getCondition());
+                        if (extra.getThresholdMinutes() != null) {
+                            ps.setInt(4, extra.getThresholdMinutes());
+                        } else {
+                            ps.setNull(4, java.sql.Types.INTEGER);
+                        }
+                        ps.setInt(5, staffId);
+                        ps.setInt(6, order++);
+                        ps.addBatch();
+                    }
+                    seq++;
                 }
                 ps.executeBatch();
             }

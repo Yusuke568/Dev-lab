@@ -124,6 +124,26 @@ class ApprovalRouteResolverTest {
     }
 
     @Test
+    void 条件つきの段は残業事前申請で条件に当たったときだけ足す() {
+        routes.add(new ApprovalRoute(1, "開発部", null, null, List.of(List.of(300), List.of(200)),
+                List.of(new com.example.approval.domain.model.ExtraLevel("MONTHLY_OVERTIME", 1110, List.of(100)),
+                        new com.example.approval.domain.model.ExtraLevel("NIGHT", null, List.of(200, 900))),
+                List.of(dept(2))));
+        com.example.approval.domain.model.RequestFacts over = new com.example.approval.domain.model.RequestFacts(1200, true);
+
+        // 条件を見ない（マスタ画面の表示）
+        assertEquals(List.of(List.of(300), List.of(200)), resolver.resolve(1, 3, RequestType.OVERTIME, org(2)).getLevels());
+        // 18.5h以上・深夜：部長(200)は前の段にいるので深夜の段は 900 だけ
+        ResolvedRoute r = resolver.resolve(1, 3, RequestType.OVERTIME, org(2), over);
+        assertEquals(List.of(List.of(300), List.of(200), List.of(100), List.of(900)), r.getLevels());
+        assertTrue(r.getSource().contains("当月の時間外 18.5時間以上"));
+        // 休暇申請には足さない
+        assertEquals(List.of(List.of(300), List.of(200)), resolver.resolve(1, 3, RequestType.LEAVE, org(2), over).getLevels());
+        // 本人が追加の段の承認者なら、その段は飛ばす
+        assertEquals(List.of(List.of(300), List.of(200), List.of(900)), resolver.resolve(100, 3, RequestType.OVERTIME, org(2), over).getLevels());
+    }
+
+    @Test
     void ルートの承認者が本人だけなら自動承認() {
         routes.add(route(1, "社長", null, List.of(List.of(100)), staff(100)));
 

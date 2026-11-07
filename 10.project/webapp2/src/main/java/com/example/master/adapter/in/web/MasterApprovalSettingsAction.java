@@ -4,6 +4,7 @@ import com.example.approval.application.service.ApprovalWorkflowService;
 import com.example.approval.domain.model.ApprovalRoute;
 import com.example.approval.domain.model.RequestType;
 import com.example.approval.domain.model.RoutePreview;
+import com.example.approval.domain.model.ExtraLevel;
 import com.example.approval.domain.model.RouteAssignment;
 import com.example.master.application.port.in.MasterMaintenanceUseCase;
 import com.example.master.domain.model.ApprovalRouteSetting;
@@ -121,6 +122,16 @@ public class MasterApprovalSettingsAction extends MasterActionSupport {
             m.put("type", r.getRequestType() != null ? r.getRequestType().name() : null);
             m.put("note", r.getNote());
             m.put("levels", r.getLevels());
+            List<Map<String, Object>> extras = new ArrayList<>();
+            for (ExtraLevel e : r.getExtraLevels()) {
+                Map<String, Object> x = new LinkedHashMap<>();
+                x.put("cond", e.getCondition());
+                x.put("minutes", e.getThresholdMinutes());
+                x.put("label", e.getConditionLabel());
+                x.put("approvers", e.getApprovers());
+                extras.add(x);
+            }
+            m.put("extras", extras);
             m.put("staffIds", r.getAssignments().stream().filter(RouteAssignment::isStaff).map(RouteAssignment::getTargetId).toList());
             m.put("deptIds", r.getAssignments().stream().filter(a -> !a.isStaff()).map(RouteAssignment::getTargetId).toList());
             routeList.add(m);
@@ -135,6 +146,19 @@ public class MasterApprovalSettingsAction extends MasterActionSupport {
         }
         data.put("previews", previews);
         return data;
+    }
+
+    /** "18.5" → 1110（分）。空・数字でなければ null */
+    static Integer hoursToMinutes(String hours) {
+        if (hours == null || hours.isBlank()) {
+            return null;
+        }
+        try {
+            return new java.math.BigDecimal(hours.trim()).multiply(java.math.BigDecimal.valueOf(60))
+                    .setScale(0, java.math.RoundingMode.HALF_UP).intValueExact();
+        } catch (NumberFormatException | ArithmeticException e) {
+            throw new IllegalArgumentException("追加の段の時間は数字で入れてください（例：18.5）。");
+        }
     }
 
     private static Map<String, Object> toMap(RoutePreview p) {
@@ -189,6 +213,13 @@ public class MasterApprovalSettingsAction extends MasterActionSupport {
                 for (int i = 1; i <= Math.min(levelCount, 20); i++) {
                     levels.add(MasterDepartmentAction.intValues(request, "level" + i));
                 }
+                List<ExtraLevel> extras = new ArrayList<>();
+                Integer extraCount = optionalInt(request, "extraCount");
+                for (int i = 1; extraCount != null && i <= Math.min(extraCount, 20); i++) {
+                    String cond = request.getParameter("extra" + i + "Cond");
+                    Integer minutes = ExtraLevel.MONTHLY_OVERTIME.equals(cond) ? hoursToMinutes(request.getParameter("extra" + i + "Hours")) : null;
+                    extras.add(new ExtraLevel(cond, minutes, MasterDepartmentAction.intValues(request, "extra" + i)));
+                }
                 List<RouteAssignment> assignments = new ArrayList<>();
                 for (Integer staffId : MasterDepartmentAction.intValues(request, "assignStaffIds")) {
                     assignments.add(new RouteAssignment(RouteAssignment.STAFF, staffId, null));
@@ -197,7 +228,7 @@ public class MasterApprovalSettingsAction extends MasterActionSupport {
                     assignments.add(new RouteAssignment(RouteAssignment.DEPARTMENT, deptId, null));
                 }
                 masterUseCase.saveApprovalRoute(id, request.getParameter("name"), type, request.getParameter("note"),
-                        levels, assignments);
+                        levels, extras, assignments);
                 return id == null ? "承認ルートを追加しました。" : "承認ルートを更新しました。";
             }
             case "deptRoutes": {

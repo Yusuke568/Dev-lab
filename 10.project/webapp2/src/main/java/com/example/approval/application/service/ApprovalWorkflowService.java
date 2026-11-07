@@ -4,6 +4,7 @@ import com.example.approval.domain.model.ApprovalLevel;
 import com.example.approval.domain.model.ApprovalOutcome;
 import com.example.approval.domain.model.ApprovalStep;
 import com.example.approval.domain.model.OrganizationSnapshot;
+import com.example.approval.domain.model.RequestFacts;
 import com.example.approval.domain.model.RequestType;
 import com.example.approval.domain.model.ResolvedRoute;
 import com.example.approval.domain.model.RoutePreview;
@@ -53,8 +54,16 @@ public class ApprovalWorkflowService {
      * @throws IllegalStateException 所属部署や承認者が設定されていない場合
      */
     public boolean startRoute(RequestType requestType, int requestId, String applicantStaffId, Integer departmentId) {
+        return startRoute(requestType, requestId, applicantStaffId, departmentId, null);
+    }
+
+    /**
+     * @param facts 申請の中身（当月の時間外・深夜か）。承認ルートの条件つきの段を足すかの判定に使う。null なら足さない
+     */
+    public boolean startRoute(RequestType requestType, int requestId, String applicantStaffId, Integer departmentId,
+                              RequestFacts facts) {
         int applicant = Integer.parseInt(applicantStaffId);
-        ResolvedRoute route = resolve(requestType, applicant, departmentId);
+        ResolvedRoute route = resolve(requestType, applicant, departmentId, facts);
         if (route.isAutoApproved()) {
             approvalStepPort.replaceSteps(requestType, requestId, List.of(List.of(applicant)));
             approvalStepPort.recordDecision(requestType, requestId, 1, applicant, ApprovalStep.APPROVED);
@@ -70,12 +79,16 @@ public class ApprovalWorkflowService {
     }
 
     public void checkRouteAvailable(RequestType requestType, String applicantStaffId, Integer departmentId) {
-        resolve(requestType, Integer.parseInt(applicantStaffId), departmentId);
+        checkRouteAvailable(requestType, applicantStaffId, departmentId, null);
+    }
+
+    public void checkRouteAvailable(RequestType requestType, String applicantStaffId, Integer departmentId, RequestFacts facts) {
+        resolve(requestType, Integer.parseInt(applicantStaffId), departmentId, facts);
     }
 
     /** この社員がこの部署の業務として申請したら、どのルートになるか（マスタ画面の確認用）。 */
     public ResolvedRoute previewRoute(RequestType requestType, int applicantStaffId, Integer departmentId) {
-        return resolve(requestType, applicantStaffId, departmentId);
+        return resolve(requestType, applicantStaffId, departmentId, null);
     }
 
     /**
@@ -118,7 +131,7 @@ public class ApprovalWorkflowService {
         return result;
     }
 
-    private ResolvedRoute resolve(RequestType requestType, int applicant, Integer departmentId) {
+    private ResolvedRoute resolve(RequestType requestType, int applicant, Integer departmentId, RequestFacts facts) {
         Integer dept = departmentId;
         if (dept == null) {
             dept = organizationPort.findDepartmentIdOfStaff(applicant);
@@ -130,7 +143,7 @@ public class ApprovalWorkflowService {
                 organizationPort.findSubApprovers(),
                 organizationPort.findApprovalRoutes(),
                 organizationPort.findMaxLevels(requestType));
-        return resolver.resolve(applicant, dept, requestType, org);
+        return resolver.resolve(applicant, dept, requestType, org, facts);
     }
 
     /**

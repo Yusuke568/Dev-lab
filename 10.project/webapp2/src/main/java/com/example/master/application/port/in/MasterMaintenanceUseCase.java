@@ -51,6 +51,11 @@ public interface MasterMaintenanceUseCase {
      */
     void saveApprovalRoute(Integer id, String name, RequestType requestType, String note,
                            List<List<Integer>> levels, List<RouteAssignment> assignments);
+
+    /** extraLevels は条件つきで足す段（残業事前申請に使えるルートだけ） */
+    void saveApprovalRoute(Integer id, String name, RequestType requestType, String note,
+                           List<List<Integer>> levels, List<com.example.approval.domain.model.ExtraLevel> extraLevels,
+                           List<RouteAssignment> assignments);
     void deleteApprovalRoute(int id);
     /**
      * 社員個別の承認ルートを決める（承認設定画面の社員一覧から）。

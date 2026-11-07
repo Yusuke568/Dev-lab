@@ -384,6 +384,7 @@
         el("td", { "data-label": "申請種別", text: r.type ? D.requestTypes[r.type] : "残業・休暇の両方" }),
         el("td", { "data-label": "承認者" },
           el("ol", { className: "as-route" }, r.levels.map((lv, i) => el("li", {}, (i + 1) + ". " + levelText(lv)))),
+          (r.extras || []).map((x) => el("div", { className: "as-extra", text: "＋ " + x.label + "：" + levelText(x.approvers) })),
           missing.length ? el("div", { className: "as-error", text: "⚠ 社員マスタにいない承認者がいます" }) : null),
         el("td", { "data-label": "割り当て先" }, targets.length ? targets : el("span", { className: "as-error", text: "未割り当て（使われていません）" })),
         el("td", { "data-label": "使っている社員", text: routeUserCount(r) + "人" }),
@@ -557,19 +558,54 @@
    * 段ごとの承認者を「選択済 ← 未選択」の2つの欄で選ぶ。
    * 段の並べ替え（▲▼）・削除（✖）・「経路追加」ができる。
    * 送る値：levelCount と、段ごとの level1, level2, …（社員ID を複数）
+   *
+   * opts.extra が true なら「条件つきで足す段」の編集（0段でもよい）。段ごとに条件（当月の時間外○時間以上／深夜）を選ぶ。
+   * 送る値：extraCount と、extra1Cond・extra1Hours・extra1（社員ID を複数）, …
    */
-  function routeLevelsEditor(initial) {
+  function routeLevelsEditor(initial, opts) {
+    const extra = !!(opts && opts.extra);
     const groups = staffGroups();
     const groupByKey = new Map(groups.map((g) => [g.key, g]));
-    const levels = (initial && initial.length ? initial : [[]]).map((lv) => lv.slice());
+    const levels = extra ? (initial || []).map((x) => x.approvers.slice())
+      : (initial && initial.length ? initial : [[]]).map((lv) => lv.slice());
+    const conds = extra ? (initial || []).map((x) => ({ cond: x.cond, hours: x.minutes ? String(Math.round(x.minutes / 60 * 100) / 100) : "" })) : null;
     const views = levels.map(() => ({ group: "all", q: "" }));
     const box = el("div", { className: "as-rl" });
     const inputs = el("div", {});
+    const levelName = (i) => (extra ? "追加の" : "") + (i + 1) + "段目";
 
     function syncInputs() {
       inputs.innerHTML = "";
+      if (extra) {
+        inputs.appendChild(hidden("extraCount", levels.length));
+        levels.forEach((lv, i) => {
+          inputs.appendChild(hidden("extra" + (i + 1) + "Cond", conds[i].cond));
+          inputs.appendChild(hidden("extra" + (i + 1) + "Hours", conds[i].hours));
+          lv.forEach((id) => inputs.appendChild(hidden("extra" + (i + 1), id)));
+        });
+        return;
+      }
       inputs.appendChild(hidden("levelCount", levels.length));
       levels.forEach((lv, i) => lv.forEach((id) => inputs.appendChild(hidden("level" + (i + 1), id))));
+    }
+
+    /** 条件つきの段の、条件を選ぶ欄（左の列） */
+    function condControls(i) {
+      const c = conds[i];
+      const hours = el("input", { type: "number", className: "as-rl-hours", min: "0.5", max: "300", step: "0.5", value: c.hours,
+        "aria-label": levelName(i) + "の時間", required: c.cond === "MONTHLY_OVERTIME",
+        oninput: (e) => { c.hours = e.target.value; syncInputs(); } });
+      const hoursWrap = el("div", { className: "as-rl-hourswrap" }, hours, "時間以上");
+      hoursWrap.hidden = c.cond !== "MONTHLY_OVERTIME";
+      const sel = el("select", { className: "as-rl-cond", "aria-label": levelName(i) + "の条件",
+        onchange: (e) => {
+          c.cond = e.target.value;
+          if (c.cond === "MONTHLY_OVERTIME" && !c.hours) c.hours = "18.5";
+          box.children[i].replaceWith(drawLevel(i)); syncInputs();
+        } },
+        el("option", { value: "MONTHLY_OVERTIME", selected: c.cond === "MONTHLY_OVERTIME" }, "当月の時間外が"),
+        el("option", { value: "NIGHT", selected: c.cond === "NIGHT" }, "深夜（22時〜翌5時）にかかる"));
+      return el("div", { className: "as-rl-no as-rl-condcell" }, el("div", { text: levelName(i) }), sel, hoursWrap);
     }
 
     function person(id, onclick, title) {
@@ -614,7 +650,7 @@
       const unselList = el("ul", { className: "as-dl-list" },
         candidates.length ? candidates.map((id) => person(id, () => { lv.push(id); redraw(); }, "クリックで選択済に入れる"))
           : el("li", { className: "as-dl-empty", text: "該当する社員はいません" }));
-      const search = el("input", { type: "search", className: "as-dl-search", placeholder: "社員ID・氏名で検索", "aria-label": (i + 1) + "段目の承認者を検索", value: view.q,
+      const search = el("input", { type: "search", className: "as-dl-search", placeholder: "社員ID・氏名で検索", "aria-label": levelName(i) + "の承認者を検索", value: view.q,
         oninput: (e) => { view.q = e.target.value; const pos = e.target.selectionStart; redraw();
           const s = box.children[i].querySelector(".as-dl-search"); s.focus(); s.setSelectionRange(pos, pos); } });
       const unselBox = el("div", { className: "as-dl-box" },
@@ -627,34 +663,47 @@
         if (j < 0 || j >= levels.length) return;
         [levels[i], levels[j]] = [levels[j], levels[i]];
         [views[i], views[j]] = [views[j], views[i]];
+        if (extra) [conds[i], conds[j]] = [conds[j], conds[i]];
         drawAll();
       };
       return el("div", { className: "as-rl-row" },
-        el("div", { className: "as-rl-no", text: (i + 1) + "段目" }),
+        extra ? condControls(i) : el("div", { className: "as-rl-no", text: levelName(i) }),
         el("div", { className: "as-rl-body" },
           search,
           el("div", { className: "as-dl" }, selBox, el("div", { className: "as-dl-arrow", "aria-hidden": "true", text: "⇦" }), unselBox)),
         el("div", { className: "as-rl-ctrl" },
-          el("button", { type: "button", className: "as-rl-del", title: "この段を削除", "aria-label": (i + 1) + "段目を削除", disabled: levels.length <= 1,
-            onclick: () => { levels.splice(i, 1); views.splice(i, 1); drawAll(); } }, "✖"),
-          el("button", { type: "button", title: "上へ", "aria-label": (i + 1) + "段目を上へ", disabled: i === 0, onclick: () => move(-1) }, "▲"),
-          el("button", { type: "button", title: "下へ", "aria-label": (i + 1) + "段目を下へ", disabled: i === levels.length - 1, onclick: () => move(1) }, "▼")));
+          el("button", { type: "button", className: "as-rl-del", title: "この段を削除", "aria-label": levelName(i) + "を削除", disabled: !extra && levels.length <= 1,
+            onclick: () => { levels.splice(i, 1); views.splice(i, 1); if (extra) conds.splice(i, 1); drawAll(); } }, "✖"),
+          el("button", { type: "button", title: "上へ", "aria-label": levelName(i) + "を上へ", disabled: i === 0, onclick: () => move(-1) }, "▲"),
+          el("button", { type: "button", title: "下へ", "aria-label": levelName(i) + "を下へ", disabled: i === levels.length - 1, onclick: () => move(1) }, "▼")));
     }
 
     function drawAll() {
       box.innerHTML = "";
       levels.forEach((_, i) => box.appendChild(drawLevel(i)));
+      box.hidden = levels.length === 0;
       syncInputs();
     }
     drawAll();
     const add = el("button", { type: "button", className: "as-dl-link as-rl-add",
-      onclick: () => { levels.push([]); views.push({ group: "all", q: "" }); drawAll(); } }, "＋ 経路追加（段を増やす）");
+      onclick: () => {
+        levels.push([]); views.push({ group: "all", q: "" });
+        if (extra) {
+          // 18.5時間 → 45時間 → 深夜 の順に、まだない条件を初期値にする
+          const used = conds.map((c) => c.cond + ":" + c.hours);
+          const next = ["MONTHLY_OVERTIME:18.5", "MONTHLY_OVERTIME:45", "NIGHT:"].find((k) => !used.includes(k)) || "MONTHLY_OVERTIME:";
+          const [cond, hours] = next.split(":");
+          conds.push({ cond: cond, hours: hours });
+        }
+        drawAll();
+      } }, extra ? "＋ 条件つきの段を追加" : "＋ 経路追加（段を増やす）");
     return el("div", {}, box, add, inputs);
   }
 
   /** 承認ルート：名前・種別・段ごとの承認者・割り当て先 */
   function openRouteDialog(r) {
     const levelsEditor = routeLevelsEditor(r ? r.levels : null);
+    const extrasEditor = routeLevelsEditor(r ? r.extras || [] : [], { extra: true });
 
     const typeChoices = [{ value: null, label: "残業・休暇の両方" }, ...TYPES.map((t) => ({ value: t, label: D.requestTypes[t] }))];
     const body = [
@@ -666,6 +715,10 @@
         el("div", { className: "lbl", text: "承認者（段ごと）" }),
         el("div", { className: "hint", style: "margin-bottom:6px;", text: "1段目から順に承認します。同じ段に複数選ぶと、誰か1人の承認でその段は終わります。先頭の人（主）本人の申請は、その段のほかの人に回さず次の段へ進みます。右の欄で職種・部署を選ぶと、その社員だけが出ます。" }),
         levelsEditor),
+      el("div", { className: "as-field" },
+        el("div", { className: "lbl", text: "条件つきで足す段（残業事前申請だけ）" }),
+        el("div", { className: "hint", style: "margin-bottom:6px;", text: "条件に当たる申請だけ、上の段のあとにこの段を足します（上から順。当たる段はすべて通します）。当月の時間外は、申請日以外の日の勤怠の実績に今回の申請の時間を足して判定します。深夜は、予定が22時〜翌5時にかかる申請です。" }),
+        extrasEditor),
       field("割り当て先：部署", pickList("assignDepartmentIds", deptOptions(), r ? r.deptIds : [], "部署名で絞り込み"),
         "その部署と下の部署の社員に使われます（別のルートを割り当てた部署・社員を除く）。"),
       field("割り当て先：社員", pickList("assignStaffIds", staffOptions(), r ? r.staffIds : [], "社員ID・氏名で絞り込み"),

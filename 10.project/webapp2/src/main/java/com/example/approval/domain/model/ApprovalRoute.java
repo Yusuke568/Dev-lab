@@ -8,6 +8,7 @@ import java.util.List;
  * 承認ルートマスタの1件。
  * levels は段（1段目から）ごとの承認者の社員ID。同じ段に複数いれば、誰か1人の承認で次の段へ進む。
  * requestType が null なら残業事前申請・休暇申請の両方に使う。
+ * extraLevels は条件つきで足す段（残業事前申請だけ。当月の時間外が○時間以上・深夜など）。
  */
 public class ApprovalRoute {
 
@@ -17,15 +18,22 @@ public class ApprovalRoute {
     private final String note;
     private final List<List<Integer>> levels;
     private final List<RouteAssignment> assignments;
+    private final List<ExtraLevel> extraLevels;
 
     public ApprovalRoute(Integer id, String name, RequestType requestType, String note,
                          List<List<Integer>> levels, List<RouteAssignment> assignments) {
+        this(id, name, requestType, note, levels, List.of(), assignments);
+    }
+
+    public ApprovalRoute(Integer id, String name, RequestType requestType, String note,
+                         List<List<Integer>> levels, List<ExtraLevel> extraLevels, List<RouteAssignment> assignments) {
         this.id = id;
         this.name = name;
         this.requestType = requestType;
         this.note = note;
         this.levels = levels != null ? levels : new ArrayList<>();
         this.assignments = assignments != null ? assignments : new ArrayList<>();
+        this.extraLevels = extraLevels != null ? new ArrayList<>(extraLevels) : new ArrayList<>();
     }
 
     public Integer getId() { return id; }
@@ -34,6 +42,7 @@ public class ApprovalRoute {
     public String getNote() { return note; }
     public List<List<Integer>> getLevels() { return Collections.unmodifiableList(levels); }
     public List<RouteAssignment> getAssignments() { return Collections.unmodifiableList(assignments); }
+    public List<ExtraLevel> getExtraLevels() { return Collections.unmodifiableList(extraLevels); }
 
     /** この申請種別に使えるルートか（種別の指定がないルートはどちらにも使える） */
     public boolean appliesTo(RequestType type) {

@@ -2,6 +2,7 @@ package com.example.kintai.application.service;
 
 import com.example.approval.application.service.ApprovalWorkflowService;
 import com.example.approval.domain.model.ApprovalOutcome;
+import com.example.approval.domain.model.RequestFacts;
 import com.example.approval.domain.model.RequestType;
 import com.example.kintai.application.port.in.DecideOvertimeRequestUseCase;
 import com.example.kintai.application.port.in.GetMyOvertimeRequestsUseCase;
@@ -13,6 +14,8 @@ import com.example.kintai.domain.port.out.LoadAttendanceRecordPort;
 import com.example.kintai.domain.model.employee.EmployeeId;
 import com.example.kintai.domain.port.out.OvertimeRequestPort;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 
@@ -60,8 +63,12 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
             throw new IllegalStateException(
                     date + " はすでに申請済みです（" + existing.get().getStatusLabel() + "）。却下された場合のみ再申請できます。");
         }
+        // 承認ルートの条件つきの段（当月の時間外が○時間以上・深夜）を決めるための申請の中身
+        RequestFacts facts = new RequestFacts(
+                monthlyOvertimeMinutesExcept(id, date) + plannedOvertimeMinutes,
+                isNight(plannedStartTime, plannedEndTime));
         // 承認者がいないまま申請だけ残らないよう、保存前にルートが組めるか確かめる
-        approvalWorkflowService.checkRouteAvailable(RequestType.OVERTIME, employeeId, departmentId);
+        approvalWorkflowService.checkRouteAvailable(RequestType.OVERTIME, employeeId, departmentId, facts);
 
         int requestId;
         if (existing.isPresent()) {
@@ -71,7 +78,7 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
             requestId = overtimeRequestPort.insert(id, date, plannedOvertimeMinutes, plannedStartTime, plannedEndTime, reason);
         }
         overtimeRequestPort.updateDepartment(requestId, departmentId);
-        boolean autoApproved = approvalWorkflowService.startRoute(RequestType.OVERTIME, requestId, employeeId, departmentId);
+        boolean autoApproved = approvalWorkflowService.startRoute(RequestType.OVERTIME, requestId, employeeId, departmentId, facts);
         if (autoApproved) {
             overtimeRequestPort.decide(requestId, true, employeeId);
         }
@@ -85,6 +92,31 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
                 .map(AttendanceRecord::getOvertimeMinutes)
                 .orElse(0);
     }
+
+    /** 申請日と同じ月の、申請日以外の日の時間外の実績（分）。申請日の分は今回の申請の予定で数える */
+    private int monthlyOvertimeMinutesExcept(EmployeeId id, LocalDate date) {
+        if (loadAttendanceRecordPort == null) return 0;
+        return loadAttendanceRecordPort.loadByEmployeeAndMonth(id, YearMonth.from(date)).stream()
+                .filter(r -> !date.equals(r.getWorkDate()))
+                .mapToInt(AttendanceRecord::getOvertimeMinutes)
+                .sum();
+    }
+
+    /** 予定が深夜（22:00〜翌5:00）にかかるか：5時より前の出勤、22時より後の退勤、日をまたぐ退勤 */
+    static boolean isNight(String plannedStartTime, String plannedEndTime) {
+        if (plannedStartTime != null && !plannedStartTime.isBlank()
+                && LocalTime.parse(plannedStartTime).isBefore(NIGHT_END)) {
+            return true;
+        }
+        if (plannedEndTime == null || plannedEndTime.isBlank()) {
+            return false;
+        }
+        return OvertimeRequest.isPlannedEndNextDay(plannedStartTime, plannedEndTime)
+                || LocalTime.parse(plannedEndTime).isAfter(NIGHT_START);
+    }
+
+    private static final LocalTime NIGHT_START = LocalTime.of(22, 0);
+    private static final LocalTime NIGHT_END = LocalTime.of(5, 0);
 
     @Override
     public List<OvertimeRequest> getMyRequests(String employeeId) {

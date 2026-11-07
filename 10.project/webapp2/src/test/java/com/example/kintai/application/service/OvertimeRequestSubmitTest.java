@@ -40,6 +40,12 @@ class OvertimeRequestSubmitTest {
     private final List<String> decided = new ArrayList<>();
     /** 開発1課の承認者（300 なら 300 本人の申請は自動承認） */
     private Integer approverOfSection = 300;
+    /** 開発1課に割り当てた承認ルート（空なら組織図） */
+    private final List<com.example.approval.domain.model.ApprovalRoute> routes = new ArrayList<>();
+    /** 当月の勤怠 */
+    private final List<AttendanceRecord> monthRecords = new ArrayList<>();
+    /** replaceSteps で保存された段 */
+    private List<List<Integer>> savedLevels;
 
     private final OvertimeRequestPort requestPort = new OvertimeRequestPort() {
         @Override public Optional<OvertimeRequest> findByEmployeeAndDate(EmployeeId employeeId, LocalDate date) { return Optional.empty(); }
@@ -61,19 +67,19 @@ class OvertimeRequestSubmitTest {
         @Override public Integer findDepartmentIdOfStaff(int staffId) { return 2; }
         @Override public List<Integer> findDepartmentIdsOfStaff(int staffId) { return List.of(2); }
         @Override public Map<Integer, List<Integer>> findSubApprovers() { return Map.of(); }
-        @Override public List<com.example.approval.domain.model.ApprovalRoute> findApprovalRoutes() { return List.of(); }
+        @Override public List<com.example.approval.domain.model.ApprovalRoute> findApprovalRoutes() { return routes; }
         @Override public int findMaxLevels(RequestType requestType) { return 1; }
     };
 
     private final ApprovalStepPort steps = new ApprovalStepPort() {
-        @Override public void replaceSteps(RequestType requestType, int requestId, List<List<Integer>> levels) { }
+        @Override public void replaceSteps(RequestType requestType, int requestId, List<List<Integer>> levels) { savedLevels = levels; }
         @Override public List<ApprovalStep> findSteps(RequestType requestType, int requestId) { return List.of(); }
         @Override public Map<Integer, List<ApprovalStep>> findSteps(RequestType requestType, Collection<Integer> requestIds) { return Map.of(); }
         @Override public void recordDecision(RequestType requestType, int requestId, int level, int approverStaffId, String decision) { }
     };
 
     private final LoadAttendanceRecordPort attendance = new LoadAttendanceRecordPort() {
-        @Override public List<AttendanceRecord> loadByEmployeeAndMonth(EmployeeId employeeId, YearMonth yearMonth) { return List.of(); }
+        @Override public List<AttendanceRecord> loadByEmployeeAndMonth(EmployeeId employeeId, YearMonth yearMonth) { return monthRecords; }
         @Override public Optional<AttendanceRecord> loadByEmployeeAndDate(EmployeeId employeeId, LocalDate date) { return Optional.ofNullable(recorded); }
         @Override public long sumOvertimeMinutesByEmployeeAndYear(EmployeeId employeeId, int year) { return 0; }
     };
@@ -121,6 +127,61 @@ class OvertimeRequestSubmitTest {
     void 承認者がいる人の申請は承認待ちのまま() {
         assertFalse(service.submit("126", DAY, "09:00", "20:00", "障害対応"));
         assertTrue(decided.isEmpty());
+    }
+
+    // ---- 条件つきで足す段（当月の時間外・深夜） ----
+
+    private void routeWithExtras() {
+        routes.add(new com.example.approval.domain.model.ApprovalRoute(1, "開発1課", null, null,
+                List.of(List.of(300)),
+                List.of(new com.example.approval.domain.model.ExtraLevel("MONTHLY_OVERTIME", 1110, List.of(500)),
+                        new com.example.approval.domain.model.ExtraLevel("MONTHLY_OVERTIME", 2700, List.of(600)),
+                        new com.example.approval.domain.model.ExtraLevel("NIGHT", null, List.of(700))),
+                List.of(new com.example.approval.domain.model.RouteAssignment("DEPARTMENT", 2, null))));
+    }
+
+    private void recordOvertime(int day, int minutes) {
+        AttendanceRecord r = new AttendanceRecord(new EmployeeId("126"), DAY.withDayOfMonth(day), new WorkTime(LocalTime.of(9, 0), LocalTime.of(20, 0)));
+        r.setOvertimeMinutes(minutes);
+        monthRecords.add(r);
+    }
+
+    @Test
+    void 当月の時間外が18時間半に届かなければ段は足さない() {
+        routeWithExtras();
+        recordOvertime(1, 16 * 60);
+        service.submit("126", DAY, "09:00", "20:00", "障害対応"); // 16h ＋ 2h ＝ 18h
+
+        assertEquals(List.of(List.of(300)), savedLevels);
+    }
+
+    @Test
+    void 実績と今回の申請で18時間半以上なら追加の段を通す() {
+        routeWithExtras();
+        recordOvertime(1, 16 * 60);
+        recordOvertime(5, 10 * 60); // 申請日の実績は今回の申請の時間で数えるので足さない
+        service.submit("126", DAY, "09:00", "20:30", "障害対応"); // 16h ＋ 2.5h ＝ 18.5h
+
+        assertEquals(List.of(List.of(300), List.of(500)), savedLevels);
+    }
+
+    @Test
+    void 時間外45時間以上で深夜にかかれば追加の段をすべて通す() {
+        routeWithExtras();
+        recordOvertime(1, 44 * 60);
+        service.submit("126", DAY, "09:00", "23:00", "リリース対応"); // 44h ＋ 5h、22時より後
+
+        assertEquals(List.of(List.of(300), List.of(500), List.of(600), List.of(700)), savedLevels);
+    }
+
+    @Test
+    void 深夜の判定() {
+        assertTrue(OvertimeRequestService.isNight("09:00", "22:30"));
+        assertTrue(OvertimeRequestService.isNight("13:00", "01:00"));
+        assertTrue(OvertimeRequestService.isNight("04:30", "18:00"));
+        assertFalse(OvertimeRequestService.isNight("09:00", "22:00"));
+        assertFalse(OvertimeRequestService.isNight("05:00", "21:00"));
+        assertFalse(OvertimeRequestService.isNight(null, null));
     }
 
     @Test

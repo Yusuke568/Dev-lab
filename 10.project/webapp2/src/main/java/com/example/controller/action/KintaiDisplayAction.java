@@ -71,7 +71,7 @@ public class KintaiDisplayAction implements Action {
             throws ServletException, IOException {
         try {
             // 1. リクエストからコマンドを作�E
-            // 表示できるのは、本人の勤怠表と、承認権限を持つ人にとっての組織図上の配下の社員の勤怠表
+            // 表示できるのは、本人の勤怠表と、承認権限を持つ人にとっての組織図上の部下の社員の勤怠表
             HttpSession loginSession = request.getSession(false);
             String loginUser = loginSession != null ? (String) loginSession.getAttribute("loginUser") : null;
             if (loginUser == null) {
@@ -85,7 +85,7 @@ public class KintaiDisplayAction implements Action {
                 Set<String> features = (Set<String>) loginSession.getAttribute("features");
                 if (!attendanceAccessUseCase.canAccess(loginUser, features, idParam)) {
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                    request.setAttribute("errorMessage", "この社員の勤怠表を見る権限がありません。組織図で自分の配下にいる社員の勤怠表だけを表示できます。");
+                    request.setAttribute("errorMessage", "この社員の勤怠表を見る権限がありません。組織図で自分の部下の勤怠表だけを表示できます。");
                     return new View("/WEB-INF/view/error.jsp");
                 }
             }

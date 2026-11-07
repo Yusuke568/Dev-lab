@@ -55,7 +55,7 @@ public class AttendanceApprovalService implements GetPendingApprovalsUseCase, Ap
     @Override
     public void decide(String employeeId, LocalDate date, boolean approve, String decidedBy) {
         if (!loadPendingApprovalsPort.isManagedBy(employeeId, decidedBy)) {
-            throw new IllegalStateException("配下の社員の勤怠のみ承認・却下できます: " + employeeId);
+            throw new IllegalStateException("部下の勤怠のみ承認・却下できます: " + employeeId);
         }
         EmployeeId id = new EmployeeId(employeeId);
         AttendanceRecord record = loadAttendanceRecordPort.loadByEmployeeAndDate(id, date)

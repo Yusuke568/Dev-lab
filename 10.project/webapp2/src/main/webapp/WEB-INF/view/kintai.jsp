@@ -1294,7 +1294,7 @@ body.kintai-calendar-view .table-responsive {
 		            <c:url value="/subordinateAttendance.do" var="subordinateUrl">
 		                <c:param name="ym" value="${attendanceData.yearMonth}" />
 		            </c:url>
-		            <a href="${subordinateUrl}">配下の一覧に戻る</a>
+		            <a href="${subordinateUrl}">部下の一覧に戻る</a>
 		        </span>
 		    </div>
 	    </c:if>
@@ -1363,7 +1363,7 @@ body.kintai-calendar-view .table-responsive {
 					<a href="${pageContext.request.contextPath}/overtimeRequestMenu.do" class="btn btn-secondary">🕐 残業事前申請</a>
 				</c:if>
 				<c:if test="${proxyMode}">
-					<a href="${subordinateUrl}" class="btn btn-secondary">👥 配下の一覧</a>
+					<a href="${subordinateUrl}" class="btn btn-secondary">👥 部下の一覧</a>
 				</c:if>
 				<%-- スマホでは使う機会の少ない操作を「その他の操作」にまとめる。PC では最初から開いておく（下の script） --%>
 				<details class="more-actions" id="more-actions">

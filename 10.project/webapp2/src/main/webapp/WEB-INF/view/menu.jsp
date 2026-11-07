@@ -157,25 +157,25 @@
 				<div class="menu-card" style="cursor: pointer; height: 100%;" onclick="location.href='${pageContext.request.contextPath}/approvalList.do'">
 					<div class="icon">✅</div>
 					<h3>勤怠承認</h3>
-					<p>自分宛ての残業・休暇申請と、配下の社員の勤怠を承認・却下します。</p>
+					<p>自分宛ての残業・休暇申請と、部下の勤怠を承認・却下します。</p>
 				</div>
 			</div>
 
-			<!-- 配下へのお知らせカード -->
+			<!-- 部下へのお知らせカード -->
 			<div class="menu-card-wrapper">
 				<div class="menu-card" style="cursor: pointer; height: 100%;" onclick="location.href='${pageContext.request.contextPath}/noticeManage.do'">
 					<div class="icon">📢</div>
-					<h3>配下へのお知らせ</h3>
-					<p>組織図で自分の配下にいるメンバーの勤怠画面に、お知らせを出します。</p>
+					<h3>部下へのお知らせ</h3>
+					<p>組織図で自分の部下の勤怠画面に、お知らせを出します。</p>
 				</div>
 			</div>
 
-			<!-- 配下の勤怠表カード -->
+			<!-- 部下の勤怠表カード -->
 			<div class="menu-card-wrapper">
 				<div class="menu-card" style="cursor: pointer; height: 100%;" onclick="location.href='${pageContext.request.contextPath}/subordinateAttendance.do'">
 					<div class="icon">👥</div>
-					<h3>配下の勤怠表</h3>
-					<p>組織図で自分の配下にいる社員の勤怠表を参照・編集します。</p>
+					<h3>部下の勤怠表</h3>
+					<p>組織図で自分の部下の勤怠表を参照・編集します。</p>
 				</div>
 			</div>
 		</c:if>

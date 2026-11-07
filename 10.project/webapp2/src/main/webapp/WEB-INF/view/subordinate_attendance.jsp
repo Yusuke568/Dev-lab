@@ -6,7 +6,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>配下の勤怠表</title>
+<title>部下の勤怠表</title>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 <style>
 .subordinate-month {
@@ -51,7 +51,7 @@
 </head>
 <body>
 	<div class="card">
-		<h1>配下の勤怠表</h1>
+		<h1>部下の勤怠表</h1>
 		<p>組織図で自分が承認者になっている部署と、その下の部署に所属する社員の勤怠表を参照・編集できます。</p>
 
 		<form class="subordinate-month" method="get" action="${pageContext.request.contextPath}/subordinateAttendance.do">
@@ -64,7 +64,7 @@
 
 		<c:choose>
 			<c:when test="${empty subordinates}">
-				<p>配下の社員がいません。組織図（マスタ管理）で、自分が承認者の部署に社員が所属しているか確かめてください。</p>
+				<p>部下がいません。組織図（マスタ管理）で、自分が承認者の部署に社員が所属しているか確かめてください。</p>
 			</c:when>
 			<c:otherwise>
 				<ul class="subordinate-list">

@@ -6,7 +6,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>配下へのお知らせ</title>
+<title>部下へのお知らせ</title>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 <style>
 .notice-form textarea { min-height: 8rem; resize: vertical; }
@@ -25,7 +25,7 @@
 <body>
 <div class="card">
 	<div class="text-center page-title-container">
-		<h1>配下へのお知らせ</h1>
+		<h1>部下へのお知らせ</h1>
 		<p>組織図で自分が承認者になっている部署（とその下の部署）のメンバーに、お知らせを出します。メンバーの勤怠画面の上部にある「上長からのお知らせ」欄に表示されます。</p>
 	</div>
 

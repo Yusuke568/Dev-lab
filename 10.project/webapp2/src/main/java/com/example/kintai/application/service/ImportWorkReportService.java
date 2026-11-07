@@ -55,10 +55,16 @@ public class ImportWorkReportService implements ImportWorkReportUseCase {
 
         List<String> skipped = new ArrayList<>();
         int importedMonthCount = 0;
+        int savedDays = 0;
+        int savedWeeks = 0;
+        List<String> monthLabels = new ArrayList<>();
 
         for (ImportedMonthData month : months) {
             boolean monthHadData = !month.getDays().isEmpty() || !month.getWeeklyWorkReports().isEmpty();
             boolean monthHadFailure = false;
+            if (monthHadData) {
+                monthLabels.add(month.getYearMonth().toString());
+            }
 
             for (ImportedDayData day : month.getDays()) {
                 // 摘要欄の値を勤務区分に読み替える（有休 → 有給、代休 → 代休 など）。
@@ -87,6 +93,7 @@ public class ImportWorkReportService implements ImportWorkReportUseCase {
                 );
                 try {
                     updateAttendanceUseCase.updateAttendance(Collections.singletonList(command));
+                    savedDays++;
                 } catch (Exception e) {
                     monthHadFailure = true;
                     skipped.add(day.getDate() + ": " + rootMessage(e));
@@ -102,6 +109,7 @@ public class ImportWorkReportService implements ImportWorkReportUseCase {
                 ).replacingLeaderComment(parsed.getLeaderComment());
                 try {
                     saveWeeklyWorkReportsUseCase.saveWeeklyWorkReports(employeeId, Collections.singletonList(report));
+                    savedWeeks++;
                 } catch (Exception e) {
                     monthHadFailure = true;
                     skipped.add(month.getYearMonth() + "週(" + report.getWeekLabel() + "): " + rootMessage(e));
@@ -115,7 +123,7 @@ public class ImportWorkReportService implements ImportWorkReportUseCase {
             }
         }
 
-        return new ImportResult(importedMonthCount, skipped);
+        return new ImportResult(importedMonthCount, skipped, savedDays, savedWeeks, monthLabels);
     }
 
     private static boolean hasText(String value) {

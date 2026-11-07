@@ -64,7 +64,10 @@ public class WorkReportImportAction implements Action {
     }
 
     private String buildSuccessMessage(ImportResult result) {
-        return result.getImportedMonthCount() + "ヶ月分のデータを取り込みました。";
+        // どのシートを読み、勤怠・週次作業報告を何件保存できたかも出す（取り込めていないときに原因を絞るため）
+        String months = result.getMonths().isEmpty() ? "" : "（" + String.join("・", result.getMonths()) + "）";
+        return result.getImportedMonthCount() + "ヶ月分" + months + "のデータを取り込みました。勤怠 "
+                + result.getSavedDayCount() + "日・週次作業報告 " + result.getSavedWeekCount() + "週を保存しました。";
     }
 
     private String buildSkippedMessage(List<String> skipped) {

@@ -19,13 +19,30 @@ public interface ImportWorkReportUseCase {
     class ImportResult {
         private final int importedMonthCount;
         private final List<String> skipped;
+        /** 保存できた勤怠の日数 */
+        private final int savedDayCount;
+        /** 保存できた週次作業報告の週数 */
+        private final int savedWeekCount;
+        /** 取り込んだ月（例：2025-12, 2026-01, …）。画面に出して、どのシートを読んだか分かるようにする */
+        private final List<String> months;
 
         public ImportResult(int importedMonthCount, List<String> skipped) {
+            this(importedMonthCount, skipped, 0, 0, List.of());
+        }
+
+        public ImportResult(int importedMonthCount, List<String> skipped, int savedDayCount, int savedWeekCount,
+                            List<String> months) {
             this.importedMonthCount = importedMonthCount;
             this.skipped = skipped;
+            this.savedDayCount = savedDayCount;
+            this.savedWeekCount = savedWeekCount;
+            this.months = months;
         }
 
         public int getImportedMonthCount() { return importedMonthCount; }
         public List<String> getSkipped() { return skipped; }
+        public int getSavedDayCount() { return savedDayCount; }
+        public int getSavedWeekCount() { return savedWeekCount; }
+        public List<String> getMonths() { return months; }
     }
 }

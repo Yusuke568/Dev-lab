@@ -10,5 +10,6 @@ ON CONFLICT (staff_id, week_end_date) DO UPDATE SET
     progress_detail = EXCLUDED.progress_detail,
     personal_note = EXCLUDED.personal_note,
     problem_countermeasure = EXCLUDED.problem_countermeasure,
+    updated_at = CURRENT_TIMESTAMP,
     -- リーダー所見は作業報告書の取り込みのときだけ書き換える（11番目のパラメータが true のとき）
     leader_comment = CASE WHEN ? THEN EXCLUDED.leader_comment ELSE weekly_work_report.leader_comment END;

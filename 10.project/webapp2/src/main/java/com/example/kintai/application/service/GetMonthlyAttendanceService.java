@@ -9,6 +9,7 @@ import com.example.kintai.domain.port.out.LoadAttendanceRecordPort;
 import com.example.kintai.domain.port.out.LoadEmployeePort;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,6 +22,10 @@ public class GetMonthlyAttendanceService implements GetMonthlyAttendanceUseCase 
     private final LoadAttendanceRecordPort loadAttendanceRecordPort;
     private final LoadEmployeePort loadEmployeePort;
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+    /** 勤務区分「出勤」の ID（勤怠の自動作成で使うものと同じ） */
+    private static final int WORK_TYPE_ATTENDANCE = 1;
+    /** 今日（テストでは差し替える） */
+    java.util.function.Supplier<LocalDate> today = LocalDate::now;
 
     /**
      * 依存性をコンストラクタ経由で注入します！EI�E�、E
@@ -84,7 +89,7 @@ public class GetMonthlyAttendanceService implements GetMonthlyAttendanceUseCase 
                 endTime,
                 workHours,
                 record.getWorkDescription(),
-                record.getAbstractId(),
+                displayedWorkType(record, today.get()),
                 record.getCorrectionId(),
                 record.getCorrectionUsTime(),
                 record.getCorrectionMidTime(),
@@ -92,6 +97,25 @@ public class GetMonthlyAttendanceService implements GetMonthlyAttendanceUseCase 
                 record.getApprovalStatus(),
                 record.getOvertimeMinutes()
         );
+    }
+
+    /**
+     * 画面に出す勤務区分。まだ来ていない日で、時刻などを何も入れていない「出勤」は未設定（null）として出す。
+     * （以前は月を開いたときに平日をすべて「出勤」で作っていたため、その分を未設定に見せる）
+     */
+    static Integer displayedWorkType(AttendanceRecord record, LocalDate today) {
+        Integer abstractId = record.getAbstractId();
+        boolean untouchedFutureWorkday = abstractId != null && abstractId == WORK_TYPE_ATTENDANCE
+                && record.getWorkDate().isAfter(today)
+                && record.getStartTime() == null && record.getEndTime() == null
+                && record.getCorrectionId() == null && isZero(record.getCorrectionUsTime())
+                && isZero(record.getCorrectionMidTime()) && isZero(record.getIndirectTime())
+                && (record.getWorkDescription() == null || record.getWorkDescription().isBlank());
+        return untouchedFutureWorkday ? null : abstractId;
+    }
+
+    private static boolean isZero(Integer minutes) {
+        return minutes == null || minutes == 0;
     }
 
     /**

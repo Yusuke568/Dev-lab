@@ -186,6 +186,15 @@ public class MasterMaintenanceService implements MasterMaintenanceUseCase {
 
     @Override
     public void assignStaffRoutes(int staffId, Integer overtimeRouteId, Integer leaveRouteId) {
+        assignRoutes(RouteAssignment.STAFF, staffId, overtimeRouteId, leaveRouteId);
+    }
+
+    @Override
+    public void assignDepartmentRoutes(int departmentId, Integer overtimeRouteId, Integer leaveRouteId) {
+        assignRoutes(RouteAssignment.DEPARTMENT, departmentId, overtimeRouteId, leaveRouteId);
+    }
+
+    private void assignRoutes(String targetType, int targetId, Integer overtimeRouteId, Integer leaveRouteId) {
         List<ApprovalRoute> routes = masterPort.findApprovalRoutes();
         checkRouteFor(routes, overtimeRouteId, RequestType.OVERTIME);
         checkRouteFor(routes, leaveRouteId, RequestType.LEAVE);
@@ -197,7 +206,7 @@ public class MasterMaintenanceService implements MasterMaintenanceUseCase {
         if (leaveRouteId != null && !routeIds.contains(leaveRouteId)) {
             routeIds.add(leaveRouteId);
         }
-        masterPort.replaceStaffRouteAssignments(staffId, routeIds);
+        masterPort.replaceRouteAssignments(targetType, targetId, routeIds);
     }
 
     private static void checkRouteFor(List<ApprovalRoute> routes, Integer routeId, RequestType type) {

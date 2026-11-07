@@ -111,6 +111,19 @@ class ApprovalRouteResolverTest {
     }
 
     @Test
+    void ルートの段の先頭の人本人の申請は同じ段のほかの人に回さず次の段へ() {
+        // 開発部の標準ルート：1段目 課長(300)・副課長(310)、2段目 部長(200)
+        routes.add(route(1, "開発部 標準", null, List.of(List.of(300, 310), List.of(200)), dept(2)));
+
+        // 課長本人 → 副課長ではなく部長
+        assertEquals(List.of(List.of(200)), resolver.resolve(300, 3, RequestType.OVERTIME, org(2)).getLevels());
+        // 副課長本人 → 課長 → 部長
+        assertEquals(List.of(List.of(300), List.of(200)), resolver.resolve(310, 3, RequestType.OVERTIME, org(2)).getLevels());
+        // 一般社員 → 課長か副課長 → 部長
+        assertEquals(List.of(List.of(300, 310), List.of(200)), resolver.resolve(1, 3, RequestType.OVERTIME, org(2)).getLevels());
+    }
+
+    @Test
     void ルートの承認者が本人だけなら自動承認() {
         routes.add(route(1, "社長", null, List.of(List.of(100)), staff(100)));
 

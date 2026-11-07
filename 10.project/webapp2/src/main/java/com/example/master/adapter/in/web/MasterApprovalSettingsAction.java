@@ -21,14 +21,15 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 承認設定（組織図・承認段数・例外ルート・社員ごとの承認ルートを1画面で扱う）。
+ * 承認設定（承認ルート・部署と社員への割り当て・組織図を1画面で扱う）。
  *
  * 画面は JSP に埋め込んだ JSON を JavaScript（resources/js/master/approval-settings.js）が描く。
  * 保存はフォームの mode で振り分ける。
- *   staff  … 社員の主所属・兼任部署・例外ルート（組織図の権限）
+ *   staff  … 社員の主所属・兼任部署・社員個別の承認ルート（組織図の権限）
  *   dept   … 部署（名前・上位部署・承認者・副承認者・並び順）（組織図の権限）
  *   levels … 組織図でたどる段数（承認ルート設定の権限）
- *   route / routeDelete … 例外ルートの保存・削除（承認ルート設定の権限）
+ *   route / routeDelete … 承認ルートの保存・削除（承認ルート設定の権限）
+ *   deptRoutes … 部署に割り当てる承認ルート（承認ルート設定の権限）
  */
 public class MasterApprovalSettingsAction extends MasterActionSupport {
 
@@ -59,7 +60,7 @@ public class MasterApprovalSettingsAction extends MasterActionSupport {
         return "/WEB-INF/view/master/master_approval_settings.jsp";
     }
 
-    /** 画面に渡すデータ（社員・部署・段数・例外ルート・社員ごとのルート） */
+    /** 画面に渡すデータ（社員・部署・段数・承認ルート・社員ごとのルート） */
     Map<String, Object> buildData(HttpServletRequest request) {
         List<StaffOption> staff = masterUseCase.getStaffOptions();
         List<Department> departments = masterUseCase.getDepartmentTree();
@@ -197,12 +198,18 @@ public class MasterApprovalSettingsAction extends MasterActionSupport {
                 }
                 masterUseCase.saveApprovalRoute(id, request.getParameter("name"), type, request.getParameter("note"),
                         levels, assignments);
-                return id == null ? "例外ルートを追加しました。" : "例外ルートを更新しました。";
+                return id == null ? "承認ルートを追加しました。" : "承認ルートを更新しました。";
+            }
+            case "deptRoutes": {
+                require(request, Feature.MASTER_APPROVAL_ROUTE);
+                int departmentId = requiredInt(request, "departmentId");
+                masterUseCase.assignDepartmentRoutes(departmentId, optionalInt(request, "overtimeRouteId"), optionalInt(request, "leaveRouteId"));
+                return "部署の承認ルートを更新しました。";
             }
             case "routeDelete": {
                 require(request, Feature.MASTER_APPROVAL_ROUTE);
                 masterUseCase.deleteApprovalRoute(requiredInt(request, "id"));
-                return "例外ルートを削除しました。";
+                return "承認ルートを削除しました。";
             }
             default:
                 throw new IllegalArgumentException("保存する内容が分かりません。画面を読み込み直してください。");

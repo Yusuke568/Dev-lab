@@ -24,6 +24,7 @@ import java.util.Set;
  *   3. 組織図：申請の部署から上位部署へたどり、各部署の主承認者と副承認者をその段の候補者にする（承認ルート設定の段数まで）
  *
  * 共通の決まり
+ *   ・段の主承認者（組織図は部署の承認者、ルートは段の先頭の人）本人の申請は、その段を飛ばす（副承認者に回さない）
  *   ・候補者から申請者本人を除く。前の段に出てきた人も除く。候補者がいなくなった段は飛ばす
  *   ・全部の段が空になり、申請者本人が承認者の一人だった（最上位の承認者が自分で申請した）ときは自動承認
  *   ・それ以外で承認者がいなければ申請できない（例外）
@@ -70,7 +71,13 @@ public class ApprovalRouteResolver {
 
     private static ResolvedRoute fromRoute(ApprovalRoute route, int applicant, String how) {
         String source = "承認ルート「" + route.getName() + "」" + how;
-        return finish(route.getLevels(), applicant, source,
+        // 段の先頭の人をその段の主承認者とみなす。主承認者本人の申請は、同じ段のほかの人（副承認者・部下）に回さず次の段へ
+        List<List<Integer>> levels = new ArrayList<>();
+        for (List<Integer> level : route.getLevels()) {
+            boolean applicantIsMain = !level.isEmpty() && level.get(0) != null && level.get(0) == applicant;
+            levels.add(applicantIsMain ? List.of(applicant) : level);
+        }
+        return finish(levels, applicant, source,
                 "承認ルート「" + route.getName() + "」に、申請者以外の承認者が設定されていません。管理者に承認ルートの設定を依頼してください。");
     }
 

@@ -1,10 +1,11 @@
 /*
  * 承認設定画面（master_approval_settings.jsp）。
  *
- * サーバーが埋め込んだ JSON（#settings-data）から、3つのタブを描く。
- *   ・社員ごとの承認ルート … 全社員の実際の承認者と決まり方。所属・兼任・例外ルートをここで変える
- *   ・組織図・段数 … 部署の承認者・副承認者と、組織図でたどる段数
- *   ・例外ルート … 組織図どおりにしない社員・部署のためのルート
+ * サーバーが埋め込んだ JSON（#settings-data）から、4つのタブを描く。
+ *   ・承認ルート … 段ごとの承認者を決めたルート。部署か社員に割り当てて使う（ふだんの設定はここ）
+ *   ・部署ごとの割り当て … 部署に割り当てたルート（上位部署から引き継ぐものも表示）
+ *   ・社員ごとの確認 … 全社員の実際の承認者と決まり方。所属・兼任・社員個別のルートをここで変える
+ *   ・組織図（割り当てなし用） … ルートを割り当てていない社員は、部署の承認者・副承認者を段数までたどる
  * 保存はふつうのフォーム送信（POST /masterApprovalSettings.do、mode で振り分け）。
  * 文字はすべて textContent で入れる（HTML として解釈しない）。
  */
@@ -81,20 +82,51 @@
       return !!p.error || missingApprovers(p.levels).length > 0;
     });
   }
-  function staffRouteIds(staffId) {
-    return D.routes.filter((r) => r.staffIds.includes(staffId)).map((r) => r.id);
-  }
-  function usesException(staffId) {
+  /** 社員の申請がどれかの承認ルートで決まっていれば true（組織図で決まる人は false） */
+  function usesRoute(staffId) {
     return TYPES.some((t) => {
       const p = preview(t, staffId);
       return p.source && p.source.startsWith("承認ルート");
     });
   }
 
+  // ------------------------------------------------------------ ルートの割り当て
+
+  function appliesTo(r, t) {
+    return r.type === null || r.type === t;
+  }
+  /** 社員・部署に直接割り当てたルート（申請種別を指定したルートを優先。サーバーの決め方と同じ） */
+  function directRoute(kind, id, t) {
+    const list = D.routes.filter((r) => appliesTo(r, t) && (kind === "dept" ? r.deptIds : r.staffIds).includes(id));
+    list.sort((a, b) => ((a.type === null) - (b.type === null)) || (a.id - b.id));
+    return list[0] || null;
+  }
+  /** 部署に効くルート。なければ上位部署の割り当てをたどる → { route, from（割り当てた部署） } か null */
+  function deptRoute(deptId, t) {
+    const seen = new Set();
+    let cur = deptId;
+    while (cur !== null && cur !== undefined && !seen.has(cur)) {
+      seen.add(cur);
+      const r = directRoute("dept", cur, t);
+      if (r) return { route: r, from: cur };
+      const d = deptById.get(cur);
+      cur = d ? d.parentId : null;
+    }
+    return null;
+  }
+  /** ルートを使っている社員の数（実際の決まり方から数える） */
+  function routeUserCount(r) {
+    const key = "承認ルート「" + r.name + "」";
+    return D.staff.filter((s) => TYPES.some((t) => (preview(t, s.id).source || "").startsWith(key))).length;
+  }
+  function routeSteps(r) {
+    return r.levels.map(levelText).join(" → ");
+  }
+
   // ------------------------------------------------------------ 画面全体
 
   const state = {
-    tab: ["staff", "org", "routes"].includes(D.tab) ? D.tab : "staff",
+    tab: ["routes", "depts", "staff", "org"].includes(D.tab) ? D.tab : "routes",
     type: "OVERTIME",
     dept: "",
     q: "",
@@ -105,15 +137,16 @@
     root.innerHTML = "";
     root.appendChild(renderSummary());
     root.appendChild(renderTabs());
+    root.appendChild(renderRoutesPanel());
+    root.appendChild(renderDeptsPanel());
     root.appendChild(renderStaffPanel());
     root.appendChild(renderOrgPanel());
-    root.appendChild(renderRoutesPanel());
   }
 
   function renderSummary() {
     const problems = D.staff.filter((s) => staffHasProblem(s.id)).length;
-    const exceptions = D.staff.filter((s) => usesException(s.id)).length;
-    const deptsWithoutApprover = D.departments.filter((d) => d.approverId === null && d.subIds.length === 0).length;
+    const byOrg = D.staff.filter((s) => !usesRoute(s.id)).length;
+    const deptsWithoutRoute = D.departments.filter((d) => TYPES.some((t) => !deptRoute(d.id, t))).length;
     const go = (tab, only) => () => {
       state.tab = tab;
       if (only !== undefined) state.onlyProblems = only;
@@ -123,19 +156,19 @@
       el("button", { type: "button", className: "as-stat" + (problems ? " ng" : ""), onclick: go("staff", true) },
         el("div", { className: "num", text: String(problems) }),
         el("div", { className: "lbl", text: problems ? "承認者が決まらない・いない人に回る社員（押すと絞り込み）" : "承認者が決まらない社員はいません" })),
-      el("button", { type: "button", className: "as-stat", onclick: go("staff", false) },
-        el("div", { className: "num", text: String(D.staff.length) }),
-        el("div", { className: "lbl", text: "社員（うち例外ルート " + exceptions + "人）" })),
-      el("button", { type: "button", className: "as-stat" + (deptsWithoutApprover ? " ng" : ""), onclick: go("org") },
-        el("div", { className: "num", text: String(D.departments.length) }),
-        el("div", { className: "lbl", text: "部署" + (deptsWithoutApprover ? "（承認者なし " + deptsWithoutApprover + "部署）" : "") })),
       el("button", { type: "button", className: "as-stat", onclick: go("routes") },
         el("div", { className: "num", text: String(D.routes.length) }),
-        el("div", { className: "lbl", text: "例外ルート" })));
+        el("div", { className: "lbl", text: "承認ルート" })),
+      el("button", { type: "button", className: "as-stat", onclick: go("depts") },
+        el("div", { className: "num", text: String(D.departments.length) }),
+        el("div", { className: "lbl", text: "部署" + (deptsWithoutRoute ? "（ルート未割り当て " + deptsWithoutRoute + "部署 → 組織図で決まる）" : "（すべてルート割り当て済み）") })),
+      el("button", { type: "button", className: "as-stat", onclick: go("staff", false) },
+        el("div", { className: "num", text: String(D.staff.length) }),
+        el("div", { className: "lbl", text: "社員" + (byOrg ? "（組織図で決まる " + byOrg + "人）" : "（全員ルートで決まる）") })));
   }
 
   function renderTabs() {
-    const tabs = [["staff", "社員ごとの承認ルート"], ["org", "組織図・段数"], ["routes", "例外ルート"]];
+    const tabs = [["routes", "承認ルート"], ["depts", "部署ごとの割り当て"], ["staff", "社員ごとの確認"], ["org", "組織図（割り当てなし用）"]];
     return el("div", { className: "as-tabs", role: "tablist" },
       tabs.map(([key, label]) => el("button", {
         type: "button", role: "tab", id: "tab-" + key, "aria-controls": "panel-" + key,
@@ -224,7 +257,7 @@
 
       let how;
       if (p.error) how = el("span", { className: "as-tag ng", text: "決まらない" });
-      else if (p.source && p.source.startsWith("承認ルート")) how = el("span", { className: "as-tag ex", text: p.source.replace("承認ルート", "例外：") });
+      else if (p.source && p.source.startsWith("承認ルート")) how = el("span", { className: "as-tag ex", text: p.source.replace("承認ルート", "ルート") });
       else if (p.auto) how = el("span", { className: "as-tag auto", text: "自動承認" });
       else how = el("span", { className: "as-tag org", text: "組織図" });
 
@@ -261,7 +294,7 @@
       D.canRoute ? el("button", { type: "submit", className: "btn btn-primary", text: "段数を保存" }) : null);
     panel.appendChild(el("div", { className: "as-box" },
       el("h3", { style: "margin-top:0;", text: "組織図でたどる段数" }),
-      el("p", { className: "as-lead", style: "margin-top:0;", text: "例外ルートのない社員は、所属部署の承認者を1段目として、上位部署の承認者へこの段数まで回ります（承認者のいない部署・本人は飛ばします）。" }),
+      el("p", { className: "as-lead", style: "margin-top:0;", text: "承認ルートを割り当てていない社員は、所属部署の承認者を1段目として、上位部署の承認者へこの段数まで回ります（承認者のいない部署・本人は飛ばします）。" }),
       levelsForm));
 
     // 部署
@@ -291,16 +324,49 @@
     return panel;
   }
 
-  // ------------------------------------------------------------ タブ3：例外ルート
+  // ------------------------------------------------------------ タブ：部署ごとの割り当て
+
+  function renderDeptsPanel() {
+    const panel = el("section", { className: "as-panel", id: "panel-depts", role: "tabpanel", "aria-labelledby": "tab-depts" });
+    panel.hidden = state.tab !== "depts";
+    panel.appendChild(el("p", { className: "as-lead", text:
+      "部署に承認ルートを割り当てると、その部署と下の部署の社員の申請はそのルートで回ります。下の部署に別のルートを割り当てれば、そちらが優先されます。どこにも割り当てがない部署は組織図で決まります。" }));
+    const cell = (d, t) => {
+      const hit = deptRoute(d.id, t);
+      if (!hit) return el("span", { className: "as-tag org", text: "組織図で決まる" });
+      const direct = hit.from === d.id;
+      return el("div", {},
+        direct ? el("strong", { text: hit.route.name }) : el("span", { className: "as-muted", text: "↑ " + hit.route.name + "（" + deptName(hit.from) + "から）" }),
+        el("div", { className: "as-muted", style: "font-size:0.8rem;", text: routeSteps(hit.route) }));
+    };
+    const tbody = el("tbody", {});
+    D.departments.forEach((d) => {
+      tbody.appendChild(el("tr", {},
+        el("td", { "data-label": "部署", className: "as-who" },
+          el("span", { className: "as-indent", text: "　".repeat(d.depth || 0) + (d.depth ? "└ " : "") }),
+          el("strong", { text: d.name })),
+        TYPES.map((t) => el("td", { "data-label": D.requestTypes[t] }, cell(d, t))),
+        el("td", { "data-label": "所属人数", text: d.memberCount + "人" }),
+        el("td", { className: "as-actions" },
+          D.canRoute ? el("button", { type: "button", className: "btn btn-secondary", onclick: () => openDeptRouteDialog(d) }, "ルートを選ぶ") : null)));
+    });
+    panel.appendChild(el("div", { style: "overflow-x:auto;" }, el("table", { className: "as-table" },
+      el("thead", {}, el("tr", {}, el("th", { text: "部署" }), TYPES.map((t) => el("th", { text: D.requestTypes[t] })),
+        el("th", { text: "所属人数" }), el("th", {}))),
+      tbody)));
+    return panel;
+  }
+
+  // ------------------------------------------------------------ タブ：承認ルート
 
   function renderRoutesPanel() {
     const panel = el("section", { className: "as-panel", id: "panel-routes", role: "tabpanel", "aria-labelledby": "tab-routes" });
     panel.hidden = state.tab !== "routes";
     panel.appendChild(el("p", { className: "as-lead", text:
-      "組織図どおりにしたくない社員・部署（派遣先の責任者に承認してもらう、など）のためのルートです。社員への割り当てが部署への割り当てより優先され、部署への割り当ては下の部署にも効きます。" }));
+      "段ごとの承認者を決めたルートを作り、部署か社員に割り当てます。ふだんは部署に割り当て、派遣先常駐・代理などイレギュラーな人だけ社員に割り当てます（社員への割り当てが優先）。部署への割り当ては下の部署にも効きます。" }));
     panel.appendChild(el("div", { className: "as-toolbar" },
-      el("h3", { text: "例外ルート" }),
-      D.canRoute ? el("button", { type: "button", className: "btn btn-primary", onclick: () => openRouteDialog(null) }, "＋ 例外ルートを作る") : null));
+      el("h3", { text: "承認ルート" }),
+      D.canRoute ? el("button", { type: "button", className: "btn btn-primary", onclick: () => openRouteDialog(null) }, "＋ 承認ルートを作る") : null));
 
     if (D.routes.length === 0) {
       panel.appendChild(el("p", { className: "as-muted", text: "まだありません。全員が組織図で決まります。" }));
@@ -320,18 +386,19 @@
           el("ol", { className: "as-route" }, r.levels.map((lv, i) => el("li", {}, (i + 1) + ". " + levelText(lv)))),
           missing.length ? el("div", { className: "as-error", text: "⚠ 社員マスタにいない承認者がいます" }) : null),
         el("td", { "data-label": "割り当て先" }, targets.length ? targets : el("span", { className: "as-error", text: "未割り当て（使われていません）" })),
+        el("td", { "data-label": "使っている社員", text: routeUserCount(r) + "人" }),
         el("td", { className: "as-actions" },
           D.canRoute ? [
             el("button", { type: "button", className: "btn btn-secondary", onclick: () => openRouteDialog(r) }, "編集"), " ",
             el("form", { method: "post", action: ACTION, style: "display:inline;",
-              onsubmit: (e) => { if (!confirm("例外ルート「" + r.name + "」を削除しますか？\n割り当てていた社員・部署は、組織図で決まるようになります。")) e.preventDefault(); } },
+              onsubmit: (e) => { if (!confirm("承認ルート「" + r.name + "」を削除しますか？\n割り当てていた社員・部署は、上位部署の割り当てか組織図で決まるようになります。")) e.preventDefault(); } },
               hidden("mode", "routeDelete"), hidden("tab", "routes"), hidden("id", r.id),
               el("button", { type: "submit", className: "btn btn-danger" }, "削除"))
           ] : null)));
     });
     panel.appendChild(el("div", { style: "overflow-x:auto;" }, el("table", { className: "as-table" },
       el("thead", {}, el("tr", {}, el("th", { text: "ルート名" }), el("th", { text: "申請種別" }), el("th", { text: "承認者（段ごと）" }),
-        el("th", { text: "割り当て先" }), el("th", {}))),
+        el("th", { text: "割り当て先" }), el("th", { text: "使っている社員" }), el("th", {}))),
       tbody)));
     return panel;
   }
@@ -395,27 +462,59 @@
     return form;
   }
 
-  /** 社員：主所属・兼任・例外ルート */
+  /**
+   * 残業・休暇それぞれのルートを選ぶ欄。currentFor(t) は今の割り当て。
+   * 種別「両方」のルートは割り当て1件で両方の申請に効くので、もう一方が「なし」なら同じルートを入れて見せる。
+   */
+  function routeSelectFields(label, currentFor, noneLabel) {
+    const selects = {};
+    const fields = TYPES.map((t) => {
+      const usable = D.routes.filter((r) => appliesTo(r, t));
+      const cur = currentFor(t);
+      const sel = selectEl(t === "OVERTIME" ? "overtimeRouteId" : "leaveRouteId",
+        [{ value: null, label: noneLabel }, ...usable.map((r) => ({ value: r.id, label: r.name + (r.type === null ? "（残業・休暇の両方）" : "") }))],
+        cur ? cur.id : null, "dlg-route-" + t);
+      selects[t] = sel;
+      return field(D.requestTypes[t] + "の" + label, sel, null, "dlg-route-" + t);
+    });
+    TYPES.forEach((t) => selects[t].addEventListener("change", () => {
+      const r = routeById.get(Number(selects[t].value));
+      if (r && r.type === null) TYPES.filter((o) => o !== t).forEach((o) => { if (selects[o].value === "") selects[o].value = String(r.id); });
+    }));
+    fields.push(el("div", { className: "hint", style: "font-size:0.75rem;color:#718096;margin:-6px 0 12px;",
+      text: "「両方」のルートは、もう一方の申請にも使われます（もう一方で別のルートを選べば、そちらが優先されます）。" }));
+    return fields;
+  }
+
+  /** 社員：主所属・兼任・社員個別の承認ルート */
   function openStaffDialog(s) {
     const deptChoices = [{ value: null, label: "（未所属）" }, ...D.departments.map((d) => ({ value: d.id, label: deptOptionLabel(d) }))];
-    const current = staffRouteIds(s.id);
     const body = [
       field("所属部署（主）", selectEl("departmentId", deptChoices, s.deptId, "dlg-dept"), null, "dlg-dept"),
       field("兼任部署", pickList("concurrentDepartmentIds", deptOptions(), s.concurrent, "部署名で絞り込み"),
         "兼任している部署を選ぶと、申請のときに「どの部署の業務か」を選べるようになります。")
     ];
     if (D.canRoute) {
-      TYPES.forEach((t) => {
-        const usable = D.routes.filter((r) => r.type === null || r.type === t);
-        const sel = current.find((id) => usable.some((r) => r.id === id)) ?? null;
-        body.push(field(D.requestTypes[t] + "の例外ルート",
-          selectEl(t === "OVERTIME" ? "overtimeRouteId" : "leaveRouteId",
-            [{ value: null, label: "なし（部署の割り当て・組織図で決まる）" }, ...usable.map((r) => ({ value: r.id, label: r.name }))],
-            sel, "dlg-route-" + t),
-          null, "dlg-route-" + t));
-      });
+      body.push(el("div", { className: "as-field" }, el("div", { className: "lbl", text: "社員個別の承認ルート（部署の割り当てより優先。派遣先常駐・代理などイレギュラーな人だけ）" })));
+      body.push(...routeSelectFields("ルート", (t) => directRoute("staff", s.id, t), "なし（部署の割り当て・組織図で決まる）"));
     }
     openDialog(s.name + "（ID " + s.id + "）", { mode: "staff", tab: "staff", staffId: s.id }, body, "保存");
+  }
+
+  /** 部署：割り当てる承認ルート */
+  function openDeptRouteDialog(d) {
+    const parentHit = (t) => {
+      const p = d.parentId !== null && d.parentId !== undefined ? deptRoute(d.parentId, t) : null;
+      return p ? "上位部署の「" + p.route.name + "」を使う" : "組織図で決める";
+    };
+    const body = [
+      el("p", { className: "as-lead", style: "margin-top:0;", text: "この部署と下の部署の社員の申請に使うルートを選びます。下の部署・社員に別のルートを割り当てていれば、そちらが優先されます。" }),
+      ...routeSelectFields("ルート", (t) => directRoute("dept", d.id, t), "なし（" + parentHit("OVERTIME") + "）")
+    ];
+    // 「なし」の説明は申請種別ごとに違うので、休暇側を直す
+    const leaveNone = body.find((n) => n.querySelector && n.querySelector("#dlg-route-LEAVE"));
+    if (leaveNone) leaveNone.querySelector("option").textContent = "なし（" + parentHit("LEAVE") + "）";
+    openDialog("部署の承認ルート：" + d.name, { mode: "deptRoutes", tab: "depts", departmentId: d.id }, body, "保存");
   }
 
   /** 部署：名前・上位部署・承認者・副承認者・並び順 */
@@ -484,9 +583,18 @@
       const redraw = () => { box.children[i].replaceWith(drawLevel(i)); syncInputs(); };
 
       // 選択済
+      // 先頭の人がその段の主承認者（主承認者本人の申請は、この段のほかの人に回さず次の段へ進む）
       const selList = el("ul", { className: "as-dl-list" },
-        lv.length ? lv.map((id) => person(id, () => { lv.splice(lv.indexOf(id), 1); redraw(); }, "クリックで外す"))
-          : el("li", { className: "as-dl-empty", text: "右の欄から承認者を選んでください" }));
+        lv.length ? lv.map((id, k) => {
+          const li = person(id, () => { lv.splice(lv.indexOf(id), 1); redraw(); }, "クリックで外す");
+          if (lv.length > 1) {
+            li.classList.add("as-dl-sel");
+            li.appendChild(k === 0 ? el("span", { className: "as-dl-main", title: "この人の申請は、この段のほかの人に回さず次の段へ進みます", text: "主" })
+              : el("button", { type: "button", className: "as-dl-link as-dl-tomain", "aria-label": staffName(id) + "を主承認者にする",
+                onclick: () => { lv.splice(k, 1); lv.unshift(id); redraw(); } }, "主にする"));
+          }
+          return li;
+        }) : el("li", { className: "as-dl-empty", text: "右の欄から承認者を選んでください" }));
       const selBox = el("div", { className: "as-dl-box" },
         el("div", { className: "as-dl-head" }, el("span", { text: "選択済（" + lv.length + "人）" }),
           el("button", { type: "button", className: "as-dl-link", onclick: () => { lv.length = 0; redraw(); } }, "全て削除")),
@@ -544,7 +652,7 @@
     return el("div", {}, box, add, inputs);
   }
 
-  /** 例外ルート：名前・種別・段ごとの承認者・割り当て先 */
+  /** 承認ルート：名前・種別・段ごとの承認者・割り当て先 */
   function openRouteDialog(r) {
     const levelsEditor = routeLevelsEditor(r ? r.levels : null);
 
@@ -556,14 +664,14 @@
       field("メモ（任意）", el("input", { type: "text", name: "note", id: "dlg-rnote", className: "form-input", maxlength: "255", value: r && r.note ? r.note : "" }), null, "dlg-rnote"),
       el("div", { className: "as-field" },
         el("div", { className: "lbl", text: "承認者（段ごと）" }),
-        el("div", { className: "hint", style: "margin-bottom:6px;", text: "1段目から順に承認します。同じ段に複数選ぶと、誰か1人の承認でその段は終わります。右の欄で職種・部署を選ぶと、その社員だけが出ます。" }),
+        el("div", { className: "hint", style: "margin-bottom:6px;", text: "1段目から順に承認します。同じ段に複数選ぶと、誰か1人の承認でその段は終わります。先頭の人（主）本人の申請は、その段のほかの人に回さず次の段へ進みます。右の欄で職種・部署を選ぶと、その社員だけが出ます。" }),
         levelsEditor),
       field("割り当て先：部署", pickList("assignDepartmentIds", deptOptions(), r ? r.deptIds : [], "部署名で絞り込み"),
         "その部署と下の部署の社員に使われます（別のルートを割り当てた部署・社員を除く）。"),
       field("割り当て先：社員", pickList("assignStaffIds", staffOptions(), r ? r.staffIds : [], "社員ID・氏名で絞り込み"),
         "社員への割り当ては、部署への割り当てより優先されます。")
     ];
-    const form = openDialog(r ? "例外ルートを編集：" + r.name : "例外ルートを作る", { mode: "route", tab: "routes", id: r ? r.id : "" }, body, r ? "保存" : "作る");
+    const form = openDialog(r ? "承認ルートを編集：" + r.name : "承認ルートを作る", { mode: "route", tab: "routes", id: r ? r.id : "" }, body, r ? "保存" : "作る");
     form.parentElement.classList.add("wide");
   }
 

@@ -53,8 +53,11 @@ public interface MasterPort {
     /** @return 保存したルートの ID。段と割り当て先はまるごと置き換える */
     int saveApprovalRoute(ApprovalRoute route);
     void deleteApprovalRoute(int id);
-    /** 社員への割り当てを、routeIds のルートだけにする（ほかのルートへの割り当ては外す） */
-    void replaceStaffRouteAssignments(int staffId, List<Integer> routeIds);
+    /**
+     * 社員・部署への割り当てを、routeIds のルートだけにする（ほかのルートへの割り当ては外す）。
+     * targetType は RouteAssignment.STAFF か RouteAssignment.DEPARTMENT
+     */
+    void replaceRouteAssignments(String targetType, int targetId, List<Integer> routeIds);
 
     // --- 適用マスタ ---
     List<WorkType> findAbstracts();

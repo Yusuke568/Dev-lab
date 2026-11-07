@@ -53,11 +53,17 @@ public interface MasterMaintenanceUseCase {
                            List<List<Integer>> levels, List<RouteAssignment> assignments);
     void deleteApprovalRoute(int id);
     /**
-     * 社員の例外ルートを決める（承認設定画面の社員一覧から）。
+     * 社員個別の承認ルートを決める（承認設定画面の社員一覧から）。
      * overtimeRouteId・leaveRouteId は残業・休暇に使うルート（null なら割り当てなし＝部署の割り当てか組織図で決まる）。
      * 選んだルートがその申請種別に使えなければエラー。
      */
     void assignStaffRoutes(int staffId, Integer overtimeRouteId, Integer leaveRouteId);
+
+    /**
+     * 部署の承認ルートを決める（その部署と下の部署の社員に使われる）。
+     * null なら割り当てなし（上位部署の割り当てか組織図で決まる）。
+     */
+    void assignDepartmentRoutes(int departmentId, Integer overtimeRouteId, Integer leaveRouteId);
 
     List<WorkType> getAbstracts();
     /**

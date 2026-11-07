@@ -108,6 +108,10 @@
 .as-dl-item:hover, .as-dl-group:hover { background: #ebf4ff; }
 .as-dl-group[aria-pressed="true"] { background: #fff; font-weight: 700; color: #1a3d6d; }
 .as-dl-icon { flex: none; font-size: 0.8rem; }
+.as-dl-sel { display: flex; align-items: center; gap: 4px; padding-right: 6px; }
+.as-dl-sel .as-dl-item { flex: 1; min-width: 0; }
+.as-dl-main { flex: none; padding: 0 6px; border-radius: 999px; background: #1a3d6d; color: #fff; font-size: 0.7rem; font-weight: 700; }
+.as-dl-tomain { flex: none; font-size: 0.75rem; }
 .as-dl-empty { padding: 6px 8px; font-size: 0.8rem; color: #a0aec0; }
 @media (max-width: 768px) {
     /* 表をカードにする */
@@ -139,7 +143,7 @@
 	<div class="text-center page-title-container">
 		<h1>承認設定</h1>
 		<p class="as-lead">残業事前申請・休暇申請を「誰が承認するか」をまとめて設定します。<br>
-		ふだんは<strong>組織図</strong>（部署の承認者・副承認者を、上位部署へ決めた段数までたどる）で決まり、組織図どおりにしたくない社員・部署だけ<strong>例外ルート</strong>を割り当てます。</p>
+		<strong>承認ルート</strong>（段ごとの承認者）を作り、<strong>部署</strong>か<strong>社員</strong>に割り当てます。ふだんは部署に、イレギュラーな人だけ社員に割り当てます。<br>どこにも割り当てがない社員は<strong>組織図</strong>（部署の承認者を上位部署へ段数までたどる）で決まります。</p>
 	</div>
 
 	<%@ include file="_header.jspf" %>

@@ -41,11 +41,11 @@
 			<p>役職を追加し、どの権限グループに置くかを設定します。</p>
 		</a>
 		</c:if>
-		<%-- 組織図・段数・例外ルート・社員ごとの承認ルートは「承認設定」1画面にまとめた --%>
+		<%-- 承認ルート・部署と社員への割り当て・組織図は「承認設定」1画面にまとめた --%>
 		<c:if test="${sessionScope.can.MASTER_DEPARTMENT or sessionScope.can.MASTER_APPROVAL_ROUTE}">
 		<a class="master-link" href="${pageContext.request.contextPath}/masterApprovalSettings.do">
 			<h3>🏢 承認設定（組織図・承認ルート）</h3>
-			<p>社員ごとに「誰が承認するか」を一覧で確認し、組織図（部署・承認者・副承認者・兼任）、段数、例外ルートをまとめて設定します。</p>
+			<p>承認ルートを作って部署・社員に割り当て、社員ごとに「誰が承認するか」を一覧で確認します。割り当てのない人用の組織図（部署・承認者・兼任）もここで設定します。</p>
 		</a>
 		</c:if>
 		<c:if test="${sessionScope.can.MASTER_ABSTRACT}">

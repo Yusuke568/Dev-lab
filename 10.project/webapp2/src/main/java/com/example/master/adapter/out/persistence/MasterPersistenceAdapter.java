@@ -600,7 +600,7 @@ public class MasterPersistenceAdapter implements MasterPort, OrganizationPort {
                 }
             }
             try (PreparedStatement ps = con.prepareStatement(
-                    "SELECT route_id, level, staff_id FROM approval_route_step ORDER BY route_id, level, staff_id");
+                    "SELECT route_id, level, staff_id FROM approval_route_step ORDER BY route_id, level, sort_order, staff_id");
                  ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     steps.computeIfAbsent(rs.getInt("route_id"), k -> new java.util.TreeMap<>())
@@ -691,13 +691,15 @@ public class MasterPersistenceAdapter implements MasterPort, OrganizationPort {
                 ps.executeUpdate();
             }
             try (PreparedStatement ps = con.prepareStatement(
-                    "INSERT INTO approval_route_step (route_id, level, staff_id) VALUES (?, ?, ?)")) {
+                    "INSERT INTO approval_route_step (route_id, level, staff_id, sort_order) VALUES (?, ?, ?, ?)")) {
                 int level = 1;
                 for (List<Integer> approvers : route.getLevels()) {
+                    int order = 0;
                     for (Integer staffId : approvers) {
                         ps.setInt(1, id);
                         ps.setInt(2, level);
                         ps.setInt(3, staffId);
+                        ps.setInt(4, order++); // 先頭がその段の主承認者
                         ps.addBatch();
                     }
                     level++;
@@ -723,24 +725,36 @@ public class MasterPersistenceAdapter implements MasterPort, OrganizationPort {
     }
 
     @Override
-    public void replaceStaffRouteAssignments(int staffId, List<Integer> routeIds) {
+    public void replaceRouteAssignments(String targetType, int targetId, List<Integer> routeIds) {
         try (Connection con = ConnectionBase.getConnection()) {
-            try (PreparedStatement ps = con.prepareStatement(
-                    "DELETE FROM approval_route_assignment WHERE target_type = 'STAFF' AND target_id = ?")) {
-                ps.setInt(1, staffId);
-                ps.executeUpdate();
-            }
-            try (PreparedStatement ps = con.prepareStatement(
-                    "INSERT INTO approval_route_assignment (route_id, target_type, target_id) VALUES (?, 'STAFF', ?)")) {
-                for (Integer routeId : routeIds) {
-                    ps.setInt(1, routeId);
-                    ps.setInt(2, staffId);
-                    ps.addBatch();
+            boolean autoCommit = con.getAutoCommit();
+            con.setAutoCommit(false);
+            try {
+                try (PreparedStatement ps = con.prepareStatement(
+                        "DELETE FROM approval_route_assignment WHERE target_type = ? AND target_id = ?")) {
+                    ps.setString(1, targetType);
+                    ps.setInt(2, targetId);
+                    ps.executeUpdate();
                 }
-                ps.executeBatch();
+                try (PreparedStatement ps = con.prepareStatement(
+                        "INSERT INTO approval_route_assignment (route_id, target_type, target_id) VALUES (?, ?, ?)")) {
+                    for (Integer routeId : routeIds) {
+                        ps.setInt(1, routeId);
+                        ps.setString(2, targetType);
+                        ps.setInt(3, targetId);
+                        ps.addBatch();
+                    }
+                    ps.executeBatch();
+                }
+                con.commit();
+            } catch (Exception e) {
+                con.rollback();
+                throw e;
+            } finally {
+                con.setAutoCommit(autoCommit);
             }
         } catch (Exception e) {
-            throw new RuntimeException("Failed to assign approval routes to staff: " + staffId, e);
+            throw new RuntimeException("Failed to assign approval routes: " + targetType + " " + targetId, e);
         }
     }
 

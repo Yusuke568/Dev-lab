@@ -343,6 +343,7 @@ CREATE TABLE IF NOT EXISTS approval_route_step (
     route_id  integer NOT NULL REFERENCES approval_route (id) ON DELETE CASCADE,
     level     integer NOT NULL CHECK (level >= 1),
     staff_id  integer NOT NULL,
+    sort_order integer NOT NULL DEFAULT 0,  -- 段の中の並び。先頭がその段の主承認者
     PRIMARY KEY (route_id, level, staff_id)
 );
 

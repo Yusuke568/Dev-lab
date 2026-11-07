@@ -1792,8 +1792,10 @@ body.kintai-calendar-view .table-responsive {
 					<section class="wwr-section">
 						<h5 class="wwr-heading">本人所感</h5>
 						<div class="form-group">
-							<label class="form-label">本人所感 <span class="wwr-limit">1行15文字・10行まで</span></label>
-							<textarea class="form-input wwr-text wwr-note" rows="10" data-max-lines="10" data-max-chars="15"><c:out value="${week.personalNote}" /></textarea>
+							<label class="form-label">本人所感 <span class="wwr-limit">1行15文字・10列まで（15文字を超えると自動で改行します）</span></label>
+							<%-- data-auto-wrap：15文字を超えた分を自動で次の列へ送る。data-line-unit：件数の数え方（列） --%>
+							<textarea class="form-input wwr-text wwr-note" rows="10" data-max-lines="10" data-max-chars="15"
+								data-auto-wrap="true" data-line-unit="列"><c:out value="${week.personalNote}" /></textarea>
 							<div class="wwr-counter" aria-live="polite"></div>
 						</div>
 						<p class="wwr-limit">リーダー所見は、Excel出力後にリーダーが記入します。</p>
@@ -1845,6 +1847,7 @@ body.kintai-calendar-view .table-responsive {
 	function updateWeeklyCounter(textarea) {
 	    const maxLines = Number(textarea.dataset.maxLines);
 	    const maxChars = Number(textarea.dataset.maxChars);
+	    const unit = textarea.dataset.lineUnit || "行";
 	    const lines = textarea.value === "" ? [] : textarea.value.split(/\r?\n/);
 	    const longLines = [];
 	    lines.forEach((line, i) => {
@@ -1854,14 +1857,73 @@ body.kintai-calendar-view .table-responsive {
 	    const over = tooManyLines || longLines.length > 0;
 	    const counter = textarea.parentElement.querySelector(".wwr-counter");
 	    if (counter) {
-	        let text = lines.length + " / " + maxLines + "行";
-	        if (tooManyLines) text += "：" + (maxLines + 1) + "行目以降はExcelに出力されません";
-	        if (longLines.length > 0) text += "：" + longLines.join("・") + "行目が" + maxChars + "文字を超えています";
+	        let text = lines.length + " / " + maxLines + unit;
+	        if (tooManyLines) text += "：" + (maxLines + 1) + unit + "目以降はExcelに出力されません";
+	        if (longLines.length > 0) text += "：" + longLines.join("・") + unit + "目が" + maxChars + "文字を超えています";
 	        counter.textContent = text;
 	        counter.classList.toggle("over", over);
 	    }
 	    textarea.classList.toggle("over", over);
 	    return over;
+	}
+
+	/**
+	 * 1行の文字数の上限（data-max-chars）を超えた分を、自動で次の行へ送る（改行を入れる）。
+	 * 入力中の位置（カーソル）は、改行を足した後も同じ文字の後ろに保つ。
+	 * 日本語入力の変換中は動かさない（変換が確定してから折り返す）。
+	 */
+	function autoWrapTextarea(textarea) {
+	    const maxChars = Number(textarea.dataset.maxChars);
+	    if (!maxChars) return;
+	    const value = textarea.value;
+	    const lines = value.split(/\r?\n/);
+	    if (lines.every((line) => Array.from(line).length <= maxChars)) return;
+
+	    // カーソルより前にある「改行以外の文字」の数を覚えておき、折り返し後の位置に戻す
+	    const caret = textarea.selectionEnd;
+	    const charsBeforeCaret = Array.from(value.slice(0, caret).replace(/\r?\n/g, "")).length;
+	    const caretAtLineStart = caret > 0 && value.charAt(caret - 1) === "\n";
+
+	    // 上限ちょうど（またはそれ以上）の行の次の行は、自動で折り返した続きとみなしてつなげ直す。
+	    // こうすると、途中に文字を足したときに後ろの行も詰め直される（短い行が途中に残らない）
+	    const paragraphs = [];
+	    lines.forEach((line, i) => {
+	        if (i > 0 && Array.from(lines[i - 1]).length >= maxChars) {
+	            paragraphs[paragraphs.length - 1] += line;
+	        } else {
+	            paragraphs.push(line);
+	        }
+	    });
+
+	    const wrapped = [];
+	    paragraphs.forEach((line) => {
+	        const chars = Array.from(line);
+	        if (chars.length === 0) {
+	            wrapped.push("");
+	            return;
+	        }
+	        for (let i = 0; i < chars.length; i += maxChars) {
+	            wrapped.push(chars.slice(i, i + maxChars).join(""));
+	        }
+	    });
+	    const result = wrapped.join("\n");
+	    textarea.value = result;
+
+	    // 折り返し後の文字列で、同じ数の文字（改行以外）の後ろの位置を探す
+	    let count = 0;
+	    let position = result.length;
+	    for (let i = 0; i < result.length; i++) {
+	        if (count === charsBeforeCaret) {
+	            position = i;
+	            break;
+	        }
+	        if (result.charAt(i) !== "\n") count++;
+	    }
+	    // 改行の直後にカーソルがあった（行の先頭にいた）ときは、改行の後ろに置く
+	    if (caretAtLineStart) {
+	        while (position < result.length && result.charAt(position) === "\n") position++;
+	    }
+	    textarea.setSelectionRange(position, position);
 	}
 
 	/** 同じ週・同じ列（工程名／作業内容）の行ごとの入力欄 */
@@ -1909,8 +1971,18 @@ body.kintai-calendar-view .table-responsive {
 	    });
 
 	    document.querySelectorAll(".weekly-report-block textarea.wwr-text").forEach((textarea) => {
+	        const autoWrap = textarea.dataset.autoWrap === "true";
+	        if (autoWrap) autoWrapTextarea(textarea);
 	        updateWeeklyCounter(textarea);
-	        textarea.addEventListener("input", () => updateWeeklyCounter(textarea));
+	        textarea.addEventListener("input", (e) => {
+	            if (autoWrap && !e.isComposing) autoWrapTextarea(textarea);
+	            updateWeeklyCounter(textarea);
+	        });
+	        // 日本語入力は、変換を確定したときに折り返す
+	        textarea.addEventListener("compositionend", () => {
+	            if (autoWrap) autoWrapTextarea(textarea);
+	            updateWeeklyCounter(textarea);
+	        });
 	    });
 	});
 

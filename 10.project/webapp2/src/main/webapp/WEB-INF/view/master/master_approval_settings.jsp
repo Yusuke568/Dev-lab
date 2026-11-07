@@ -81,8 +81,34 @@
 .as-pick label:hover { background: #f7fafc; }
 .as-pick label[hidden] { display: none; }
 .as-pick .foot { font-size: 0.75rem; color: #4a5568; padding: 4px 10px; border-top: 1px solid #e2e8f0; }
-.as-level { border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; }
-.as-level h4 { margin: 0 0 6px; font-size: 0.9rem; }
+.as-dialog.wide { width: min(980px, calc(100vw - 24px)); }
+/* 段ごとの承認者（選択済 ← 未選択） */
+.as-rl { border: 1px solid #c9b99a; border-radius: 6px; overflow: hidden; }
+.as-rl-row { display: grid; grid-template-columns: 5em 1fr auto; border-top: 1px solid #c9b99a; }
+.as-rl-row:first-child { border-top: 0; }
+.as-rl-no { background: #f3ede2; padding: 10px 8px; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; }
+.as-rl-body { padding: 8px; min-width: 0; }
+.as-rl-ctrl { display: flex; flex-direction: column; gap: 6px; padding: 8px 8px 8px 0; align-items: center; }
+.as-rl-ctrl button { width: 30px; height: 30px; border: 1px solid #cbd5e0; border-radius: 50%; background: #fff; color: #4a5568; cursor: pointer; font-size: 0.8rem; line-height: 1; }
+.as-rl-ctrl button:disabled { opacity: 0.35; cursor: default; }
+.as-rl-ctrl .as-rl-del { background: #e53e3e; border-color: #e53e3e; color: #fff; }
+.as-rl-add { margin-top: 6px; }
+.as-dl-search { display: block; margin: 0 0 6px auto; width: min(260px, 100%); padding: 6px 8px; border: 1px solid #cbd5e0; border-radius: 6px; font: inherit; font-size: 0.85rem; }
+.as-dl { display: grid; grid-template-columns: minmax(0, 2fr) auto minmax(0, 3fr); gap: 8px; align-items: center; }
+.as-dl-arrow { color: #8c7b5e; font-size: 1.3rem; }
+.as-dl-box { border: 1px solid #c9b99a; background: #fff; min-width: 0; }
+.as-dl-head { display: flex; justify-content: space-between; gap: 8px; background: #ddd0b8; padding: 4px 8px; font-size: 0.85rem; }
+.as-dl-head > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.as-dl-link { border: 0; background: none; padding: 0; color: #2b6cb0; cursor: pointer; font: inherit; font-size: 0.85rem; white-space: nowrap; }
+.as-dl-link:hover { text-decoration: underline; }
+.as-dl-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.as-dl-list, .as-dl-groups { list-style: none; margin: 0; padding: 2px 0; height: 150px; overflow-y: auto; }
+.as-dl-groups { background: #f2f2f2; border-right: 1px solid #e2e8f0; }
+.as-dl-item, .as-dl-group { display: flex; gap: 4px; align-items: flex-start; width: 100%; border: 0; background: none; padding: 3px 8px; text-align: left; font: inherit; font-size: 0.85rem; color: #2d3748; cursor: pointer; }
+.as-dl-item:hover, .as-dl-group:hover { background: #ebf4ff; }
+.as-dl-group[aria-pressed="true"] { background: #fff; font-weight: 700; color: #1a3d6d; }
+.as-dl-icon { flex: none; font-size: 0.8rem; }
+.as-dl-empty { padding: 6px 8px; font-size: 0.8rem; color: #a0aec0; }
 @media (max-width: 768px) {
     /* 表をカードにする */
     .as-table thead { display: none; }
@@ -95,6 +121,15 @@
     .as-count { margin-left: 0; width: 100%; }
     .as-dialog { width: 100vw; max-width: 100vw; margin: auto 0 0; border-radius: 14px 14px 0 0; }
     .as-dialog form { max-height: 90dvh; }
+    .as-dialog.wide { width: 100vw; }
+    /* 段の編集：選択済と未選択を縦に並べる */
+    .as-rl-row { grid-template-columns: 1fr auto; }
+    .as-rl-no { grid-column: 1 / -1; padding: 6px 8px; }
+    .as-rl-ctrl { padding: 8px 6px 8px 0; }
+    .as-dl { grid-template-columns: minmax(0, 1fr); }
+    .as-dl-arrow { justify-self: center; transform: rotate(90deg); }
+    .as-dl-list, .as-dl-groups { height: 120px; }
+    .as-dl-search { width: 100%; }
 }
 </style>
 <%@ include file="../_icons.jspf" %>

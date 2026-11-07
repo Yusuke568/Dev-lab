@@ -80,6 +80,8 @@ public class MasterApprovalSettingsAction extends MasterActionSupport {
             m.put("id", s.getId());
             m.put("name", s.getName());
             m.put("deptId", s.getDepartmentId());
+            m.put("classId", s.getClassId());
+            m.put("className", s.getClassName());
             m.put("concurrent", concurrent.getOrDefault(s.getId(), List.of()));
             staffList.add(m);
             primary.put(s.getId(), s.getDepartmentId());

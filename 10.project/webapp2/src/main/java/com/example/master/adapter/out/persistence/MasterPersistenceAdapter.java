@@ -294,15 +294,17 @@ public class MasterPersistenceAdapter implements MasterPort, OrganizationPort {
 
     @Override
     public List<StaffOption> findStaffOptions() {
-        String sql = "SELECT s.id, s.name, s.department_id, d.name AS department_name " +
-                "FROM staff_table s LEFT JOIN department d ON s.department_id = d.id ORDER BY s.id";
+        String sql = "SELECT s.id, s.name, s.department_id, d.name AS department_name, s.class_id, c.name AS class_name " +
+                "FROM staff_table s LEFT JOIN department d ON s.department_id = d.id " +
+                "LEFT JOIN class_master c ON s.class_id = c.id ORDER BY s.id";
         List<StaffOption> list = new ArrayList<>();
         try (Connection con = ConnectionBase.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 list.add(new StaffOption(rs.getInt("id"), rs.getString("name"),
-                        nullableInt(rs, "department_id"), rs.getString("department_name")));
+                        nullableInt(rs, "department_id"), rs.getString("department_name"),
+                        nullableInt(rs, "class_id"), rs.getString("class_name")));
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to load staff.", e);

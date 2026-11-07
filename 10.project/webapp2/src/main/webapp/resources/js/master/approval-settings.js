@@ -434,18 +434,119 @@
     openDialog(d ? "部署を編集：" + d.name : "部署を追加", { mode: "dept", tab: "org", id: d ? d.id : "" }, body, d ? "保存" : "追加");
   }
 
+  /**
+   * 承認者を選ぶグループ（左の列）。全員・職種ごと・部署ごと。
+   * 部署は主所属と兼任の両方を含める。
+   */
+  function staffGroups() {
+    const groups = [{ key: "all", label: "全員", kind: "all", ids: D.staff.map((s) => s.id) }];
+    const classes = new Map();
+    D.staff.forEach((s) => {
+      if (s.classId === null || s.classId === undefined) return;
+      if (!classes.has(s.classId)) classes.set(s.classId, { key: "c" + s.classId, label: s.className || "職種" + s.classId, kind: "class", ids: [] });
+      classes.get(s.classId).ids.push(s.id);
+    });
+    groups.push(...[...classes.entries()].sort((a, b) => a[0] - b[0]).map((e) => e[1]));
+    D.departments.forEach((d) => {
+      const ids = D.staff.filter((s) => s.deptId === d.id || (s.concurrent || []).includes(d.id)).map((s) => s.id);
+      groups.push({ key: "d" + d.id, label: d.name, indent: d.depth || 0, kind: "dept", ids: ids });
+    });
+    return groups;
+  }
+
+  /**
+   * 段ごとの承認者を「選択済 ← 未選択」の2つの欄で選ぶ。
+   * 段の並べ替え（▲▼）・削除（✖）・「経路追加」ができる。
+   * 送る値：levelCount と、段ごとの level1, level2, …（社員ID を複数）
+   */
+  function routeLevelsEditor(initial) {
+    const groups = staffGroups();
+    const groupByKey = new Map(groups.map((g) => [g.key, g]));
+    const levels = (initial && initial.length ? initial : [[]]).map((lv) => lv.slice());
+    const views = levels.map(() => ({ group: "all", q: "" }));
+    const box = el("div", { className: "as-rl" });
+    const inputs = el("div", {});
+
+    function syncInputs() {
+      inputs.innerHTML = "";
+      inputs.appendChild(hidden("levelCount", levels.length));
+      levels.forEach((lv, i) => lv.forEach((id) => inputs.appendChild(hidden("level" + (i + 1), id))));
+    }
+
+    function person(id, onclick, title) {
+      return el("li", {}, el("button", { type: "button", className: "as-dl-item", title: title, onclick: onclick },
+        el("span", { className: "as-dl-icon", "aria-hidden": "true", text: "👤" }), staffName(id)));
+    }
+
+    function drawLevel(i) {
+      const lv = levels[i];
+      const view = views[i];
+      const redraw = () => { box.children[i].replaceWith(drawLevel(i)); syncInputs(); };
+
+      // 選択済
+      const selList = el("ul", { className: "as-dl-list" },
+        lv.length ? lv.map((id) => person(id, () => { lv.splice(lv.indexOf(id), 1); redraw(); }, "クリックで外す"))
+          : el("li", { className: "as-dl-empty", text: "右の欄から承認者を選んでください" }));
+      const selBox = el("div", { className: "as-dl-box" },
+        el("div", { className: "as-dl-head" }, el("span", { text: "選択済（" + lv.length + "人）" }),
+          el("button", { type: "button", className: "as-dl-link", onclick: () => { lv.length = 0; redraw(); } }, "全て削除")),
+        selList);
+
+      // 未選択：グループ ＋ 社員
+      const group = groupByKey.get(view.group) || groups[0];
+      const q = view.q.trim().toLowerCase();
+      const candidates = group.ids.filter((id) => !lv.includes(id))
+        .filter((id) => q === "" || (id + " " + staffName(id)).toLowerCase().includes(q));
+      const groupList = el("ul", { className: "as-dl-groups" }, groups.map((g) =>
+        el("li", {}, el("button", { type: "button", className: "as-dl-group" + (g.kind === "class" ? " cls" : ""),
+          "aria-pressed": g.key === group.key ? "true" : "false",
+          onclick: () => { view.group = g.key; redraw(); } },
+          el("span", { className: "as-dl-icon", "aria-hidden": "true", text: g.kind === "dept" ? "🏢" : "👥" }),
+          (g.indent ? "　".repeat(g.indent) : "") + g.label))));
+      const unselList = el("ul", { className: "as-dl-list" },
+        candidates.length ? candidates.map((id) => person(id, () => { lv.push(id); redraw(); }, "クリックで選択済に入れる"))
+          : el("li", { className: "as-dl-empty", text: "該当する社員はいません" }));
+      const search = el("input", { type: "search", className: "as-dl-search", placeholder: "社員ID・氏名で検索", "aria-label": (i + 1) + "段目の承認者を検索", value: view.q,
+        oninput: (e) => { view.q = e.target.value; const pos = e.target.selectionStart; redraw();
+          const s = box.children[i].querySelector(".as-dl-search"); s.focus(); s.setSelectionRange(pos, pos); } });
+      const unselBox = el("div", { className: "as-dl-box" },
+        el("div", { className: "as-dl-head" }, el("span", { text: "未選択：" + group.label }),
+          el("button", { type: "button", className: "as-dl-link", onclick: () => { candidates.forEach((id) => lv.push(id)); redraw(); } }, "全て選択")),
+        el("div", { className: "as-dl-split" }, groupList, unselList));
+
+      const move = (d) => {
+        const j = i + d;
+        if (j < 0 || j >= levels.length) return;
+        [levels[i], levels[j]] = [levels[j], levels[i]];
+        [views[i], views[j]] = [views[j], views[i]];
+        drawAll();
+      };
+      return el("div", { className: "as-rl-row" },
+        el("div", { className: "as-rl-no", text: (i + 1) + "段目" }),
+        el("div", { className: "as-rl-body" },
+          search,
+          el("div", { className: "as-dl" }, selBox, el("div", { className: "as-dl-arrow", "aria-hidden": "true", text: "⇦" }), unselBox)),
+        el("div", { className: "as-rl-ctrl" },
+          el("button", { type: "button", className: "as-rl-del", title: "この段を削除", "aria-label": (i + 1) + "段目を削除", disabled: levels.length <= 1,
+            onclick: () => { levels.splice(i, 1); views.splice(i, 1); drawAll(); } }, "✖"),
+          el("button", { type: "button", title: "上へ", "aria-label": (i + 1) + "段目を上へ", disabled: i === 0, onclick: () => move(-1) }, "▲"),
+          el("button", { type: "button", title: "下へ", "aria-label": (i + 1) + "段目を下へ", disabled: i === levels.length - 1, onclick: () => move(1) }, "▼")));
+    }
+
+    function drawAll() {
+      box.innerHTML = "";
+      levels.forEach((_, i) => box.appendChild(drawLevel(i)));
+      syncInputs();
+    }
+    drawAll();
+    const add = el("button", { type: "button", className: "as-dl-link as-rl-add",
+      onclick: () => { levels.push([]); views.push({ group: "all", q: "" }); drawAll(); } }, "＋ 経路追加（段を増やす）");
+    return el("div", {}, box, add, inputs);
+  }
+
   /** 例外ルート：名前・種別・段ごとの承認者・割り当て先 */
   function openRouteDialog(r) {
-    const levelsBox = el("div", {});
-    const levelCount = hidden("levelCount", 0);
-    const addLevel = (selected) => {
-      const n = levelsBox.children.length + 1;
-      levelsBox.appendChild(el("div", { className: "as-level" },
-        el("h4", { text: n + "段目" }),
-        pickList("level" + n, staffOptions(), selected, "社員ID・氏名で絞り込み")));
-      levelCount.value = String(levelsBox.children.length);
-    };
-    (r ? r.levels : [[]]).forEach((lv) => addLevel(lv));
+    const levelsEditor = routeLevelsEditor(r ? r.levels : null);
 
     const typeChoices = [{ value: null, label: "残業・休暇の両方" }, ...TYPES.map((t) => ({ value: t, label: D.requestTypes[t] }))];
     const body = [
@@ -455,19 +556,15 @@
       field("メモ（任意）", el("input", { type: "text", name: "note", id: "dlg-rnote", className: "form-input", maxlength: "255", value: r && r.note ? r.note : "" }), null, "dlg-rnote"),
       el("div", { className: "as-field" },
         el("div", { className: "lbl", text: "承認者（段ごと）" }),
-        el("div", { className: "hint", style: "margin-bottom:6px;", text: "1段目から順に承認します。同じ段に複数選ぶと、誰か1人の承認でその段は終わります。" }),
-        levelsBox, levelCount,
-        el("div", { style: "display:flex;gap:8px;" },
-          el("button", { type: "button", className: "btn btn-secondary", onclick: () => addLevel([]) }, "＋ 段を追加"),
-          el("button", { type: "button", className: "btn btn-secondary", onclick: () => {
-            if (levelsBox.children.length > 1) { levelsBox.lastElementChild.remove(); levelCount.value = String(levelsBox.children.length); }
-          } }, "－ 最後の段を削除"))),
+        el("div", { className: "hint", style: "margin-bottom:6px;", text: "1段目から順に承認します。同じ段に複数選ぶと、誰か1人の承認でその段は終わります。右の欄で職種・部署を選ぶと、その社員だけが出ます。" }),
+        levelsEditor),
       field("割り当て先：部署", pickList("assignDepartmentIds", deptOptions(), r ? r.deptIds : [], "部署名で絞り込み"),
         "その部署と下の部署の社員に使われます（別のルートを割り当てた部署・社員を除く）。"),
       field("割り当て先：社員", pickList("assignStaffIds", staffOptions(), r ? r.staffIds : [], "社員ID・氏名で絞り込み"),
         "社員への割り当ては、部署への割り当てより優先されます。")
     ];
-    openDialog(r ? "例外ルートを編集：" + r.name : "例外ルートを作る", { mode: "route", tab: "routes", id: r ? r.id : "" }, body, r ? "保存" : "作る");
+    const form = openDialog(r ? "例外ルートを編集：" + r.name : "例外ルートを作る", { mode: "route", tab: "routes", id: r ? r.id : "" }, body, r ? "保存" : "作る");
+    form.parentElement.classList.add("wide");
   }
 
   render();

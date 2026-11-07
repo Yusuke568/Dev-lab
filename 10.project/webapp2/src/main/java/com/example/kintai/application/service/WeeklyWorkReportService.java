@@ -44,7 +44,8 @@ public class WeeklyWorkReportService implements GetWeeklyWorkReportsUseCase, Sav
                 result.add(new WeeklyWorkReport(employeeId.getValue(), weekStart, weekEnd,
                         existing.getClientName(), existing.getProjectName(), existing.getProcessName(),
                         existing.getProgressStatus(), existing.getProgressDetail(), existing.getPersonalNote(),
-                        existing.getProblemCountermeasure()));
+                        existing.getProblemCountermeasure())
+                        .withLeaderComment(existing.getLeaderComment()));
             } else {
                 result.add(new WeeklyWorkReport(employeeId.getValue(), weekStart, weekEnd,
                         null, null, null, null, null, null));

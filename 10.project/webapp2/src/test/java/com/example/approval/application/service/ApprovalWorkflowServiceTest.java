@@ -16,7 +16,9 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ApprovalWorkflowServiceTest {
 
@@ -31,7 +33,8 @@ class ApprovalWorkflowServiceTest {
         org.put(2, new Department(2, "開発1課", 1, 300, 0));
         service = new ApprovalWorkflowService(steps, new OrganizationPort() {
             @Override public Map<Integer, Department> findAllDepartments() { return org; }
-            @Override public Integer findDepartmentIdOfStaff(int staffId) { return staffId == 1 ? 2 : null; }
+            // 1 は開発1課、200（開発部の承認者＝最上位）は開発部
+            @Override public Integer findDepartmentIdOfStaff(int staffId) { return staffId == 1 ? Integer.valueOf(2) : staffId == 200 ? Integer.valueOf(1) : null; }
             @Override public int findMaxLevels(RequestType requestType) { return 2; }
         });
     }
@@ -75,6 +78,21 @@ class ApprovalWorkflowServiceTest {
 
         service.startRoute(RequestType.LEAVE, 10, "1");
         assertEquals(ApprovalOutcome.NEXT_LEVEL, service.decide(RequestType.LEAVE, 10, 1, "300", true));
+    }
+
+    @Test
+    void 最上位の承認者本人の申請は自動承認として本人の承認を記録する() {
+        assertTrue(service.startRoute(RequestType.OVERTIME, 11, "200"));
+
+        List<ApprovalStep> route = steps.findSteps(RequestType.OVERTIME, 11);
+        assertEquals(1, route.size());
+        assertEquals(200, route.get(0).getApproverStaffId());
+        assertTrue(route.get(0).isDecided());
+    }
+
+    @Test
+    void 承認者がいる申請は自動承認しない() {
+        assertFalse(service.startRoute(RequestType.OVERTIME, 12, "1"));
     }
 
     @Test

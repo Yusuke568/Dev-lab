@@ -68,6 +68,23 @@ class ApprovalRouteBuilderTest {
     }
 
     @Test
+    void 最上位の承認者本人の申請は空のルート_自動承認() {
+        // 本部長(100)本人の申請：本部より上がないので、ほかに承認者がいない
+        assertEquals(List.of(), builder.build(100, 1, org(), 2));
+        // 課長(300)が課も部も本部も兼ねている場合も同じ
+        Map<Integer, Department> map = new HashMap<>();
+        map.put(1, new Department(1, "本部", null, 300, 0));
+        map.put(3, new Department(3, "開発1課", 1, 300, 0));
+        assertEquals(List.of(), builder.build(300, 3, map, 2));
+    }
+
+    @Test
+    void 上位に別の承認者がいれば自動承認にはしない() {
+        // 部長(200)本人の申請は本部長(100)へ
+        assertEquals(List.of(100), builder.build(200, 2, org(), 2));
+    }
+
+    @Test
     void 承認者が一人も見つからないと申請できない() {
         Map<Integer, Department> map = new HashMap<>();
         map.put(1, new Department(1, "本部", null, null, 0));

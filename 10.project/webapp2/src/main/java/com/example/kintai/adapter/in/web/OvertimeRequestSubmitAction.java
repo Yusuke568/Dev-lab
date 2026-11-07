@@ -51,9 +51,11 @@ public class OvertimeRequestSubmitAction implements Action {
             } catch (DateTimeParseException | NullPointerException e) {
                 throw new IllegalArgumentException("対象日を入力してください。");
             }
-            submitOvertimeRequestUseCase.submit(employeeId, date, plannedStartTime, plannedEndTime, reason);
+            boolean autoApproved = submitOvertimeRequestUseCase.submit(employeeId, date, plannedStartTime, plannedEndTime, reason);
             if (session != null) {
-                session.setAttribute("overtimeRequestSuccessMessage", date + " の残業事前申請を出しました。承認されるまでお待ちください。");
+                session.setAttribute("overtimeRequestSuccessMessage", autoApproved
+                        ? date + " の残業事前申請を出しました。組織図で上位の承認者がいないため、自動で承認しました。"
+                        : date + " の残業事前申請を出しました。承認されるまでお待ちください。");
             }
         } catch (Exception e) {
             LOG.log(Level.WARNING, "残業事前申請を受け付けられませんでした（社員ID " + employeeId + "、対象日 " + targetDate + "）", e);

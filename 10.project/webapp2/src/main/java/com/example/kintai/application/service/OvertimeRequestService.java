@@ -43,7 +43,7 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
     }
 
     @Override
-    public void submit(String employeeId, LocalDate date, String plannedStartTime, String plannedEndTime, String reason) {
+    public boolean submit(String employeeId, LocalDate date, String plannedStartTime, String plannedEndTime, String reason) {
         EmployeeId id = new EmployeeId(employeeId);
         int plannedOvertimeMinutes = OvertimeRequest.calculatePlannedOvertimeMinutes(plannedStartTime, plannedEndTime);
         // 時間外には補正・間接の時間も含めるので、出退勤が 9:00〜18:00 の中でも時間外になる日がある。
@@ -69,7 +69,11 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
         } else {
             requestId = overtimeRequestPort.insert(id, date, plannedOvertimeMinutes, plannedStartTime, plannedEndTime, reason);
         }
-        approvalWorkflowService.startRoute(RequestType.OVERTIME, requestId, employeeId);
+        boolean autoApproved = approvalWorkflowService.startRoute(RequestType.OVERTIME, requestId, employeeId);
+        if (autoApproved) {
+            overtimeRequestPort.decide(requestId, true, employeeId);
+        }
+        return autoApproved;
     }
 
     /** その日の勤怠に保存されている時間外（分）。勤怠がない・見られないときは0 */

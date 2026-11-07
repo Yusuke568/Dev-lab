@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -35,6 +36,10 @@ class OvertimeRequestSubmitTest {
     /** insert された予定時間外（分） */
     private final List<Integer> inserted = new ArrayList<>();
     private AttendanceRecord recorded;
+    /** decide された申請（"ID:承認:判定者"） */
+    private final List<String> decided = new ArrayList<>();
+    /** 開発1課の承認者（300 なら 300 本人の申請は自動承認） */
+    private Integer approverOfSection = 300;
 
     private final OvertimeRequestPort requestPort = new OvertimeRequestPort() {
         @Override public Optional<OvertimeRequest> findByEmployeeAndDate(EmployeeId employeeId, LocalDate date) { return Optional.empty(); }
@@ -46,13 +51,13 @@ class OvertimeRequestSubmitTest {
             return inserted.size();
         }
         @Override public void resubmit(int requestId, int plannedOvertimeMinutes, String start, String end, String reason) { }
-        @Override public void decide(int requestId, boolean approve, String decidedBy) { }
+        @Override public void decide(int requestId, boolean approve, String decidedBy) { decided.add(requestId + ":" + approve + ":" + decidedBy); }
         @Override public void advanceLevel(int requestId) { }
     };
 
     /** 126 は開発1課（承認者 300） */
     private final OrganizationPort organization = new OrganizationPort() {
-        @Override public Map<Integer, Department> findAllDepartments() { return Map.of(2, new Department(2, "開発1課", null, 300, 0)); }
+        @Override public Map<Integer, Department> findAllDepartments() { return Map.of(2, new Department(2, "開発1課", null, approverOfSection, 0)); }
         @Override public Integer findDepartmentIdOfStaff(int staffId) { return 2; }
         @Override public int findMaxLevels(RequestType requestType) { return 1; }
     };
@@ -99,6 +104,20 @@ class OvertimeRequestSubmitTest {
         service.submit("126", DAY, "09:00", "17:45", "週報纏め");
 
         assertEquals(List.of(120), inserted);
+    }
+
+    @Test
+    void 上位に承認者がいない承認者本人の申請は自動で承認済みになる() {
+        boolean auto = service.submit("300", DAY, "09:00", "20:00", "障害対応");
+
+        assertTrue(auto);
+        assertEquals(List.of("1:true:300"), decided);
+    }
+
+    @Test
+    void 承認者がいる人の申請は承認待ちのまま() {
+        assertFalse(service.submit("126", DAY, "09:00", "20:00", "障害対応"));
+        assertTrue(decided.isEmpty());
     }
 
     @Test

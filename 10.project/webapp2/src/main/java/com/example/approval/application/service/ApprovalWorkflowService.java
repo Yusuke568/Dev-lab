@@ -30,12 +30,20 @@ public class ApprovalWorkflowService {
 
     /**
      * 申請者の所属部署から承認ルートを作り、保存する。
+     * 最上位の承認者本人の申請（ほかに承認者がいない）は、本人を1段目として承認済みで記録する（自動承認）。
+     * @return 自動承認したら true。呼び出し側は申請を承認済みにすること
      * @throws IllegalStateException 所属部署や承認者が設定されていない場合
      */
-    public void startRoute(RequestType requestType, int requestId, String applicantStaffId) {
+    public boolean startRoute(RequestType requestType, int requestId, String applicantStaffId) {
         int applicant = Integer.parseInt(applicantStaffId);
         List<Integer> approvers = buildRoute(requestType, applicant);
+        if (approvers.isEmpty()) {
+            approvalStepPort.replaceSteps(requestType, requestId, List.of(applicant));
+            approvalStepPort.recordDecision(requestType, requestId, 1, ApprovalStep.APPROVED);
+            return true;
+        }
         approvalStepPort.replaceSteps(requestType, requestId, approvers);
+        return false;
     }
 
     /**

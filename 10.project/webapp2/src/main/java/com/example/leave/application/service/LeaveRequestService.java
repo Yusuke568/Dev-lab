@@ -44,7 +44,10 @@ public class LeaveRequestService implements LeaveRequestUseCase {
         } else {
             requestId = leaveRequestPort.insert(staffId, date, abstractId, reason);
         }
-        approvalWorkflowService.startRoute(RequestType.LEAVE, requestId, employeeId);
+        // 最上位の承認者本人の申請は自動承認
+        if (approvalWorkflowService.startRoute(RequestType.LEAVE, requestId, employeeId)) {
+            leaveRequestPort.updateStatus(requestId, LeaveRequest.STATUS_APPROVED);
+        }
     }
 
     @Override

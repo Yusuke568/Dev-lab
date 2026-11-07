@@ -38,23 +38,33 @@ public class AttendanceRecord {
         this.workTime = workTime; // Can be null if not worked
     }
 
+    /** 所定労働時間（これを超えた総勤務時間が時間外） */
+    public static final int STANDARD_WORK_MINUTES = 8 * 60;
+
     /**
-     * 勤務時間を計算します。
-     * 出退勤時刻から求めた実働時間から休憩時間（BreakSchedule の時間帯と重なる分）を控除し、
-     * 派遣先ごとに勤務時間の計上ルールが異なるため、補正CDで登録された補正時間
-     * （補正(通)＋補正(深)）を加算した値を最終的な勤務時間とする。
-     * @return 休憩控除・補正後の勤務時間。未勤務の場合は Duration.ZERO。
+     * 総勤務時間（作業報告書の (e)）を計算します。
+     * 出退勤時刻から休憩時間（BreakSchedule の時間帯と重なる分）を引いた実働時間に、
+     * 稼働補正（補正(通)＋補正(深)）と、出退勤時刻の外で行った間接作業の時間（勤務時間(間接) (d)）を足す。
+     * 例：9:00〜23:00、補正(通)+0:30、補正(深)+0:30 → 実働12:00 ＋ 1:00 ＝ 13:00
+     *     9:00〜17:45、補正(通)+0:15、間接2:00     → 実働7:45 ＋ 0:15 ＋ 2:00 ＝ 10:00
+     * @return 総勤務時間。未勤務の場合は補正と間接の分だけ（なければ Duration.ZERO）。
      */
     public Duration calculateWorkDuration() {
-        return calculateRawWorkDuration().plusMinutes(getCorrectionMinutes());
+        return calculateRawWorkDuration().plusMinutes(getCorrectionMinutes()).plusMinutes(getIndirectMinutes());
+    }
+
+    /** 勤務時間(直接)（作業報告書の (f) ＝ (e) − (d)） */
+    public Duration calculateDirectWorkDuration() {
+        return calculateWorkDuration().minusMinutes(getIndirectMinutes());
+    }
+
+    /** 時間外（残業時間）：総勤務時間のうち所定の8時間を超えた分。補正と間接作業の時間も含めて数える。 */
+    public int calculateOvertimeMinutes() {
+        return (int) Math.max(0, calculateWorkDuration().toMinutes() - STANDARD_WORK_MINUTES);
     }
 
     /**
-     * 出退勤時刻から休憩控除のみを行った、補正を含まない実働時間。
-     * 「時間外（残業）」の判定はこちらを基準にする。補正は給与計算上の勤務時間の
-     * 水増し・調整であって、実際に働いた時間の長さとは無関係のため、
-     * 補正を含む calculateWorkDuration() で時間外を判定すると、
-     * 定時どおりに退勤した日でも補正分だけ「残業扱い」になってしまう。
+     * 出退勤時刻から休憩控除のみを行った実働時間（補正・間接作業を含まない）。
      * @return 休憩控除後の実働時間。未勤務の場合は Duration.ZERO。
      */
     public Duration calculateRawWorkDuration() {
@@ -69,6 +79,10 @@ public class AttendanceRecord {
     private long getCorrectionMinutes() {
         return (correctionUsTime != null ? correctionUsTime : 0)
                 + (correctionMidTime != null ? correctionMidTime : 0);
+    }
+
+    private long getIndirectMinutes() {
+        return indirectTime != null ? indirectTime : 0;
     }
 
     /**

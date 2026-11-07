@@ -67,6 +67,8 @@ public class DailyAttendanceDto {
     public String getCorrectionUsTimeFormatted() { return formatMinutes(correctionUsTime); }
     public String getCorrectionMidTimeFormatted() { return formatMinutes(correctionMidTime); }
     public String getOvertimeMinutesFormatted() { return formatMinutes(overtimeMinutes); }
+    /** 勤務時間(間接)。0 や未入力は空欄 */
+    public String getIndirectTimeFormatted() { return indirectTime == null || indirectTime == 0 ? "" : formatMinutes(indirectTime); }
 
     private static String formatMinutes(Integer totalMinutes) {
         if (totalMinutes == null) {

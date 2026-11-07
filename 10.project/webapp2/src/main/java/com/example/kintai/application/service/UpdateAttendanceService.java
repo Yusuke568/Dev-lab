@@ -29,7 +29,6 @@ public class UpdateAttendanceService implements UpdateAttendanceUseCase {
     private static final int STATUS_DRAFT = 0;
     private static final int STATUS_PENDING_APPROVAL = 1;
     private static final int STATUS_APPROVED = 2;
-    private static final int STANDARD_WORK_MINUTES = 480; // 8時間
 
     private final SaveAttendanceRecordPort saveAttendanceRecordPort;
     private final LoadAttendanceRecordPort loadAttendanceRecordPort;
@@ -124,22 +123,17 @@ public class UpdateAttendanceService implements UpdateAttendanceUseCase {
                 record.setCorrectionMidTime(cmd.getCorrectionMidTime());
                 record.setIndirectTime(cmd.getIndirectTime());
 
-                // 給与計上用の合計勤務時間（休憩控除・補正済み）は AttendanceRecord.calculateWorkDuration() を単一の正とする。
-                // 一方、時間外（残業・要事前承認）の判定は補正を含まない実働時間で行う。補正は派遣先ごとの
-                // 勤務時間計上ルールの差異を吸収するための給与計算上の調整であり、実際に働いた時間の長さ
-                // （＝事前承認が必要な「残業」）とは無関係のため、補正込みの時間で時間外を判定すると、
-                // 定時どおりに退勤した日でも補正分だけ「残業扱い」になってしまう。
+                // 総勤務時間・勤務時間(直接)・時間外は、作業報告書と同じ計算（AttendanceRecord）を単一の正とする。
+                //   総勤務時間 ＝ 休憩控除後の実働 ＋ 補正(通) ＋ 補正(深) ＋ 勤務時間(間接)
+                //   勤務時間(直接) ＝ 総勤務時間 − 勤務時間(間接)
+                //   時間外 ＝ 総勤務時間 − 8:00（補正・間接も含めて数える）
                 Integer correctedTotalWorkTime = null;
                 Integer correctedTotalDirectWorkTime = null;
                 int overtimeMinutes = 0;
                 if (workTime != null) {
-                    int corrected = (int) record.calculateWorkDuration().toMinutes();
-                    correctedTotalWorkTime = corrected;
-                    int indirect = cmd.getIndirectTime() != null ? cmd.getIndirectTime() : 0;
-                    correctedTotalDirectWorkTime = corrected - indirect;
-
-                    int rawAfterBreak = (int) record.calculateRawWorkDuration().toMinutes();
-                    overtimeMinutes = Math.max(0, rawAfterBreak - STANDARD_WORK_MINUTES);
+                    correctedTotalWorkTime = (int) record.calculateWorkDuration().toMinutes();
+                    correctedTotalDirectWorkTime = (int) record.calculateDirectWorkDuration().toMinutes();
+                    overtimeMinutes = record.calculateOvertimeMinutes();
                 }
                 record.setOvertimeMinutes(overtimeMinutes);
                 record.setTotalWorkTime(correctedTotalWorkTime);

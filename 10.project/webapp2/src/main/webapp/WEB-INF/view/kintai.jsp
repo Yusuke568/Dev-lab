@@ -752,6 +752,357 @@
         min-width: 0;
     }
 }
+
+/* ============================================================
+   カレンダー表示（resources/js/kintai/month-calendar.js）
+   body.kintai-calendar-view のときは表の代わりにカレンダーを出す
+   ============================================================ */
+.view-switch {
+    display: inline-flex;
+    margin: 0 0 0.75rem;
+    border: 1px solid #cbd5e0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.view-switch button {
+    border: 0;
+    background: #ffffff;
+    color: #1a3d6d;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+.view-switch button + button {
+    border-left: 1px solid #cbd5e0;
+}
+.view-switch button[aria-pressed="true"] {
+    background: #1a3d6d;
+    color: #ffffff;
+}
+.month-calendar {
+    display: none;
+    margin-bottom: 0.5rem;
+}
+body.kintai-calendar-view .month-calendar {
+    display: block;
+}
+body.kintai-calendar-view .table-responsive {
+    display: none;
+}
+.mc-week, .mc-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+}
+.mc-dow {
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 4px 0;
+    background: transparent !important;
+    color: #4a5568;
+}
+.mc-dow.sunday { color: #c53030; }
+.mc-dow.saturday { color: #2b6cb0; }
+.mc-day {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1px;
+    min-height: 76px;
+    padding: 4px 3px 5px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #2d3748;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    overflow: hidden;
+}
+.mc-day:hover {
+    border-color: #90cdf4;
+}
+.mc-day:focus-visible {
+    outline: 3px solid #3182ce;
+    outline-offset: 1px;
+}
+.mc-day.filled {
+    border-color: #cbd5e0;
+}
+.mc-day.dirty {
+    border-color: #dd6b20;
+    border-style: dashed;
+}
+.mc-day.error {
+    border: 2px solid #c50000;
+}
+.mc-date {
+    font-size: 0.85rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+.mc-day.sunday .mc-date, .mc-day.holiday .mc-date { color: #c53030; }
+.mc-day.saturday .mc-date { color: #2b6cb0; }
+.mc-type {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1.3;
+    padding: 0 3px;
+    border-radius: 3px;
+    background: #ebf4ff;
+    color: #1a3d6d;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mc-holiday {
+    display: block;
+    font-size: 0.62rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #c53030;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mc-time {
+    display: block;
+    font-size: 0.72rem;
+    line-height: 1.25;
+    font-variant-numeric: tabular-nums;
+    color: #2d3748;
+    white-space: nowrap;
+}
+.mc-memo {
+    margin-left: 2px;
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: #718096;
+}
+.mc-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    vertical-align: middle;
+}
+.mc-day > .mc-dot {
+    position: absolute;
+    top: 5px;
+    right: 4px;
+}
+.mc-dot.dirty { background: #dd6b20; }
+.mc-dot.ng { background: #c50000; }
+.mc-dot.wait { background: #d69e2e; }
+.mc-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    margin-top: 8px;
+    font-size: 0.75rem;
+    color: #4a5568;
+}
+.mc-legend .mc-dot {
+    margin-right: 4px;
+}
+.mc-legend-hint {
+    color: #718096;
+}
+
+/* 入力ポップアップ（スマホでは画面下から出す） */
+.day-dialog {
+    width: min(480px, calc(100vw - 24px));
+    max-height: calc(100dvh - 24px);
+    padding: 0;
+    border: 0;
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    color: #2d3748;
+}
+.day-dialog::backdrop {
+    background: rgba(26, 32, 44, 0.45);
+}
+.dd-form {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100dvh - 24px);
+}
+.dd-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 12px 8px;
+    border-bottom: 1px solid #e2e8f0;
+}
+.dd-title-wrap {
+    flex: 1;
+    text-align: center;
+}
+.dd-title {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 800;
+}
+.dd-title.dd-sun { color: #c53030; }
+.dd-title.dd-sat { color: #2b6cb0; }
+.dd-holiday {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #c53030;
+}
+.dd-holiday:empty { display: none; }
+.dd-nav {
+    width: 44px;
+    height: 44px;
+    border: 1px solid #cbd5e0;
+    border-radius: 50%;
+    background: #ffffff;
+    color: #1a3d6d;
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+}
+.dd-nav:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+.dd-body {
+    padding: 12px 16px;
+    overflow-y: auto;
+}
+.dd-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.dd-row label, .dd-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #4a5568;
+    margin-bottom: 8px;
+}
+.dd-row .form-input, .dd-label .form-input {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+    font-size: 1rem;
+}
+.dd-field-note {
+    align-self: end;
+    margin: 0 0 8px;
+    font-size: 0.72rem;
+    color: #718096;
+}
+.dd-quick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+.dd-quick .btn {
+    padding: 4px 10px;
+    font-size: 0.8rem;
+}
+.dd-worktime {
+    font-size: 0.85rem;
+    color: #1a3d6d;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+.dd-worktime:empty { display: none; }
+.dd-more {
+    margin: 4px 0 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 8px 10px;
+}
+.dd-more summary {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1a3d6d;
+    cursor: pointer;
+}
+.dd-more[open] summary {
+    margin-bottom: 8px;
+}
+.dd-memo-row {
+    display: flex;
+    gap: 6px;
+}
+.dd-memo-row .form-input {
+    flex: 1;
+    min-width: 0;
+}
+.dd-template {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+}
+.dd-status {
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+}
+.dd-status:empty { display: none; }
+.dd-status-label {
+    display: inline-block;
+    margin-right: 6px;
+    color: #4a5568;
+    font-weight: 700;
+}
+.dd-check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: #4a5568;
+}
+.dd-actions {
+    display: flex;
+    gap: 8px;
+    padding: 10px 16px 4px;
+    border-top: 1px solid #e2e8f0;
+}
+.dd-actions .btn {
+    flex: 1;
+    min-height: 44px;
+}
+.dd-note {
+    margin: 0;
+    padding: 0 16px 12px;
+    font-size: 0.72rem;
+    color: #718096;
+}
+@media (max-width: 768px) {
+    .mc-week, .mc-grid {
+        gap: 2px;
+    }
+    .mc-day {
+        min-height: 68px;
+        padding: 3px 2px 4px;
+        border-radius: 4px;
+    }
+    .mc-time {
+        font-size: 0.66rem;
+        letter-spacing: -0.02em;
+    }
+    .mc-type {
+        font-size: 0.62rem;
+        padding: 0 2px;
+    }
+    .day-dialog {
+        width: 100vw;
+        max-width: 100vw;
+        margin: auto 0 0;
+        border-radius: 14px 14px 0 0;
+    }
+    .dd-form {
+        max-height: 88dvh;
+    }
+}
 </style>
 <%@ include file="_icons.jspf" %>
 </head>
@@ -1055,6 +1406,7 @@
 					<th class="detail-col">補正CD</th>
 					<th class="detail-col">補正(通)</th>
 					<th class="detail-col">補正(深)</th>
+					<th class="detail-col" title="出退勤時刻の外で行った社内会議・教育などの時間。総勤務時間と時間外に含めます">間接</th>
 					<th class="toggle-col mobile-only">詳細</th>
 				</tr>
 			</thead>
@@ -1142,6 +1494,9 @@
 							value="${daily.correctionUsTimeFormatted}" class="form-input" /></td>
 						<td data-label="補正(深)" class="detail-col"><input type="time" name="correctionMidTime"
 							value="${daily.correctionMidTimeFormatted}" class="form-input" /></td>
+						<%-- 勤務時間(間接)：出退勤時刻の外で行った間接作業（社内会議・教育など）。総勤務時間と時間外に足す --%>
+						<td data-label="間接" class="detail-col"><input type="time" name="indirectTime"
+							value="${daily.indirectTimeFormatted}" class="form-input" aria-label="${daily.date.dayOfMonth}日の勤務時間(間接)" /></td>
 						<td class="toggle-col mobile-only"><button type="button" class="btn btn-secondary" style="padding: 4px 12px; font-size: 0.8rem; width: 100%;" onclick="toggleRowDetails(this)">詳細を開く ∨</button></td>
 					</tr>
 				</c:forEach>
@@ -1290,6 +1645,11 @@
 
 	<script
 		src="${pageContext.request.contextPath}/resources/js/kintai/kintai.js"
+		type="module">
+	</script>
+	<%-- カレンダー表示と入力ポップアップ。kintai.js の後に読み込む --%>
+	<script
+		src="${pageContext.request.contextPath}/resources/js/kintai/month-calendar.js"
 		type="module">
 	</script>
 

@@ -1,5 +1,5 @@
 import {
-  collectAttendanceRecords, collectRowRecord, getMinutes, calculateTotalWorkMinutes,
+  collectAttendanceRecords, collectRowRecord, getMinutes, calculateTotalWorkMinutes, calculateOvertime,
   localDateString, currentTimeString, getTimeInput, isNextDayEnd
 } from "./utils.js";
 
@@ -301,12 +301,17 @@ function insertTemplate(btnEl) {
   }
 }
 
-function getRowCorrectionMinutes(row) {
-  const us = row.querySelector("input[name='correctionUsTime']");
-  const mid = row.querySelector("input[name='correctionMidTime']");
-  const usVal = us && us.value !== "" ? getMinutes(us.value) : 0;
-  const midVal = mid && mid.value !== "" ? getMinutes(mid.value) : 0;
-  return (isNaN(usVal) ? 0 : usVal) + (isNaN(midVal) ? 0 : midVal);
+/** 実働時間に足す分（補正(通)＋補正(深)＋勤務時間(間接)） */
+function getRowAddMinutes(row) {
+  return ["correctionUsTime", "correctionMidTime", "indirectTime"].reduce((sum, name) => {
+    const input = row.querySelector("input[name='" + name + "']");
+    const value = input && input.value !== "" ? getMinutes(input.value) : 0;
+    return sum + (isNaN(value) ? 0 : value);
+  }, 0);
+}
+
+function formatHm(totalMinutes) {
+  return String(Math.floor(totalMinutes / 60)).padStart(2, "0") + ":" + String(totalMinutes % 60).padStart(2, "0");
 }
 
 /** 補正CDの選択に応じて、登録済みの補正(通)・補正(深)をその行に反映する。 */
@@ -327,20 +332,20 @@ function updateOvertimePerRow() {
   rows.forEach((row) => {
     const start = getTimeInput(row, "kintaifrom").value;
     const end = getTimeInput(row, "kintaito").value;
-    const workTimeCell = row.cells[5]; // 実働時間（補正後）を表示するセル
+    const workTimeCell = row.cells[5]; // 総勤務時間（補正・間接を含む）を表示するセル
+    const overtimeCell = row.cells[6]; // 時間外
 
     const nextDayBadge = row.querySelector(".next-day-badge");
     if (nextDayBadge) nextDayBadge.hidden = !isNextDayEnd(start, end);
 
     if (start && end) {
-      const correctionMinutes = getRowCorrectionMinutes(row);
-      const totalMinutes = calculateTotalWorkMinutes(start, end, correctionMinutes);
-      const hours = Math.floor(totalMinutes / 60);
-      const minutes = totalMinutes % 60;
-      workTimeCell.textContent =
-        String(hours).padStart(2, "0") + ":" + String(minutes).padStart(2, "0");
+      const addMinutes = getRowAddMinutes(row);
+      workTimeCell.textContent = formatHm(calculateTotalWorkMinutes(start, end, addMinutes));
+      const overtime = calculateOvertime(start, end, addMinutes);
+      overtimeCell.textContent = overtime > 0 ? formatHm(overtime) : "ー";
     } else {
       workTimeCell.textContent = "";
+      overtimeCell.textContent = "ー";
     }
   });
 }
@@ -484,7 +489,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (e.target.matches("input[name='kintaifrom'], input[name='kintaito']") && e.target.value) {
         setWorkTypeIfUnset(e.target.closest("tr"));
       }
-      if (e.target.matches("input[name='kintaifrom'], input[name='kintaito'], input[name='correctionUsTime'], input[name='correctionMidTime']")) {
+      if (e.target.matches("input[name='kintaifrom'], input[name='kintaito'], input[name='correctionUsTime'], input[name='correctionMidTime'], input[name='indirectTime']")) {
         updateButtonState();
       }
     });

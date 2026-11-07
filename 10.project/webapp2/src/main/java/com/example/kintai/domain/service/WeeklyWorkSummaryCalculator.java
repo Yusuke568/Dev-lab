@@ -12,7 +12,7 @@ import java.util.function.ToLongFunction;
 
 /**
  * 作業報告書Excelの「累計/残業時間」と同じ計算を、勤怠記録から行う。
- * 稼働時間は休憩控除・補正込みの勤務時間、残業時間は日ごとの時間外（補正を含まない実働の8時間超え）。
+ * 稼働時間は総勤務時間（休憩控除・補正・間接込み）、残業時間は日ごとの時間外（総勤務時間の8時間超え）。
  */
 public final class WeeklyWorkSummaryCalculator {
 

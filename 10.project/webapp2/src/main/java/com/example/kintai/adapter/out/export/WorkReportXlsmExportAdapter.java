@@ -59,7 +59,7 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
     private static final int MAX_LINES_PROCESS_NAME = 5;
     private static final int MAX_LEN_PROGRESS_STATUS = 10;
     private static final int MAX_LEN_PROGRESS_DETAIL_LINE = 20;
-    private static final int MAX_LEN_PERSONAL_NOTE_LINE = 20;
+    private static final int MAX_LEN_PERSONAL_NOTE_LINE = 15; // 本人所感は1行15文字
     private static final int MAX_LEN_PROBLEM_LINE = 20;
     private static final String PROBLEM_LABEL = "問題点・対処：";
 

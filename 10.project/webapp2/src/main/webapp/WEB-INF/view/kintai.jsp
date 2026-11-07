@@ -780,9 +780,90 @@
     background: #1a3d6d;
     color: #ffffff;
 }
+.mc-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 0.75rem;
+}
+.mc-toolbar .view-switch {
+    margin: 0;
+}
+.mc-bulk-btn {
+    display: none;
+}
+body.kintai-calendar-view .mc-bulk-btn {
+    display: inline-flex;
+}
+/* カレンダー表示では、一括入力はカレンダーの「一括入力」ボタンから開く画面で行う */
+body.kintai-calendar-view .bulk-card {
+    display: none;
+}
 .month-calendar {
     display: none;
     margin-bottom: 0.5rem;
+}
+#mc-message:empty {
+    display: none;
+}
+
+/* 一括入力：なぞって日付を選ぶカレンダー */
+.bk-hint {
+    font-size: 0.78rem;
+    color: #4a5568;
+    margin-top: 2px;
+}
+.bk-select-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+.bk-select-bar .btn {
+    padding: 4px 12px;
+    font-size: 0.8rem;
+}
+.bk-count {
+    margin-left: auto;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1a3d6d;
+}
+.bk-grid {
+    /* なぞっている間に画面がスクロールしないようにする */
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    margin-bottom: 12px;
+}
+.bk-day {
+    height: 40px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #2d3748;
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    background-color: #ffffff !important;
+}
+.bk-day.sunday { color: #c53030; }
+.bk-day.saturday { color: #2b6cb0; }
+.bk-day.selected {
+    background-color: #1a3d6d !important;
+    border-color: #1a3d6d;
+    color: #ffffff;
+}
+.bk-day:focus-visible {
+    outline: 3px solid #3182ce;
+    outline-offset: 1px;
+}
+.bk-fields {
+    margin-top: 4px;
 }
 body.kintai-calendar-view .month-calendar {
     display: block;
@@ -898,6 +979,86 @@ body.kintai-calendar-view .table-responsive {
 .mc-dot.dirty { background: #dd6b20; }
 .mc-dot.ng { background: #c50000; }
 .mc-dot.wait { background: #d69e2e; }
+/* --- 時間外と残業事前申請（カレンダーで目立たせる） --- */
+.mc-ot {
+    display: block;
+    margin-top: 2px;
+    padding: 1px 2px;
+    border-radius: 3px;
+    font-size: 0.64rem;
+    font-weight: 700;
+    line-height: 1.25;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mc-ot b {
+    display: block;
+    font-size: 0.66rem;
+}
+.mc-ot.ng { background: #c50000; color: #ffffff; }
+.mc-ot.wait { background: #fefcbf; color: #744210; border: 1px solid #d69e2e; }
+.mc-ot.ok { background: #e6fffa; color: #22543d; border: 1px solid #38a169; }
+.mc-day.ot-ng {
+    border: 2px solid #c50000;
+    background-color: #fff5f5 !important;
+}
+.mc-day.ot-wait {
+    border: 2px solid #d69e2e;
+}
+.mc-ot-key {
+    display: inline-block;
+    margin-right: 4px;
+    padding: 0 4px;
+    border-radius: 3px;
+    font-size: 0.68rem;
+}
+.mc-ot-key.ng { background: #c50000; color: #ffffff; }
+.mc-ot-key.wait { background: #fefcbf; color: #744210; border: 1px solid #d69e2e; }
+.mc-ot-key.ok { background: #e6fffa; color: #22543d; border: 1px solid #38a169; }
+.mc-ot-alert {
+    margin-bottom: 8px;
+    padding: 10px 12px;
+    border: 2px solid #c50000;
+    border-radius: 8px;
+    background: #fff5f5;
+    color: #742a2a;
+}
+.mc-ot-alert[hidden] {
+    display: none;
+}
+.mc-ot-alert-title {
+    font-size: 0.9rem;
+    font-weight: 800;
+    margin-bottom: 6px;
+}
+.mc-ot-alert-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.mc-ot-alert-list button {
+    min-height: 36px;
+    padding: 4px 10px;
+    border: 1px solid #c50000;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #c50000;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+.dd-ot-alert {
+    margin-bottom: 8px;
+    padding: 8px 10px;
+    border-left: 4px solid #c50000;
+    border-radius: 4px;
+    background: #fff5f5;
+    color: #742a2a;
+    font-weight: 700;
+}
 .mc-legend {
     display: flex;
     flex-wrap: wrap;
@@ -1093,6 +1254,14 @@ body.kintai-calendar-view .table-responsive {
         font-size: 0.62rem;
         padding: 0 2px;
     }
+    /* 「未申請」など3文字が狭いマスに収まるようにする */
+    .mc-ot {
+        padding: 1px 0;
+        letter-spacing: -0.06em;
+    }
+    .mc-ot b {
+        font-size: 0.6rem;
+    }
     .day-dialog {
         width: 100vw;
         max-width: 100vw;
@@ -1145,6 +1314,7 @@ body.kintai-calendar-view .table-responsive {
 
 	<div id="kintai-app-root" class="card" style="max-width: 98%; margin: 0 auto;"
 		data-staff-id="${staffId}"
+		data-proxy-mode="${proxyMode ? 'true' : 'false'}"
 		data-work-types-json='${workTypesJson}'
 		data-break-periods='${breakPeriodsJson}'
 		data-year="${attendanceData.yearMonth.year}"
@@ -1346,7 +1516,8 @@ body.kintai-calendar-view .table-responsive {
 			<div id="overtime-summary">時間外労働: <c:out value="${attendanceData.totalOvertimeFormatted}" />（保存済みデータに基づく。未保存の変更は反映されません）</div>
 		</div>
 
-		<div class="card" style="margin-bottom: 1rem;">
+		<%-- カレンダー表示のときは隠し、カレンダーの「一括入力」ボタンから開く画面で入力する（month-calendar.js） --%>
+		<div class="card bulk-card" id="bulk-card" style="margin-bottom: 1rem;">
 			<h4>一括入力</h4>
 			<%-- スマホでは表の見出し（全選択のチェック）が隠れるので、ここでも選べるようにする --%>
 			<div class="bulk-select">
@@ -1621,8 +1792,8 @@ body.kintai-calendar-view .table-responsive {
 					<section class="wwr-section">
 						<h5 class="wwr-heading">本人所感</h5>
 						<div class="form-group">
-							<label class="form-label">本人所感 <span class="wwr-limit">1行20文字・10行まで</span></label>
-							<textarea class="form-input wwr-text wwr-note" rows="10" data-max-lines="10" data-max-chars="20"><c:out value="${week.personalNote}" /></textarea>
+							<label class="form-label">本人所感 <span class="wwr-limit">1行15文字・10行まで</span></label>
+							<textarea class="form-input wwr-text wwr-note" rows="10" data-max-lines="10" data-max-chars="15"><c:out value="${week.personalNote}" /></textarea>
 							<div class="wwr-counter" aria-live="polite"></div>
 						</div>
 						<p class="wwr-limit">リーダー所見は、Excel出力後にリーダーが記入します。</p>

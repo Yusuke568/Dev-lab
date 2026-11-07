@@ -61,6 +61,48 @@ function statusMark(row) {
   return null;
 }
 
+/** 補正(通)＋補正(深)＋間接（分） */
+function addMinutesOf(v) {
+  return [v.correctionUsTime, v.correctionMidTime, v.indirectTime].reduce((sum, value) => {
+    const minutes = value ? getMinutes(value) : 0;
+    return sum + (isNaN(minutes) ? 0 : minutes);
+  }, 0);
+}
+
+/**
+ * その日の時間外と、残業事前申請の状態。
+ * 時間外は今の入力から計算する（保存前の変更も反映）。申請の状態は表の「状態」欄（サーバーが出す）から読む。
+ * 時間外があるのに事前申請の承認・申請中・却下のどれでもなければ「未申請」とする。
+ */
+function overtimeInfo(row) {
+  const v = readRow(row);
+  const minutes = v.kintaifrom && v.kintaito ? calculateOvertime(v.kintaifrom, v.kintaito, addMinutesOf(v)) : 0;
+  if (minutes <= 0) return { minutes: 0, state: null, label: "" };
+  const cell = row.cells[9];
+  const text = cell ? cell.textContent.replace(/\s+/g, "") : "";
+  if (/事前申請承認済/.test(text)) return { minutes, state: "ok", label: "承認済" };
+  if (/事前申請申請中/.test(text)) return { minutes, state: "wait", label: "申請中" };
+  if (/却下/.test(text)) return { minutes, state: "ng", label: "却下" };
+  if (/勤怠承認済/.test(text)) return { minutes, state: "ok", label: "承認済" };
+  return { minutes, state: "ng", label: "未申請" };
+}
+
+/**
+ * 残業事前申請の画面へのリンク（その日を入れた状態で開く）。
+ * 状態欄にすでにリンクがある日と、上長が代わりに見ている画面（申請は本人が行う）では出さない。
+ */
+function requestLinkHtml(row, statusCell) {
+  if (root && root.dataset.proxyMode === "true") return "";
+  if (statusCell && statusCell.querySelector("a")) return "";
+  const contextPath = document.body.dataset.contextPath || "";
+  const url = contextPath + "/overtimeRequestMenu.do?targetDate=" + encodeURIComponent(row.dataset.date);
+  return " <a href='" + escapeHtml(url) + "'>申請する ›</a>";
+}
+
+function formatShortHm(minutes) {
+  return Math.floor(minutes / 60) + ":" + String(minutes % 60).padStart(2, "0");
+}
+
 function holidayName(row) {
   const names = Array.from(row.querySelectorAll(".holiday-name")).map((el) => el.textContent.trim()).filter(Boolean);
   return names.length > 0 ? names[0] : "";
@@ -94,6 +136,12 @@ function buildCalendar() {
     el.textContent = label;
     head.appendChild(el);
   });
+  // 残業の事前申請がまだの日（目立たせる）
+  const alert = document.createElement("div");
+  alert.className = "mc-ot-alert";
+  alert.id = "mc-ot-alert";
+  alert.setAttribute("role", "status");
+  container.appendChild(alert);
   container.appendChild(head);
 
   grid = document.createElement("div");
@@ -121,10 +169,19 @@ function buildCalendar() {
   legend.className = "mc-legend";
   legend.innerHTML =
     '<span><i class="mc-dot dirty"></i>未保存</span>' +
-    '<span><i class="mc-dot ng"></i>要対応（未申請・却下）</span>' +
-    '<span><i class="mc-dot wait"></i>承認待ち</span>' +
+    '<span><b class="mc-ot-key ng">未申請</b>残業の事前申請がまだ・却下</span>' +
+    '<span><b class="mc-ot-key wait">申請中</b>承認待ち</span>' +
+    '<span><b class="mc-ot-key ok">承認済</b>残業 承認済み</span>' +
+    '<span><i class="mc-dot wait"></i>有給などの承認待ち・却下</span>' +
     '<span class="mc-legend-hint">日付をタップすると入力できます</span>';
   container.appendChild(legend);
+
+  // 一括入力の結果
+  const message = document.createElement("div");
+  message.className = "inline-message";
+  message.id = "mc-message";
+  message.setAttribute("role", "status");
+  container.appendChild(message);
   return container;
 }
 
@@ -138,8 +195,10 @@ function renderDay(row) {
   const mark = statusMark(row);
   const dirty = isDirty(row);
   const nextDay = isNextDayEnd(v.kintaifrom, v.kintaito);
+  const ot = overtimeInfo(row);
 
   cell.className = "mc-day"
+    + (ot.state ? " ot-" + ot.state : "")
     + (row.classList.contains("sunday") || dow === 0 ? " sunday" : "")
     + (row.classList.contains("saturday") || dow === 6 ? " saturday" : "")
     + (row.classList.contains("holiday") ? " holiday" : "")
@@ -152,12 +211,17 @@ function renderDay(row) {
   let html = '<span class="mc-date">' + d
     + (v.workDescription ? '<span class="mc-memo" aria-hidden="true">✎</span>' : "") + "</span>";
   if (dirty) html += '<i class="mc-dot dirty" aria-hidden="true"></i>';
-  else if (mark && mark.cls !== "ok") html += '<i class="mc-dot ' + mark.cls + '" aria-hidden="true"></i>';
+  else if (!ot.state && mark && mark.cls !== "ok") html += '<i class="mc-dot wait" aria-hidden="true"></i>';
   if (type) html += '<span class="mc-type">' + escapeHtml(type) + "</span>";
   else if (holiday) html += '<span class="mc-holiday">' + escapeHtml(holiday) + "</span>";
   if (v.kintaifrom || v.kintaito) {
     html += '<span class="mc-time">' + (shortTime(v.kintaifrom) || "--:--") + "</span>";
     html += '<span class="mc-time">' + (v.kintaito ? (nextDay ? "翌" : "") + shortTime(v.kintaito) : "--:--") + "</span>";
+  }
+  if (ot.state) {
+    // スマホの狭いマスでも切れないよう、2行目は時間だけにする（「未申請」の下に「2:00」）
+    html += '<span class="mc-ot ' + ot.state + '" title="時間外 ' + formatShortHm(ot.minutes) + '"><b>' + ot.label + "</b>"
+      + formatShortHm(ot.minutes) + "</span>";
   }
   cell.innerHTML = html;
 
@@ -167,13 +231,40 @@ function renderDay(row) {
   if (type) parts.push(type);
   if (v.kintaifrom) parts.push("出勤 " + v.kintaifrom);
   if (v.kintaito) parts.push("退勤 " + (nextDay ? "翌日 " : "") + v.kintaito);
-  if (mark) parts.push(mark.label);
+  if (ot.state) parts.push("時間外 " + formatShortHm(ot.minutes) + "、残業の事前申請 " + ot.label);
+  else if (mark) parts.push(mark.label);
   if (dirty) parts.push("未保存");
   cell.setAttribute("aria-label", parts.join("、"));
 }
 
 function renderAll() {
   rows.forEach(renderDay);
+  renderOvertimeAlert();
+}
+
+/** カレンダーの上に、残業の事前申請がまだ（未申請・却下）の日を並べる。押すとその日を開く */
+function renderOvertimeAlert() {
+  const box = $("mc-ot-alert");
+  if (!box) return;
+  const pending = rows.map((row) => ({ row, ot: overtimeInfo(row) })).filter((x) => x.ot.state === "ng");
+  box.innerHTML = "";
+  box.hidden = pending.length === 0;
+  if (pending.length === 0) return;
+  const title = document.createElement("div");
+  title.className = "mc-ot-alert-title";
+  title.textContent = "⚠ 残業の事前申請が必要な日があります（" + pending.length + "日）";
+  box.appendChild(title);
+  const list = document.createElement("div");
+  list.className = "mc-ot-alert-list";
+  pending.forEach(({ row, ot }) => {
+    const { m, d } = dateParts(row);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = m + "/" + d + " 残" + formatShortHm(ot.minutes) + (ot.label === "却下" ? "（却下）" : "");
+    btn.addEventListener("click", () => openDay(row.dataset.date));
+    list.appendChild(btn);
+  });
+  box.appendChild(list);
 }
 
 function escapeHtml(s) {
@@ -366,7 +457,15 @@ function loadDay(date) {
   // 承認・申請の状態（リンクを含む）は表の「状態」欄をそのまま見せる
   const statusCell = row.cells[9];
   const statusText = statusCell ? statusCell.textContent.replace(/\s+/g, "") : "";
-  $("dd-status").innerHTML = statusCell && statusText !== "ー" ? "<span class='dd-status-label'>状態</span>" + statusCell.innerHTML : "";
+  const ot = overtimeInfo(row);
+  let statusHtml = statusCell && statusText !== "ー" ? "<span class='dd-status-label'>状態</span>" + statusCell.innerHTML : "";
+  if (ot.state === "ng") {
+    statusHtml = "<div class='dd-ot-alert'>⚠ 時間外 " + formatShortHm(ot.minutes) + " があります。残業の事前申請が"
+      + (ot.label === "却下" ? "却下されています。内容を見直して再申請してください。" : "まだです。")
+      + requestLinkHtml(row, statusCell)
+      + "</div>" + statusHtml;
+  }
+  $("dd-status").innerHTML = statusHtml;
 
   const checkbox = row.querySelector(".row-checkbox");
   $("dd-select").checked = !!(checkbox && checkbox.checked);
@@ -408,6 +507,7 @@ function applyDialog() {
   }
   row.classList.remove("row-error");
   renderDay(row);
+  renderOvertimeAlert();
 }
 
 function openDay(date) {
@@ -455,6 +555,252 @@ function buildSwitch() {
   return wrap;
 }
 
+// -------- 一括入力（カレンダー表示用） --------
+//
+// 日付をなぞって（ドラッグ・スワイプ）まとめて選び、出勤・退勤・勤務区分・補正CDを一度に入れる画面。
+// 選んだ日は表の各行のチェック（.row-checkbox）に移し、入力内容は一覧表示の一括入力欄に入れて
+// kintai.js の applyBulkInput() を呼ぶ。反映のしかたは一覧表示の一括入力と同じになる。
+
+let bulkDialog;
+const bulkSelected = new Set();
+const bulkCellByDate = new Map();
+
+function isWeekendRow(row) {
+  return row.classList.contains("saturday") || row.classList.contains("sunday") || row.classList.contains("holiday");
+}
+
+function buildBulkDialog() {
+  bulkDialog = document.createElement("dialog");
+  bulkDialog.className = "day-dialog bulk-dialog";
+  bulkDialog.setAttribute("aria-labelledby", "bk-title");
+  bulkDialog.innerHTML = `
+    <form method="dialog" class="dd-form">
+      <div class="dd-header">
+        <div class="dd-title-wrap">
+          <h3 id="bk-title" class="dd-title">一括入力</h3>
+          <div class="bk-hint" id="bk-hint">日付を指でなぞると、まとめて選べます（タップで1日ずつ）</div>
+        </div>
+      </div>
+      <div class="dd-body">
+        <div class="bk-select-bar">
+          <button type="button" class="btn btn-secondary" data-select="weekdays">平日</button>
+          <button type="button" class="btn btn-secondary" data-select="all">すべて</button>
+          <button type="button" class="btn btn-secondary" data-select="none">解除</button>
+          <span class="bk-count" id="bk-count" role="status">0日選択中</span>
+        </div>
+        <div class="mc-week mc-head bk-head" aria-hidden="true"></div>
+        <div class="mc-grid bk-grid" id="bk-grid" role="group" aria-label="一括入力する日" aria-describedby="bk-hint"></div>
+        <div class="dd-row dd-times bk-fields">
+          <label>出勤<input type="time" id="bk-start" class="form-input"></label>
+          <label>退勤<input type="time" id="bk-end" class="form-input"></label>
+        </div>
+        <div class="dd-quick">
+          <button type="button" class="btn btn-secondary" data-fill="09:00-18:00">9:00〜18:00</button>
+        </div>
+        <label class="dd-label">勤務区分<span id="bk-status-slot"></span></label>
+        <label class="dd-label">補正CD<span id="bk-correction-slot"></span></label>
+        <div class="inline-message" id="bk-message" role="alert"></div>
+      </div>
+      <div class="dd-actions">
+        <button type="button" class="btn btn-secondary" data-action="cancel">キャンセル</button>
+        <button type="button" class="btn btn-primary" data-action="apply">選んだ日に反映</button>
+      </div>
+      <p class="dd-note">空欄の項目は変更しません。保存は画面下の「一時保存」「保存（提出）」で行ってください。</p>
+    </form>`;
+  document.body.appendChild(bulkDialog);
+
+  const head = bulkDialog.querySelector(".bk-head");
+  WEEK_LABELS.forEach((label, i) => {
+    const el = document.createElement("div");
+    el.className = "mc-dow" + (i === 0 ? " sunday" : i === 6 ? " saturday" : "");
+    el.textContent = label;
+    head.appendChild(el);
+  });
+
+  const grid = $("bk-grid");
+  for (let i = 0; i < dateParts(rows[0]).dow; i++) {
+    const blank = document.createElement("div");
+    blank.className = "mc-blank";
+    grid.appendChild(blank);
+  }
+  rows.forEach((row) => {
+    const { d } = dateParts(row);
+    const cell = document.createElement("button");
+    cell.type = "button";
+    cell.className = "bk-day" + (isWeekendRow(row) ? (row.classList.contains("saturday") ? " saturday" : " sunday") : "");
+    cell.dataset.date = row.dataset.date;
+    cell.textContent = d;
+    // キーボード（Enter・スペース）では1日ずつ切り替える。指・マウスは下の pointer イベントで扱う
+    cell.addEventListener("click", (e) => {
+      if (e.detail === 0) toggleBulkDate(row.dataset.date, !bulkSelected.has(row.dataset.date));
+    });
+    grid.appendChild(cell);
+    bulkCellByDate.set(row.dataset.date, cell);
+  });
+  setupDragSelect(grid);
+
+  bulkDialog.querySelectorAll("[data-select]").forEach((btn) => btn.addEventListener("click", () => {
+    rows.forEach((row) => {
+      const mode = btn.dataset.select;
+      toggleBulkDate(row.dataset.date, mode === "all" || (mode === "weekdays" && !isWeekendRow(row)));
+    });
+  }));
+  bulkDialog.querySelector("[data-fill]").addEventListener("click", () => {
+    $("bk-start").value = "09:00";
+    $("bk-end").value = "18:00";
+  });
+  bulkDialog.querySelector("[data-action='cancel']").addEventListener("click", () => bulkDialog.close());
+  bulkDialog.querySelector("[data-action='apply']").addEventListener("click", applyBulkDialog);
+  bulkDialog.addEventListener("click", (e) => {
+    if (e.target === bulkDialog) bulkDialog.close();
+  });
+}
+
+/**
+ * なぞって選ぶ。最初に触れた日が未選択なら「選ぶ」、選択済みなら「外す」を、指が通った日すべてに行う。
+ * なぞっている間は画面がスクロールしないよう、グリッドに touch-action: none を付けている（CSS）。
+ */
+function setupDragSelect(grid) {
+  let mode = null;
+  let last = null;
+  const dayAt = (x, y) => {
+    const el = document.elementFromPoint(x, y);
+    const cell = el ? el.closest(".bk-day") : null;
+    return cell && grid.contains(cell) ? cell : null;
+  };
+  /** 前の位置から今の位置までを細かくたどり、途中のマスも選ぶ（速くなぞっても飛ばさない） */
+  const sweep = (x, y) => {
+    const from = last || { x, y };
+    const steps = Math.max(1, Math.ceil(Math.hypot(x - from.x, y - from.y) / 6));
+    for (let i = 1; i <= steps; i++) {
+      const cell = dayAt(from.x + (x - from.x) * i / steps, from.y + (y - from.y) * i / steps);
+      if (cell) toggleBulkDate(cell.dataset.date, mode);
+    }
+    last = { x, y };
+  };
+  grid.addEventListener("pointerdown", (e) => {
+    const cell = e.target.closest(".bk-day");
+    if (!cell) return;
+    e.preventDefault();
+    mode = !bulkSelected.has(cell.dataset.date);
+    last = { x: e.clientX, y: e.clientY };
+    toggleBulkDate(cell.dataset.date, mode);
+    // 指が別のマスへ動いても、このグリッドでイベントを受け取り続ける
+    try {
+      grid.setPointerCapture(e.pointerId);
+    } catch (err) {
+      // 受け取れなくても、グリッドの上をなぞっている間は選べる
+    }
+  });
+  grid.addEventListener("pointermove", (e) => {
+    if (mode === null) return;
+    // 指の動きがまとめて届くブラウザでは、途中の位置も使う
+    const events = typeof e.getCoalescedEvents === "function" ? e.getCoalescedEvents() : [];
+    (events.length > 0 ? events : [e]).forEach((ev) => sweep(ev.clientX, ev.clientY));
+  });
+  const end = () => { mode = null; last = null; };
+  // 指を離した位置までの間も選ぶ（最後の move から離すまでに動いた分）
+  grid.addEventListener("pointerup", (e) => {
+    if (mode !== null) sweep(e.clientX, e.clientY);
+    end();
+  });
+  grid.addEventListener("pointercancel", end);
+  grid.addEventListener("lostpointercapture", end);
+}
+
+function toggleBulkDate(date, selected) {
+  if (selected) bulkSelected.add(date);
+  else bulkSelected.delete(date);
+  const cell = bulkCellByDate.get(date);
+  if (cell) {
+    cell.classList.toggle("selected", selected);
+    cell.setAttribute("aria-pressed", String(selected));
+    const row = rowOf(date);
+    const { m, d, dow } = dateParts(row);
+    cell.setAttribute("aria-label", m + "月" + d + "日（" + WEEK_LABELS[dow] + "）" + (selected ? "、選択中" : ""));
+  }
+  $("bk-count").textContent = bulkSelected.size + "日選択中";
+}
+
+/** 一覧表示の一括入力欄の select を複製する（選択肢を同じにする） */
+function cloneBulkSelect(sourceId, id, slotId) {
+  const original = $(sourceId);
+  const slot = $(slotId);
+  slot.innerHTML = "";
+  if (!original) return;
+  const copy = original.cloneNode(true);
+  copy.id = id;
+  copy.value = original.options[0] ? original.options[0].value : "";
+  slot.appendChild(copy);
+}
+
+function openBulk() {
+  // 表でチェック済みの日を引き継ぐ
+  rows.forEach((row) => {
+    const cb = row.querySelector(".row-checkbox");
+    toggleBulkDate(row.dataset.date, !!(cb && cb.checked));
+  });
+  $("bk-start").value = "";
+  $("bk-end").value = "";
+  cloneBulkSelect("bulk-status", "bk-status", "bk-status-slot");
+  cloneBulkSelect("bulk-correction", "bk-correction", "bk-correction-slot");
+  $("bk-message").textContent = "";
+  $("bk-message").className = "inline-message";
+  if (typeof bulkDialog.showModal === "function") bulkDialog.showModal();
+  else bulkDialog.setAttribute("open", "");
+}
+
+function applyBulkDialog() {
+  const message = $("bk-message");
+  if (bulkSelected.size === 0) {
+    message.className = "inline-message error";
+    message.textContent = "反映する日を選んでください。";
+    return;
+  }
+  const status = $("bk-status");
+  const correction = $("bk-correction");
+  const nothing = !$("bk-start").value && !$("bk-end").value
+    && (!status || status.value === "") && (!correction || correction.value === "keep");
+  if (nothing) {
+    message.className = "inline-message error";
+    message.textContent = "出勤・退勤・勤務区分・補正CDのどれかを入力してください。";
+    return;
+  }
+
+  // 選んだ日を表のチェックに移す
+  rows.forEach((row) => {
+    const cb = row.querySelector(".row-checkbox");
+    const selected = bulkSelected.has(row.dataset.date);
+    if (cb && cb.checked !== selected) {
+      cb.checked = selected;
+      cb.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  });
+  // 一覧表示の一括入力欄に入れて、同じ処理で反映する
+  const setValue = (id, value) => {
+    const el = $(id);
+    if (el) el.value = value;
+  };
+  setValue("bulk-start", $("bk-start").value);
+  setValue("bulk-end", $("bk-end").value);
+  setValue("bulk-status", status ? status.value : "");
+  setValue("bulk-correction", correction ? correction.value : "keep");
+  const count = bulkSelected.size;
+  window.applyBulkInput();
+  // 一覧表示の一括入力欄は、次に一覧で使うときのために空に戻す
+  setValue("bulk-start", "");
+  setValue("bulk-end", "");
+  setValue("bulk-status", "");
+  setValue("bulk-correction", "keep");
+
+  bulkDialog.close();
+  const result = $("mc-message");
+  if (result) {
+    result.className = "inline-message success";
+    result.textContent = count + "日に反映しました。画面下の「保存」で保存してください。";
+  }
+}
+
 // -------- 初期化 --------
 
 /** 表の値を書き換える関数（打刻・一括入力・保存）の後で、カレンダーも描き直す */
@@ -473,14 +819,27 @@ function init() {
   rows.forEach((row) => initialValues.set(row.dataset.date, readRow(row)));
 
   const wrapper = table.closest(".table-responsive") || table;
-  wrapper.parentNode.insertBefore(buildSwitch(), wrapper);
+  const toolbar = document.createElement("div");
+  toolbar.className = "mc-toolbar";
+  toolbar.appendChild(buildSwitch());
+  const bulkButton = document.createElement("button");
+  bulkButton.type = "button";
+  bulkButton.className = "btn btn-secondary mc-bulk-btn";
+  bulkButton.textContent = "📝 一括入力";
+  bulkButton.addEventListener("click", openBulk);
+  toolbar.appendChild(bulkButton);
+  wrapper.parentNode.insertBefore(toolbar, wrapper);
   wrapper.parentNode.insertBefore(buildCalendar(), wrapper);
   buildDialog();
+  buildBulkDialog();
 
   // 表で直接入力したときも、カレンダーに反映する
   ["input", "change"].forEach((type) => table.addEventListener(type, (e) => {
     const row = e.target.closest("tr");
-    if (row) renderDay(row);
+    if (row) {
+      renderDay(row);
+      renderOvertimeAlert();
+    }
   }));
   ["recordAttendance", "applyBulkInput", "saveAttendance"].forEach(wrapGlobal);
 

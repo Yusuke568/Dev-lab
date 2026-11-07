@@ -185,6 +185,33 @@ public class MasterMaintenanceService implements MasterMaintenanceUseCase {
     }
 
     @Override
+    public void assignStaffRoutes(int staffId, Integer overtimeRouteId, Integer leaveRouteId) {
+        List<ApprovalRoute> routes = masterPort.findApprovalRoutes();
+        checkRouteFor(routes, overtimeRouteId, RequestType.OVERTIME);
+        checkRouteFor(routes, leaveRouteId, RequestType.LEAVE);
+        // 残業と休暇で同じルート（種別「両方」）なら1件の割り当てにする
+        List<Integer> routeIds = new ArrayList<>();
+        if (overtimeRouteId != null) {
+            routeIds.add(overtimeRouteId);
+        }
+        if (leaveRouteId != null && !routeIds.contains(leaveRouteId)) {
+            routeIds.add(leaveRouteId);
+        }
+        masterPort.replaceStaffRouteAssignments(staffId, routeIds);
+    }
+
+    private static void checkRouteFor(List<ApprovalRoute> routes, Integer routeId, RequestType type) {
+        if (routeId == null) {
+            return;
+        }
+        ApprovalRoute route = routes.stream().filter(r -> routeId.equals(r.getId())).findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("承認ルートが見つかりません。画面を読み込み直してください。"));
+        if (!route.appliesTo(type)) {
+            throw new IllegalArgumentException("承認ルート「" + route.getName() + "」は" + type.getLabel() + "には使えません。");
+        }
+    }
+
+    @Override
     public List<StaffOption> getStaffOptions() {
         return masterPort.findStaffOptions();
     }

@@ -329,6 +329,7 @@ public class DependencyFactory {
         actionMap.put("MasterLeaveRule", new com.example.master.adapter.in.web.MasterLeaveRuleAction(this.masterMaintenanceUseCase));
         actionMap.put("MasterApprovalRoute", new com.example.master.adapter.in.web.MasterApprovalRouteAction(this.masterMaintenanceUseCase));
         actionMap.put("MasterApprovalRouteDef", new com.example.master.adapter.in.web.MasterApprovalRouteDefAction(this.masterMaintenanceUseCase, this.approvalWorkflowService));
+        actionMap.put("MasterApprovalSettings", new com.example.master.adapter.in.web.MasterApprovalSettingsAction(this.masterMaintenanceUseCase, this.approvalWorkflowService));
         actionMap.put("MasterCompanyHoliday", new com.example.master.adapter.in.web.MasterCompanyHolidayAction(this.masterMaintenanceUseCase));
 
         initializeFeatureMap();
@@ -363,6 +364,8 @@ public class DependencyFactory {
         requireFeature(Feature.MASTER_CORRECTION, "CorrectionMasterList", "CorrectionMasterRegister");
         requireFeature(Feature.MASTER_COMPANY_HOLIDAY, "MasterCompanyHoliday");
         requireAnyFeature(Feature.masterFeatures(), "MasterMenu");
+        // 承認設定：組織図か承認ルート設定のどちらかがあれば開ける（変更できる範囲は画面の中で分ける）
+        requireAnyFeature(java.util.EnumSet.of(Feature.MASTER_DEPARTMENT, Feature.MASTER_APPROVAL_ROUTE), "MasterApprovalSettings");
     }
 
     private void requireFeature(Feature feature, String... actionNames) {

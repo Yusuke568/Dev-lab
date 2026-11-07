@@ -130,6 +130,21 @@ class ApprovalWorkflowServiceTest {
         assertThrows(IllegalStateException.class, () -> service.checkRouteAvailable(RequestType.LEAVE, "2"));
     }
 
+    @Test
+    void 全社員のルートをまとめて求め_決まらない人は理由を返す() {
+        Map<Integer, Integer> primary = new java.util.LinkedHashMap<>();
+        primary.put(1, 2);      // 開発1課 → 課長300 → 部長200
+        primary.put(200, 1);    // 開発部の承認者本人 → 自動承認
+        primary.put(9, null);   // 未所属 → 決まらない
+
+        Map<Integer, com.example.approval.domain.model.RoutePreview> all = service.previewAll(RequestType.OVERTIME, primary);
+
+        assertEquals(List.of(List.of(300), List.of(200)), all.get(1).levels());
+        assertEquals("組織図", all.get(1).source());
+        assertTrue(all.get(200).autoApproved());
+        assertTrue(all.get(9).error().contains("所属部署"));
+    }
+
     /** approval_step の代わりのメモリ上の実装（1段に候補者が複数行）。 */
     private static class InMemorySteps implements ApprovalStepPort {
         private final Map<String, List<ApprovalStep>> store = new HashMap<>();

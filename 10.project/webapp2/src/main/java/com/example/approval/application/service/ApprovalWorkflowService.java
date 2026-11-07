@@ -6,6 +6,7 @@ import com.example.approval.domain.model.ApprovalStep;
 import com.example.approval.domain.model.OrganizationSnapshot;
 import com.example.approval.domain.model.RequestType;
 import com.example.approval.domain.model.ResolvedRoute;
+import com.example.approval.domain.model.RoutePreview;
 import com.example.approval.domain.port.out.ApprovalStepPort;
 import com.example.approval.domain.port.out.OrganizationPort;
 import com.example.approval.domain.service.ApprovalRouteResolver;
@@ -75,6 +76,28 @@ public class ApprovalWorkflowService {
     /** この社員がこの部署の業務として申請したら、どのルートになるか（マスタ画面の確認用）。 */
     public ResolvedRoute previewRoute(RequestType requestType, int applicantStaffId, Integer departmentId) {
         return resolve(requestType, applicantStaffId, departmentId);
+    }
+
+    /**
+     * 社員それぞれが（主所属の業務として）申請したらどのルートになるか。組織の情報は1回だけ読む。
+     * @param primaryDepartments 社員ID → 主所属の部署ID（未所属なら null）
+     */
+    public Map<Integer, RoutePreview> previewAll(RequestType requestType, Map<Integer, Integer> primaryDepartments) {
+        OrganizationSnapshot org = new OrganizationSnapshot(
+                organizationPort.findAllDepartments(),
+                organizationPort.findSubApprovers(),
+                organizationPort.findApprovalRoutes(),
+                organizationPort.findMaxLevels(requestType));
+        Map<Integer, RoutePreview> result = new LinkedHashMap<>();
+        primaryDepartments.forEach((staffId, deptId) -> {
+            try {
+                ResolvedRoute route = resolver.resolve(staffId, deptId, requestType, org);
+                result.put(staffId, new RoutePreview(route.getLevels(), route.getSource(), route.isAutoApproved(), null));
+            } catch (RuntimeException e) {
+                result.put(staffId, new RoutePreview(List.of(), null, false, e.getMessage()));
+            }
+        });
+        return result;
     }
 
     /** 社員が所属するすべての部署ID（主所属が先頭）。申請画面で兼任先を選ばせるのに使う。 */

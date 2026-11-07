@@ -56,6 +56,15 @@ class ApprovalRouteResolverTest {
     }
 
     @Test
+    void 主承認者本人の申請は同じ部署の副承認者に回さず上位部署へ() {
+        subs.put(3, List.of(310));
+        // 課長(300)本人 → 副課長(310)ではなく部長(200)→本部長(100)
+        assertEquals(List.of(List.of(200), List.of(100)), resolver.resolve(300, 3, RequestType.OVERTIME, org(2)).getLevels());
+        // 副課長(310)本人 → 課長(300)→部長(200)
+        assertEquals(List.of(List.of(300), List.of(200)), resolver.resolve(310, 3, RequestType.OVERTIME, org(2)).getLevels());
+    }
+
+    @Test
     void 社員への割り当てが部署への割り当てより優先される() {
         routes.add(route(1, "開発部ルート", null, List.of(List.of(700)), dept(2)));
         routes.add(route(2, "個人ルート", null, List.of(List.of(800), List.of(900)), staff(1)));

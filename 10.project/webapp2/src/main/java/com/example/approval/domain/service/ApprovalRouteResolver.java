@@ -84,10 +84,15 @@ public class ApprovalRouteResolver {
                 break;
             }
             List<Integer> candidates = new ArrayList<>();
-            if (dept.getApproverStaffId() != null) {
-                candidates.add(dept.getApproverStaffId());
+            if (dept.getApproverStaffId() != null && dept.getApproverStaffId() == applicant) {
+                // 部署の主承認者本人の申請は、その部署の副承認者（部下）には回さず、上位部署へ回す
+                candidates.add(applicant);
+            } else {
+                if (dept.getApproverStaffId() != null) {
+                    candidates.add(dept.getApproverStaffId());
+                }
+                candidates.addAll(org.subApprovers().getOrDefault(current, List.of()));
             }
-            candidates.addAll(org.subApprovers().getOrDefault(current, List.of()));
             levels.add(candidates);
             current = dept.getParentId();
         }

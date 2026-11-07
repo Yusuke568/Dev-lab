@@ -721,6 +721,28 @@ public class MasterPersistenceAdapter implements MasterPort, OrganizationPort {
     }
 
     @Override
+    public void replaceStaffRouteAssignments(int staffId, List<Integer> routeIds) {
+        try (Connection con = ConnectionBase.getConnection()) {
+            try (PreparedStatement ps = con.prepareStatement(
+                    "DELETE FROM approval_route_assignment WHERE target_type = 'STAFF' AND target_id = ?")) {
+                ps.setInt(1, staffId);
+                ps.executeUpdate();
+            }
+            try (PreparedStatement ps = con.prepareStatement(
+                    "INSERT INTO approval_route_assignment (route_id, target_type, target_id) VALUES (?, 'STAFF', ?)")) {
+                for (Integer routeId : routeIds) {
+                    ps.setInt(1, routeId);
+                    ps.setInt(2, staffId);
+                    ps.addBatch();
+                }
+                ps.executeBatch();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to assign approval routes to staff: " + staffId, e);
+        }
+    }
+
+    @Override
     public void deleteApprovalRoute(int id) {
         // 段と割り当て先は ON DELETE CASCADE で一緒に消える
         try (Connection con = ConnectionBase.getConnection();

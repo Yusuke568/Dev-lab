@@ -17,7 +17,7 @@ import java.util.List;
 public class WeeklyWorkReport {
 
     private final String employeeId;
-    private final LocalDate weekStartDate; // 木曜日（月初に重なる場合は月初日）
+    private final LocalDate weekStartDate; // 木曜日（第1週は前月の木曜日になることがある）
     private final LocalDate weekEndDate;   // 水曜日
     private final String clientName;
     private final String projectName;
@@ -102,7 +102,8 @@ public class WeeklyWorkReport {
 
     /**
      * 指定された年月を、作業報告書Excel様式の週ブロック定義（木～翌水、月あたり5週固定）に
-     * 従って5つの週区間に分解し、各週の開始日（木曜 or 月初）・終了日（水曜）を返す。
+     * 従って5つの週区間に分解し、各週の開始日（木曜）・終了日（水曜）を返す。
+     * 月をまたぐ週も木曜から数える（例：2026年12月の第1週は 11/26(木)〜12/2(水)）。
      *
      * 様式側の週末尾算出ロジック（AW5セル）を踏襲: 第1週の終了日は月初以降で最初に訪れる水曜日。
      * 以降、7日おきに次の週の終了日となる。月をまたいでも週としてはそのまま扱う。
@@ -116,7 +117,8 @@ public class WeeklyWorkReport {
 
         List<LocalDate[]> ranges = new ArrayList<>();
         LocalDate weekEnd = firstWeekEnd;
-        LocalDate weekStart = firstOfMonth; // 第1週は月初始まり（前月分の木～水の残りは対象外）
+        // 第1週も木曜日から（月初が木曜日でなければ前月の木曜日。週の稼働・残業の集計と同じ範囲）
+        LocalDate weekStart = firstWeekEnd.minusDays(6);
         for (int i = 0; i < 5; i++) {
             ranges.add(new LocalDate[]{weekStart, weekEnd});
             weekStart = weekEnd.plusDays(1); // 次の木曜日

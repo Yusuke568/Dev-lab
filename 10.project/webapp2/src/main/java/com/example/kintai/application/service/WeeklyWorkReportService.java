@@ -40,7 +40,7 @@ public class WeeklyWorkReportService implements GetWeeklyWorkReportsUseCase, Sav
             LocalDate weekEnd = range[1];
             WeeklyWorkReport existing = existingByWeekEnd.get(weekEnd);
             if (existing != null) {
-                // 表示用の開始日は月の週ブロック構成に基づくものを優先する（第1週が月初で切り詰められるため）
+                // 表示用の開始日は月の週ブロック構成に基づくものを優先する（第1週は前月の木曜日から始まる）
                 result.add(new WeeklyWorkReport(employeeId.getValue(), weekStart, weekEnd,
                         existing.getClientName(), existing.getProjectName(), existing.getProcessName(),
                         existing.getProgressStatus(), existing.getProgressDetail(), existing.getPersonalNote(),

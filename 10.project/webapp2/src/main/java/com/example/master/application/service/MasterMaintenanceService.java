@@ -44,6 +44,46 @@ public class MasterMaintenanceService implements MasterMaintenanceUseCase {
     }
 
     @Override
+    public void deleteJobClass(int id) {
+        int staff = masterPort.countStaffOfJobClass(id);
+        if (staff > 0) {
+            throw new IllegalStateException("この役職の社員が" + staff + "人います。社員の役職を変えてから削除してください。");
+        }
+        masterPort.deleteJobClass(id);
+    }
+
+    @Override
+    public void deletePermissionGroup(int id) {
+        int jobClasses = masterPort.countJobClassesOfPermissionGroup(id);
+        if (jobClasses > 0) {
+            throw new IllegalStateException("この権限グループを割り当てた役職が" + jobClasses + "件あります。役職の権限グループを変えてから削除してください。");
+        }
+        masterPort.deletePermissionGroup(id);
+    }
+
+    @Override
+    public void deleteAbstract(int id) {
+        int used = masterPort.countAbstractUsage(id);
+        if (used > 0) {
+            throw new IllegalStateException("この区分は勤怠・休暇申請で" + used + "件使われているため削除できません。");
+        }
+        masterPort.deleteAbstract(id);
+    }
+
+    @Override
+    public void deleteDepartment(int id) {
+        int[] usage = masterPort.countDepartmentUsage(id);
+        List<String> reasons = new ArrayList<>();
+        if (usage[0] > 0) reasons.add("下の部署が" + usage[0] + "件");
+        if (usage[1] > 0) reasons.add("所属している社員が" + usage[1] + "人");
+        if (usage[2] > 0) reasons.add("この部署あてのお知らせが" + usage[2] + "件");
+        if (!reasons.isEmpty()) {
+            throw new IllegalStateException(String.join("、", reasons) + "あるため削除できません。移してから削除してください。");
+        }
+        masterPort.deleteDepartment(id);
+    }
+
+    @Override
     public void saveJobClass(Integer id, String name, Integer permissionGroupId) {
         masterPort.saveJobClass(id, requireName(name, "役職名"), permissionGroupId);
     }

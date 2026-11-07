@@ -40,4 +40,10 @@ public class MasterPermissionGroupAction extends MasterActionSupport {
         return (id == null ? "権限グループを追加しました。" : "権限グループを更新しました。")
                 + "（ログイン中の社員には、次にログインしたときから反映されます）";
     }
+
+    @Override
+    protected String delete(HttpServletRequest request) {
+        masterUseCase.deletePermissionGroup(requiredInt(request, "id"));
+        return "権限グループを削除しました。";
+    }
 }

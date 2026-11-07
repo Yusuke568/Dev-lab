@@ -57,6 +57,101 @@ public class MasterPersistenceAdapter implements MasterPort, OrganizationPort {
         return list;
     }
 
+    // ------------------------------------------------------------------ 行の削除
+
+    @Override
+    public int countStaffOfJobClass(int id) {
+        return count("SELECT COUNT(*) FROM staff_table WHERE class_id = ?", id);
+    }
+
+    @Override
+    public void deleteJobClass(int id) {
+        update("DELETE FROM class_master WHERE id = ?", id);
+    }
+
+    @Override
+    public int countJobClassesOfPermissionGroup(int id) {
+        return count("SELECT COUNT(*) FROM class_master WHERE permission_group_id = ?", id);
+    }
+
+    @Override
+    public void deletePermissionGroup(int id) {
+        // グループに付けた機能は ON DELETE CASCADE で一緒に消える
+        update("DELETE FROM permission_group WHERE id = ?", id);
+    }
+
+    @Override
+    public int countAbstractUsage(int id) {
+        return count("SELECT (SELECT COUNT(*) FROM work_month_table WHERE abstract_id = ?) " +
+                "+ (SELECT COUNT(*) FROM leave_request WHERE abstract_id = ?)", id, id);
+    }
+
+    @Override
+    public void deleteAbstract(int id) {
+        update("DELETE FROM abstract_master WHERE id = ?", id);
+    }
+
+    @Override
+    public int[] countDepartmentUsage(int id) {
+        return new int[] {
+                count("SELECT COUNT(*) FROM department WHERE parent_id = ?", id),
+                count("SELECT COUNT(*) FROM staff_table WHERE department_id = ?", id),
+                count("SELECT COUNT(*) FROM notice WHERE department_id = ?", id)};
+    }
+
+    @Override
+    public void deleteDepartment(int id) {
+        try (Connection con = ConnectionBase.getConnection()) {
+            boolean autoCommit = con.getAutoCommit();
+            con.setAutoCommit(false);
+            try {
+                // 兼任（staff_department）・副承認者（department_approver）は ON DELETE CASCADE で一緒に消える
+                try (PreparedStatement ps = con.prepareStatement(
+                        "DELETE FROM approval_route_assignment WHERE target_type = 'DEPARTMENT' AND target_id = ?")) {
+                    ps.setInt(1, id);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = con.prepareStatement("DELETE FROM department WHERE id = ?")) {
+                    ps.setInt(1, id);
+                    ps.executeUpdate();
+                }
+                con.commit();
+            } catch (Exception e) {
+                con.rollback();
+                throw e;
+            } finally {
+                con.setAutoCommit(autoCommit);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete department: " + id, e);
+        }
+    }
+
+    private static int count(String sql, int... params) {
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            for (int i = 0; i < params.length; i++) {
+                ps.setInt(i + 1, params[i]);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getInt(1);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to count: " + sql, e);
+        }
+    }
+
+    private static void update(String sql, int id) {
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to update: " + sql, e);
+        }
+    }
+
     @Override
     public void saveJobClass(Integer id, String name, Integer permissionGroupId) {
         try (Connection con = ConnectionBase.getConnection()) {

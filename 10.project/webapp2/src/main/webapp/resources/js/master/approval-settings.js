@@ -315,7 +315,13 @@
           missing.length ? el("div", { className: "as-error", text: "⚠ 社員マスタにいない人がいます" }) : null),
         el("td", { "data-label": "所属人数", text: d.memberCount + "人" }),
         el("td", { className: "as-actions" },
-          D.canDepartment ? el("button", { type: "button", className: "btn btn-secondary", onclick: () => openDeptDialog(d) }, "編集") : null)));
+          D.canDepartment ? [
+            el("button", { type: "button", className: "btn btn-secondary", onclick: () => openDeptDialog(d) }, "編集"), " ",
+            el("form", { method: "post", action: ACTION, style: "display:inline;",
+              onsubmit: (e) => { if (!confirm("部署「" + d.name + "」を削除しますか？\n下の部署・所属している社員・お知らせがあると削除できません。")) e.preventDefault(); } },
+              hidden("mode", "deptDelete"), hidden("tab", "org"), hidden("id", d.id),
+              el("button", { type: "submit", className: "btn btn-danger" }, "削除"))
+          ] : null)));
     });
     panel.appendChild(el("div", { style: "overflow-x:auto;" }, el("table", { className: "as-table" },
       el("thead", {}, el("tr", {}, el("th", { text: "部署" }), el("th", { text: "承認者" }),

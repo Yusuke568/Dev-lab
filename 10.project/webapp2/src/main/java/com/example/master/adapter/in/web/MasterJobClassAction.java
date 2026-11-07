@@ -31,4 +31,10 @@ public class MasterJobClassAction extends MasterActionSupport {
         masterUseCase.saveJobClass(id, request.getParameter("name"), optionalInt(request, "permissionGroupId"));
         return id == null ? "役職を追加しました。" : "役職を更新しました。";
     }
+
+    @Override
+    protected String delete(HttpServletRequest request) {
+        masterUseCase.deleteJobClass(requiredInt(request, "id"));
+        return "役職を削除しました。";
+    }
 }

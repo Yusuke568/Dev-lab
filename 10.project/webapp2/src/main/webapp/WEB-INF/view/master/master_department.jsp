@@ -73,6 +73,7 @@
 						<form id="d${d.id}" action="${pageContext.request.contextPath}/masterDepartment.do" method="post">
 							<input type="hidden" name="id" value="${d.id}">
 							<button type="submit" class="btn btn-primary">保存</button>
+							<button type="submit" name="op" value="delete" formnovalidate class="btn btn-danger" data-confirm="<c:out value='部署「${d.name}」を削除しますか？'/>" onclick="return confirm(this.dataset.confirm)">削除</button>
 						</form>
 					</td>
 				</tr>

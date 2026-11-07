@@ -78,7 +78,13 @@ function showRowError(date, message) {
 /** 再読み込みの後に、保存結果とスクロール位置を引き継ぐためのキー */
 const FLASH_KEY = "kintaiSaveFlash";
 
-function saveAttendance(isTemporary = false) {
+/**
+ * 勤怠を保存する。
+ * @param {boolean} isTemporary 一時保存なら true
+ * @param {{noReload?: boolean}} opts noReload が true なら保存後に読み込み直さない（別の画面へ移る前の保存）
+ * @returns {Promise<boolean>} 保存できたら true
+ */
+function saveAttendance(isTemporary = false, opts = {}) {
   let records = collectAttendanceRecords(staffId);
 
   if (!isTemporary) {
@@ -86,13 +92,13 @@ function saveAttendance(isTemporary = false) {
       const day = Number(r.kintaidate.slice(8)) + "日";
       if (r.kintaifrom && r.kintaito && r.kintaifrom === r.kintaito) {
         showRowError(r.kintaidate, day + "：出勤と退勤が同じ時刻です");
-        return;
+        return Promise.resolve(false);
       }
       const paidLeaveObj = workTypes.find(w => w.name === '有給');
       const paidLeaveId = paidLeaveObj ? paidLeaveObj.id : undefined;
       if (r.abstractId === paidLeaveId && (r.kintaifrom || r.kintaito)) {
         showRowError(r.kintaidate, day + "：有給の日に出勤・退勤時刻が入力されています");
-        return;
+        return Promise.resolve(false);
       }
     }
   }
@@ -102,11 +108,15 @@ function saveAttendance(isTemporary = false) {
   records = records.map(r => Object.assign({}, r, { isTemporary: isTemporary }));
 
   showSaveMessage("保存しています…", "");
-  postRecords(records)
+  return postRecords(records)
     .then(async (res) => {
       if (res.ok) {
         dirtyDates.clear();
         updateDirtyState();
+        if (opts.noReload) {
+          showSaveMessage(isTemporary ? "一時保存しました。" : "保存（提出）しました。", "success");
+          return true;
+        }
         // 有給残日数や承認状態を最新にするため読み込み直す。結果の表示と位置は引き継ぐ
         try {
           sessionStorage.setItem(FLASH_KEY, JSON.stringify({
@@ -117,16 +127,127 @@ function saveAttendance(isTemporary = false) {
           // 保存できない環境では、引き継がずに読み込み直す
         }
         location.reload();
-        return;
+        return true;
       }
       // 400 などは、サーバーが返した理由をそのまま表示する
       const text = (await res.text().catch(() => "")).trim();
       const reason = text && text.length < 200 && !text.startsWith("<") ? text : "保存できませんでした。";
       showSaveMessage(reason, "error");
+      return false;
     })
     .catch(() => {
       showSaveMessage("保存できませんでした。通信状態を確かめて、もう一度保存してください。", "error");
+      return false;
     });
+}
+
+// ------------------------------------------------------------ 保存していないまま別の画面へ移るとき
+
+/** 移動を確かめ済み（このあとの beforeunload では聞かない） */
+let leavingConfirmed = false;
+
+/** 週次作業報告に保存していない変更があるか（kintai.jsp の週次報告のスクリプトが用意する） */
+function weeklyReportDirty() {
+  return typeof window.isWeeklyReportDirty === "function" && window.isWeeklyReportDirty();
+}
+
+function hasUnsavedChanges() {
+  return dirtyDates.size > 0 || weeklyReportDirty();
+}
+
+/** 保存していない内容の説明（例：「勤怠 3日分・週次作業報告」） */
+function unsavedSummary() {
+  const parts = [];
+  if (dirtyDates.size > 0) parts.push("勤怠 " + dirtyDates.size + "日分");
+  if (weeklyReportDirty()) parts.push("週次作業報告");
+  return parts.join("・");
+}
+
+/**
+ * 「保存して移動」「保存しないで移動」「キャンセル」を聞く。
+ * @returns {Promise<"save"|"discard"|"cancel">}
+ */
+function askLeave() {
+  return new Promise((resolve) => {
+    const dialog = document.createElement("dialog");
+    dialog.className = "leave-dialog";
+    dialog.setAttribute("aria-labelledby", "leave-dialog-title");
+    dialog.innerHTML =
+      '<h3 id="leave-dialog-title">保存していない変更があります</h3>' +
+      '<p class="leave-dialog-what"></p>' +
+      '<p>保存してから移動しますか？（勤怠は「一時保存」します。提出はしません）</p>' +
+      '<div class="leave-dialog-buttons">' +
+      '<button type="button" class="btn btn-success" data-choice="save">💾 保存して移動</button>' +
+      '<button type="button" class="btn btn-danger" data-choice="discard">保存しないで移動</button>' +
+      '<button type="button" class="btn btn-secondary" data-choice="cancel">キャンセル</button>' +
+      '</div>';
+    dialog.querySelector(".leave-dialog-what").textContent = "未保存：" + unsavedSummary();
+    let choice = "cancel";
+    dialog.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-choice]");
+      if (btn) { choice = btn.dataset.choice; dialog.close(); }
+      else if (e.target === dialog) dialog.close();
+    });
+    dialog.addEventListener("close", () => { dialog.remove(); resolve(choice); });
+    document.body.appendChild(dialog);
+    if (typeof dialog.showModal === "function") dialog.showModal();
+    else { dialog.setAttribute("open", ""); }
+    dialog.querySelector('[data-choice="save"]').focus();
+  });
+}
+
+/** 保存していない勤怠・週次作業報告を保存する。どちらかが保存できなければ false */
+async function saveAllBeforeLeave() {
+  if (dirtyDates.size > 0 && !(await saveAttendance(true, { noReload: true }))) return false;
+  if (weeklyReportDirty() && typeof window.saveWeeklyWorkReports === "function") {
+    if (!(await window.saveWeeklyWorkReports())) return false;
+  }
+  return true;
+}
+
+/** 移動の前に聞く。移動してよければ go() を呼ぶ */
+async function confirmLeave(go) {
+  const choice = await askLeave();
+  if (choice === "cancel") return;
+  if (choice === "save" && !(await saveAllBeforeLeave())) {
+    // 保存できなかった：理由は保存バー・週次報告の欄に出ている。移動しない
+    showSaveMessage((document.getElementById("save-message")?.textContent || "保存できませんでした。") + "（移動をやめました）", "error");
+    return;
+  }
+  leavingConfirmed = true;
+  go();
+}
+
+function installLeaveGuard() {
+  // リンク：同じタブで別の画面へ移るものだけ止める
+  document.addEventListener("click", (e) => {
+    if (!hasUnsavedChanges() || e.defaultPrevented) return;
+    if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+    const a = e.target.closest("a[href]");
+    if (!a || a.target === "_blank" || a.hasAttribute("download")) return;
+    const href = a.getAttribute("href");
+    if (!href || href.startsWith("#") || href.startsWith("javascript:")) return;
+    // 作業報告書（Excel）の出力はダウンロードで画面は変わらない
+    if (/workReportExport\.do/.test(href)) return;
+    e.preventDefault();
+    confirmLeave(() => { location.href = a.href; });
+  }, true);
+
+  // フォームの送信（作業報告書の取り込み・ログアウトなど）
+  document.addEventListener("submit", (e) => {
+    const form = e.target;
+    if (!hasUnsavedChanges() || leavingConfirmed || form.closest("dialog")) return;
+    e.preventDefault();
+    confirmLeave(() => form.submit());
+  }, true);
+
+  // ブラウザの戻る・再読み込み・タブを閉じるときは、ブラウザの確認だけ出せる（保存はできない）
+  window.addEventListener("beforeunload", (e) => {
+    if (!leavingConfirmed && hasUnsavedChanges()) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+  });
 }
 
 /** 保存して読み込み直した後に、結果の表示とスクロール位置を戻す。 */
@@ -508,13 +629,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 保存していない変更があるまま画面を離れようとしたら確認する
-  window.addEventListener("beforeunload", (e) => {
-    if (dirtyDates.size > 0) {
-      e.preventDefault();
-      e.returnValue = "";
-    }
-  });
+  // 保存していない変更があるまま画面を離れようとしたら、保存してから移るか聞く
+  installLeaveGuard();
 
   // 有給残日数：読み込んだ時点の勤務区分を覚えておき、変更に合わせて保存後の日数を出す
   rows.forEach((row) => {

@@ -237,6 +237,11 @@ public class MasterApprovalSettingsAction extends MasterActionSupport {
                 masterUseCase.assignDepartmentRoutes(departmentId, optionalInt(request, "overtimeRouteId"), optionalInt(request, "leaveRouteId"));
                 return "部署の承認ルートを更新しました。";
             }
+            case "deptDelete": {
+                require(request, Feature.MASTER_DEPARTMENT);
+                masterUseCase.deleteDepartment(requiredInt(request, "id"));
+                return "部署を削除しました。";
+            }
             case "routeDelete": {
                 require(request, Feature.MASTER_APPROVAL_ROUTE);
                 masterUseCase.deleteApprovalRoute(requiredInt(request, "id"));

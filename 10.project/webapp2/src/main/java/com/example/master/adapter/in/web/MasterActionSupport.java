@@ -39,13 +39,21 @@ public abstract class MasterActionSupport implements Action {
     /** フォームの内容を保存し、完了メッセージを返す。 */
     protected abstract String save(HttpServletRequest request);
 
+    /**
+     * 行を削除し、完了メッセージを返す（フォームに op=delete を付けて送ったとき）。
+     * 削除できる画面だけ上書きする。
+     */
+    protected String delete(HttpServletRequest request) {
+        throw new IllegalArgumentException("この画面では削除できません。");
+    }
+
     @Override
     public View execute(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         HttpSession session = request.getSession();
         if ("POST".equalsIgnoreCase(request.getMethod())) {
             try {
-                session.setAttribute(MESSAGE, save(request));
+                session.setAttribute(MESSAGE, "delete".equals(request.getParameter("op")) ? delete(request) : save(request));
             } catch (NumberFormatException e) {
                 session.setAttribute(ERROR, "数値の項目に正しい値を入力してください。");
             } catch (Exception e) {

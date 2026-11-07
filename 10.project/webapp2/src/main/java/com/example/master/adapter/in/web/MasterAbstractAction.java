@@ -34,6 +34,12 @@ public class MasterAbstractAction extends MasterActionSupport {
         return isNew ? "区分を追加しました。" : "区分を更新しました。";
     }
 
+    @Override
+    protected String delete(HttpServletRequest request) {
+        masterUseCase.deleteAbstract(requiredInt(request, "id"));
+        return "区分を削除しました。";
+    }
+
     /** 有給消費日数（未指定なら 0）。 */
     private static double paidLeaveDays(HttpServletRequest request) {
         String value = request.getParameter("paidLeaveDays");

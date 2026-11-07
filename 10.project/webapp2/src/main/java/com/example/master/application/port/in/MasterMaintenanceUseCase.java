@@ -24,6 +24,12 @@ public interface MasterMaintenanceUseCase {
     List<JobClass> getJobClasses();
     void saveJobClass(Integer id, String name, Integer permissionGroupId);
 
+    /** 行を削除する。使われていれば理由つきで IllegalStateException */
+    void deleteJobClass(int id);
+    void deletePermissionGroup(int id);
+    void deleteAbstract(int id);
+    void deleteDepartment(int id);
+
     List<PermissionGroup> getPermissionGroups();
     void savePermissionGroup(Integer id, String name, Set<String> featureCodes);
 

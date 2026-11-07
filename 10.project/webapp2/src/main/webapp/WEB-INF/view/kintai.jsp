@@ -400,6 +400,14 @@
     border-radius: 8px;
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
 }
+/* 保存していないまま別の画面へ移るときの確認 */
+.leave-dialog { width: min(440px, calc(100vw - 32px)); border: 0; border-radius: 12px; padding: 18px 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
+.leave-dialog::backdrop { background: rgba(26, 32, 44, 0.45); }
+.leave-dialog h3 { margin: 0 0 8px; font-size: 1.1rem; }
+.leave-dialog p { margin: 0 0 8px; font-size: 0.9rem; }
+.leave-dialog .leave-dialog-what { font-weight: 700; color: #c05621; }
+.leave-dialog-buttons { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.leave-dialog-buttons .btn { min-height: 44px; width: 100%; }
 .save-bar .dirty-indicator {
     font-size: 0.9rem;
     color: #718096;
@@ -1381,7 +1389,7 @@ body.kintai-calendar-view .table-responsive {
 						<form id="work-report-import-form" action="${pageContext.request.contextPath}/workReportImport.do"
 							method="post" enctype="multipart/form-data" style="display: inline;">
 							<input type="file" id="work-report-import-file" name="workReportFile" accept=".xlsm"
-								style="display: none;" onchange="document.getElementById('work-report-import-form').submit();">
+								style="display: none;" onchange="const f = document.getElementById('work-report-import-form'); f.requestSubmit ? f.requestSubmit() : f.submit();">
 							<button type="button" class="btn btn-secondary"
 								onclick="document.getElementById('work-report-import-file').click();">📥 作業報告書(Excel)取込</button>
 						</form>
@@ -1817,7 +1825,7 @@ body.kintai-calendar-view .table-responsive {
 	</select>
 
 	<script
-		src="${pageContext.request.contextPath}/resources/js/kintai/kintai.js"
+		src="${pageContext.request.contextPath}/resources/js/kintai/kintai.js?v=20261115"
 		type="module">
 	</script>
 	<%-- カレンダー表示と入力ポップアップ。kintai.js の後に読み込む --%>
@@ -1986,6 +1994,15 @@ body.kintai-calendar-view .table-responsive {
 	    });
 	});
 
+	// 週次作業報告に保存していない変更があるか（勤怠画面から移るときの確認に使う）
+	let wwrDirty = false;
+	window.isWeeklyReportDirty = () => wwrDirty;
+	document.addEventListener("DOMContentLoaded", () => {
+	    const card = document.getElementById("weekly-report-card");
+	    if (card) card.addEventListener("input", (e) => { if (e.target.matches("input, textarea, select")) wwrDirty = true; });
+	});
+
+	/** 週次作業報告を保存する。保存できたら true の Promise */
 	function saveWeeklyWorkReports() {
 	    const contextPath = document.body.dataset.contextPath || "";
 	    const blocks = document.querySelectorAll(".weekly-report-block");
@@ -2000,7 +2017,7 @@ body.kintai-calendar-view .table-responsive {
 	            overArea.focus();
 	            message.className = "inline-message error";
 	            message.textContent = "第" + (i + 1) + "週に、行数か1行の文字数の制限を超えた欄があります。直してから保存してください。";
-	            return;
+	            return Promise.resolve(false);
 	        }
 	    }
 
@@ -2018,17 +2035,20 @@ body.kintai-calendar-view .table-responsive {
 	    message.className = "inline-message";
 	    message.textContent = "保存しています…";
 	    const staffId = document.getElementById("kintai-app-root").dataset.staffId;
-	    fetch(contextPath + "/weeklyWorkReportSave.do?staffId=" + encodeURIComponent(staffId), {
+	    return fetch(contextPath + "/weeklyWorkReportSave.do?staffId=" + encodeURIComponent(staffId), {
 	        method: "POST",
 	        headers: { "Content-Type": "application/json" },
 	        body: JSON.stringify(reports)
 	    }).then((res) => {
 	        if (!res.ok) throw new Error("save failed");
+	        wwrDirty = false;
 	        message.className = "inline-message success";
 	        message.textContent = "週次作業報告を保存しました。";
+	        return true;
 	    }).catch(() => {
 	        message.className = "inline-message error";
 	        message.textContent = "週次作業報告を保存できませんでした。通信状態を確かめて、もう一度保存してください。";
+	        return false;
 	    });
 	}
 

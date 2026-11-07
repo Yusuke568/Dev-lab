@@ -51,6 +51,12 @@ public class MasterDepartmentAction extends MasterActionSupport {
         return id == null ? "部署を追加しました。" : "部署を更新しました。";
     }
 
+    @Override
+    protected String delete(HttpServletRequest request) {
+        masterUseCase.deleteDepartment(requiredInt(request, "id"));
+        return "部署を削除しました。";
+    }
+
     /** 複数選択の値（空欄は除く） */
     static List<Integer> intValues(HttpServletRequest request, String name) {
         List<Integer> values = new ArrayList<>();

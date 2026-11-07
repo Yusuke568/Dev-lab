@@ -24,6 +24,22 @@ public interface MasterPort {
     List<JobClass> findJobClasses();
     void saveJobClass(Integer id, String name, Integer permissionGroupId);
 
+    // --- 行の削除（使われているかの数と削除） ---
+    /** この役職の社員の数 */
+    int countStaffOfJobClass(int id);
+    void deleteJobClass(int id);
+    /** この権限グループを割り当てた役職の数 */
+    int countJobClassesOfPermissionGroup(int id);
+    /** 権限グループと、グループに付けた機能を削除する */
+    void deletePermissionGroup(int id);
+    /** この勤務区分を使っている勤怠・休暇申請の数 */
+    int countAbstractUsage(int id);
+    void deleteAbstract(int id);
+    /** 部署が使われている数：{下の部署, 主所属の社員, お知らせ} */
+    int[] countDepartmentUsage(int id);
+    /** 部署を削除する（兼任・副承認者・承認ルートの割り当ても外す） */
+    void deleteDepartment(int id);
+
     // --- 権限グループ ---
     List<PermissionGroup> findPermissionGroups();
     /** @return 保存した権限グループの ID */

@@ -82,4 +82,56 @@ class MasterMaintenanceServiceTest {
         MasterMaintenanceService service = new MasterMaintenanceService(masterPort());
         assertThrows(IllegalArgumentException.class, () -> service.assignDepartmentRoutes(5, 2, null));
     }
+
+    // ---- 行の削除 ----
+
+    private final List<String> deleted = new ArrayList<>();
+
+    /** 使われている数を返し、削除を記録する MasterPort */
+    private MasterPort usagePort(int count, int[] deptUsage) {
+        return (MasterPort) Proxy.newProxyInstance(MasterPort.class.getClassLoader(), new Class<?>[] {MasterPort.class},
+                (proxy, method, args) -> {
+                    String name = method.getName();
+                    if (name.startsWith("count")) {
+                        return name.equals("countDepartmentUsage") ? deptUsage : count;
+                    }
+                    if (name.startsWith("delete")) {
+                        deleted.add(name + ":" + args[0]);
+                        return null;
+                    }
+                    throw new UnsupportedOperationException(name);
+                });
+    }
+
+    @Test
+    void 使われていない役職は削除できる() {
+        new MasterMaintenanceService(usagePort(0, null)).deleteJobClass(3);
+        assertEquals(List.of("deleteJobClass:3"), deleted);
+    }
+
+    @Test
+    void 社員がいる役職は削除しない() {
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> new MasterMaintenanceService(usagePort(2, null)).deleteJobClass(3));
+        assertEquals("この役職の社員が2人います。社員の役職を変えてから削除してください。", e.getMessage());
+        assertEquals(List.of(), deleted);
+    }
+
+    @Test
+    void 使われている勤務区分と権限グループは削除しない() {
+        MasterMaintenanceService service = new MasterMaintenanceService(usagePort(5, null));
+        assertThrows(IllegalStateException.class, () -> service.deleteAbstract(1));
+        assertThrows(IllegalStateException.class, () -> service.deletePermissionGroup(1));
+        assertEquals(List.of(), deleted);
+    }
+
+    @Test
+    void 部署は下の部署や社員がいれば理由を出して削除しない() {
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> new MasterMaintenanceService(usagePort(0, new int[] {1, 3, 0})).deleteDepartment(2));
+        assertEquals("下の部署が1件、所属している社員が3人あるため削除できません。移してから削除してください。", e.getMessage());
+
+        new MasterMaintenanceService(usagePort(0, new int[] {0, 0, 0})).deleteDepartment(2);
+        assertEquals(List.of("deleteDepartment:2"), deleted);
+    }
 }

@@ -31,4 +31,8 @@ public interface OvertimeRequestPort {
 
     /** 次の段の承認待ちに進める。 */
     void advanceLevel(int requestId);
+
+    /** どの部署の業務としての申請か（兼任者用。null なら主所属） */
+    default void updateDepartment(int requestId, Integer departmentId) {
+    }
 }

@@ -1,6 +1,8 @@
 package com.example.master.application.service;
 
+import com.example.approval.domain.model.ApprovalRoute;
 import com.example.approval.domain.model.RequestType;
+import com.example.approval.domain.model.RouteAssignment;
 import com.example.entity.WorkType;
 import com.example.leave.domain.model.LeaveGrantRule;
 import com.example.master.application.port.in.MasterMaintenanceUseCase;
@@ -81,7 +83,8 @@ public class MasterMaintenanceService implements MasterMaintenanceUseCase {
     }
 
     @Override
-    public void saveDepartment(Integer id, String name, Integer parentId, Integer approverStaffId, int sortOrder) {
+    public void saveDepartment(Integer id, String name, Integer parentId, Integer approverStaffId,
+                               List<Integer> subApproverIds, int sortOrder) {
         String validName = requireName(name, "部署名");
         if (id != null && parentId != null) {
             Map<Integer, Department> byId = new HashMap<>();
@@ -99,7 +102,86 @@ public class MasterMaintenanceService implements MasterMaintenanceUseCase {
                 current = d != null ? d.getParentId() : null;
             }
         }
-        masterPort.saveDepartment(id, validName, parentId, approverStaffId, sortOrder);
+        int savedId = masterPort.saveDepartment(id, validName, parentId, approverStaffId, sortOrder);
+        if (subApproverIds != null) {
+            // 主承認者と同じ人は副承認者に入れない
+            List<Integer> subs = new ArrayList<>(new LinkedHashSet<>(subApproverIds));
+            subs.removeIf(s -> s == null || s.equals(approverStaffId));
+            masterPort.replaceSubApprovers(savedId, subs);
+        }
+    }
+
+    @Override
+    public Map<Integer, List<Integer>> getSubApprovers() {
+        return masterPort.findSubApprovers();
+    }
+
+    @Override
+    public List<Integer> getConcurrentDepartmentIds(int staffId) {
+        return masterPort.findConcurrentDepartmentIds(staffId);
+    }
+
+    @Override
+    public Map<Integer, List<Integer>> getAllConcurrentDepartments() {
+        return masterPort.findAllConcurrentDepartments();
+    }
+
+    @Override
+    public void assignConcurrentDepartments(int staffId, List<Integer> departmentIds) {
+        Integer primary = masterPort.findDepartmentIdOfStaff(staffId);
+        List<Integer> ids = new ArrayList<>(new LinkedHashSet<>(departmentIds));
+        ids.removeIf(d -> d == null || d.equals(primary));
+        masterPort.replaceConcurrentDepartments(staffId, ids);
+    }
+
+    // ------------------------------------------------------------------ 承認ルートマスタ
+
+    @Override
+    public List<ApprovalRoute> getApprovalRoutes() {
+        return masterPort.findApprovalRoutes();
+    }
+
+    @Override
+    public void saveApprovalRoute(Integer id, String name, RequestType requestType, String note,
+                                  List<List<Integer>> levels, List<RouteAssignment> assignments) {
+        String validName = requireName(name, "ルート名");
+        // 空の段を詰め、同じ段の重複を除く
+        List<List<Integer>> validLevels = new ArrayList<>();
+        for (List<Integer> level : levels) {
+            List<Integer> approvers = new ArrayList<>(new LinkedHashSet<>(level));
+            approvers.removeIf(Objects::isNull);
+            if (!approvers.isEmpty()) {
+                validLevels.add(approvers);
+            }
+        }
+        if (validLevels.isEmpty()) {
+            throw new IllegalArgumentException("承認者を1人以上選んでください。");
+        }
+        // 同じ申請種別で同じ社員・部署を別のルートにも割り当てると、どちらを使うか分からなくなる
+        for (ApprovalRoute other : masterPort.findApprovalRoutes()) {
+            if (other.getId() == null || other.getId().equals(id)) {
+                continue;
+            }
+            boolean typesOverlap = other.getRequestType() == null || requestType == null
+                    || other.getRequestType() == requestType;
+            if (!typesOverlap) {
+                continue;
+            }
+            for (RouteAssignment a : assignments) {
+                if (other.isAssignedTo(a.getTargetType(), a.getTargetId())) {
+                    String target = a.isStaff() ? "社員 " + a.getTargetId() : "部署（ID " + a.getTargetId() + "）";
+                    throw new IllegalArgumentException(target + " は、すでに承認ルート「" + other.getName()
+                            + "」に割り当てています。そちらの割り当てを外してから保存してください。");
+                }
+            }
+        }
+        masterPort.saveApprovalRoute(new ApprovalRoute(id, validName, requestType,
+                note == null || note.isBlank() ? null : note.strip(), validLevels, assignments));
+    }
+
+    @Override
+    public void deleteApprovalRoute(int id) {
+        masterPort.deleteApprovalRoute(id);
     }
 
     @Override

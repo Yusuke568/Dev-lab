@@ -1,9 +1,13 @@
--- 社員（1つ目の ?）に表示するお知らせ：所属部署とその上の部署あてのもので、掲載期限（2つ目の ?）が切れていないもの
-WITH RECURSIVE upper_departments AS (
+-- 社員（1つ目の ?）に表示するお知らせ：所属部署（兼任部署を含む）とその上の部署あてのもので、掲載期限（2つ目の ?）が切れていないもの
+WITH RECURSIVE me AS (
+    SELECT CAST(? AS integer) AS staff_id
+),
+upper_departments AS (
     SELECT d.id, d.parent_id
-    FROM department d
-    JOIN staff_table s ON s.department_id = d.id
-    WHERE s.id = ?
+    FROM department d, me
+    WHERE d.id IN (SELECT s.department_id FROM staff_table s WHERE s.id = me.staff_id
+                   UNION
+                   SELECT sd.department_id FROM staff_department sd WHERE sd.staff_id = me.staff_id)
     UNION
     SELECT p.id, p.parent_id
     FROM department p

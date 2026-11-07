@@ -11,7 +11,13 @@ import java.util.List;
 public interface LeaveRequestUseCase {
 
     /** 休暇を申請する。却下済みの日付なら再申請として更新する。 */
-    void submit(String employeeId, LocalDate date, int abstractId, String reason);
+    /** 主所属の部署の業務として申請する。 */
+    default void submit(String employeeId, LocalDate date, int abstractId, String reason) {
+        submit(employeeId, date, abstractId, reason, null);
+    }
+
+    /** @param departmentId どの部署の業務か（兼任している人が選ぶ）。null なら主所属 */
+    void submit(String employeeId, LocalDate date, int abstractId, String reason, Integer departmentId);
 
     List<LeaveRequest> getMyRequests(String employeeId);
 

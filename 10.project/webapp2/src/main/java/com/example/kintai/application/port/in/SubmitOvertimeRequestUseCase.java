@@ -14,6 +14,15 @@ public interface SubmitOvertimeRequestUseCase {
      * @param plannedEndTime   予定の退勤時刻（"HH:mm"）。標準（18:00）どおりならnull/空でよい
      * @param reason           申請理由
      */
-    /** @return 自動承認された（申請者が最上位の承認者で、ほかに承認者がいない）なら true */
-    boolean submit(String employeeId, LocalDate date, String plannedStartTime, String plannedEndTime, String reason);
+    /** 主所属の部署の業務として申請する。 */
+    default boolean submit(String employeeId, LocalDate date, String plannedStartTime, String plannedEndTime, String reason) {
+        return submit(employeeId, date, plannedStartTime, plannedEndTime, reason, null);
+    }
+
+    /**
+     * @param departmentId どの部署の業務か（兼任している人が選ぶ）。null なら主所属
+     * @return 自動承認された（申請者が最上位の承認者で、ほかに承認者がいない）なら true
+     */
+    boolean submit(String employeeId, LocalDate date, String plannedStartTime, String plannedEndTime, String reason,
+                   Integer departmentId);
 }

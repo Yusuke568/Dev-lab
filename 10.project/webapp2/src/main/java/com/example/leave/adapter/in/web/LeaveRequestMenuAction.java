@@ -49,6 +49,8 @@ public class LeaveRequestMenuAction implements Action {
                 .filter(w -> !w.isWork())
                 .collect(Collectors.toList());
         request.setAttribute("leaveTypes", leaveTypes);
+        // 兼任している人は、どの部署の業務としての休暇かを選ぶ（承認ルートが部署で変わるため）
+        request.setAttribute("myDepartments", approvalWorkflowService.getDepartmentsOfStaff(Integer.parseInt(employeeId)));
 
         if (session.getAttribute("leaveRequestErrorMessage") != null) {
             request.setAttribute("errorMessage", session.getAttribute("leaveRequestErrorMessage"));

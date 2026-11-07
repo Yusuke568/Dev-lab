@@ -109,6 +109,17 @@
 				</select>
 			</div>
 
+			<div class="form-group">
+				<label for="concurrentDepartmentIds" class="form-label">兼任部署（任意）</label>
+				<select id="concurrentDepartmentIds" name="concurrentDepartmentIds" class="form-input" multiple size="4"
+					aria-describedby="concurrent-note">
+					<c:forEach var="d" items="${departments}">
+						<option value="${d.id}" <c:if test="${concurrentDepartmentIds != null and concurrentDepartmentIds.contains(d.id)}">selected</c:if>><c:out value="${d.indent}" /><c:out value="${d.name}" /></option>
+					</c:forEach>
+				</select>
+				<div class="id-note" id="concurrent-note">ほかの部署も兼任しているときに選びます（Ctrl/⌘ で複数選択）。申請のときに、どの部署の業務かを選べるようになります。</div>
+			</div>
+
 			<div class="form-actions">
 				<a href="${pageContext.request.contextPath}/shainList.do" class="btn btn-secondary">‹ キャンセル</a>
 				<button type="submit" id="submit-btn" class="btn btn-primary">✓ 更新</button>

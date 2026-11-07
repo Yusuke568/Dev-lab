@@ -31,13 +31,14 @@ public class ApprovalStepPersistenceAdapter implements ApprovalStepPort {
     private static final String SELECT_SQL =
             "SELECT a.request_id, a.level, a.approver_staff_id, s.name AS approver_name, a.decision, a.decided_at " +
             "FROM approval_step a LEFT JOIN staff_table s ON a.approver_staff_id = s.id " +
-            "WHERE a.request_type = ? AND a.request_id = ANY (?) ORDER BY a.request_id, a.level";
+            "WHERE a.request_type = ? AND a.request_id = ANY (?) ORDER BY a.request_id, a.level, a.id";
+    /** 判定した候補者の行に記録する（同じ段のほかの候補者の行は未処理のまま残る） */
     private static final String DECIDE_SQL =
             "UPDATE approval_step SET decision = ?, decided_at = CURRENT_TIMESTAMP " +
-            "WHERE request_type = ? AND request_id = ? AND level = ?";
+            "WHERE request_type = ? AND request_id = ? AND level = ? AND approver_staff_id = ?";
 
     @Override
-    public void replaceSteps(RequestType requestType, int requestId, List<Integer> approverStaffIds) {
+    public void replaceSteps(RequestType requestType, int requestId, List<List<Integer>> levels) {
         try (Connection con = ConnectionBase.getConnection()) {
             try (PreparedStatement ps = con.prepareStatement(DELETE_SQL)) {
                 ps.setString(1, requestType.name());
@@ -45,13 +46,17 @@ public class ApprovalStepPersistenceAdapter implements ApprovalStepPort {
                 ps.executeUpdate();
             }
             try (PreparedStatement ps = con.prepareStatement(INSERT_SQL)) {
+                // 段ごとに、候補者の数だけ行を作る
                 int level = 1;
-                for (Integer approver : approverStaffIds) {
-                    ps.setString(1, requestType.name());
-                    ps.setInt(2, requestId);
-                    ps.setInt(3, level++);
-                    ps.setInt(4, approver);
-                    ps.addBatch();
+                for (List<Integer> candidates : levels) {
+                    for (Integer approver : candidates) {
+                        ps.setString(1, requestType.name());
+                        ps.setInt(2, requestId);
+                        ps.setInt(3, level);
+                        ps.setInt(4, approver);
+                        ps.addBatch();
+                    }
+                    level++;
                 }
                 ps.executeBatch();
             }
@@ -96,13 +101,14 @@ public class ApprovalStepPersistenceAdapter implements ApprovalStepPort {
     }
 
     @Override
-    public void recordDecision(RequestType requestType, int requestId, int level, String decision) {
+    public void recordDecision(RequestType requestType, int requestId, int level, int approverStaffId, String decision) {
         try (Connection con = ConnectionBase.getConnection();
              PreparedStatement ps = con.prepareStatement(DECIDE_SQL)) {
             ps.setString(1, decision);
             ps.setString(2, requestType.name());
             ps.setInt(3, requestId);
             ps.setInt(4, level);
+            ps.setInt(5, approverStaffId);
             ps.executeUpdate();
         } catch (Exception e) {
             throw new RuntimeException("Failed to record approval decision.", e);

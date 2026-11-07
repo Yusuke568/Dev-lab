@@ -64,6 +64,17 @@ public class ShainUpdateExecuteAction implements Action {
         String departmentId = request.getParameter("departmentId");
         masterUseCase.assignDepartment(updatedId.getIntValue(),
                 departmentId == null || departmentId.isBlank() ? null : Integer.valueOf(departmentId));
+        // 兼任部署（主所属と同じ部署は除かれる）
+        java.util.List<Integer> concurrent = new java.util.ArrayList<>();
+        String[] concurrentParams = request.getParameterValues("concurrentDepartmentIds");
+        if (concurrentParams != null) {
+            for (String v : concurrentParams) {
+                if (v != null && !v.isBlank()) {
+                    concurrent.add(Integer.valueOf(v.trim()));
+                }
+            }
+        }
+        masterUseCase.assignConcurrentDepartments(updatedId.getIntValue(), concurrent);
 
         // 自分自身のIDを変えたときは、ログイン中の情報も新しいIDにする
         HttpSession session = request.getSession(false);

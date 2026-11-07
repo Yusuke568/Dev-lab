@@ -28,14 +28,14 @@ public class LeaveRequestService implements LeaveRequestUseCase {
     }
 
     @Override
-    public void submit(String employeeId, LocalDate date, int abstractId, String reason) {
+    public void submit(String employeeId, LocalDate date, int abstractId, String reason, Integer departmentId) {
         int staffId = Integer.parseInt(employeeId);
         Optional<LeaveRequest> existing = leaveRequestPort.findByEmployeeAndDate(staffId, date);
         if (existing.isPresent() && !existing.get().isRejected()) {
             throw new IllegalStateException(
                     date + " はすでに申請済みです（" + existing.get().getStatusLabel() + "）。却下された場合のみ再申請できます。");
         }
-        approvalWorkflowService.checkRouteAvailable(RequestType.LEAVE, employeeId);
+        approvalWorkflowService.checkRouteAvailable(RequestType.LEAVE, employeeId, departmentId);
 
         int requestId;
         if (existing.isPresent()) {
@@ -45,7 +45,8 @@ public class LeaveRequestService implements LeaveRequestUseCase {
             requestId = leaveRequestPort.insert(staffId, date, abstractId, reason);
         }
         // 最上位の承認者本人の申請は自動承認
-        if (approvalWorkflowService.startRoute(RequestType.LEAVE, requestId, employeeId)) {
+        leaveRequestPort.updateDepartment(requestId, departmentId);
+        if (approvalWorkflowService.startRoute(RequestType.LEAVE, requestId, employeeId, departmentId)) {
             leaveRequestPort.updateStatus(requestId, LeaveRequest.STATUS_APPROVED);
         }
     }

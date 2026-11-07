@@ -34,11 +34,15 @@ public class OvertimeRequestMenuAction implements Action {
 
     private final GetMyOvertimeRequestsUseCase getMyOvertimeRequestsUseCase;
     private final GetMonthlyAttendanceUseCase getMonthlyAttendanceUseCase;
+    /** 兼任している人に、どの部署の業務としての申請かを選んでもらうため */
+    private final com.example.approval.application.service.ApprovalWorkflowService approvalWorkflowService;
 
     public OvertimeRequestMenuAction(GetMyOvertimeRequestsUseCase getMyOvertimeRequestsUseCase,
-                                      GetMonthlyAttendanceUseCase getMonthlyAttendanceUseCase) {
+                                      GetMonthlyAttendanceUseCase getMonthlyAttendanceUseCase,
+                                      com.example.approval.application.service.ApprovalWorkflowService approvalWorkflowService) {
         this.getMyOvertimeRequestsUseCase = getMyOvertimeRequestsUseCase;
         this.getMonthlyAttendanceUseCase = getMonthlyAttendanceUseCase;
+        this.approvalWorkflowService = approvalWorkflowService;
     }
 
     @Override
@@ -74,6 +78,7 @@ public class OvertimeRequestMenuAction implements Action {
         }
 
         request.setAttribute("myRequests", myRequests);
+        request.setAttribute("myDepartments", approvalWorkflowService.getDepartmentsOfStaff(Integer.parseInt(employeeId)));
         request.setAttribute("attendanceByDate", attendanceByDate);
 
         if (prefillTargetDate != null) {

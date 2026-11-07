@@ -59,14 +59,17 @@ class OvertimeRequestSubmitTest {
     private final OrganizationPort organization = new OrganizationPort() {
         @Override public Map<Integer, Department> findAllDepartments() { return Map.of(2, new Department(2, "開発1課", null, approverOfSection, 0)); }
         @Override public Integer findDepartmentIdOfStaff(int staffId) { return 2; }
+        @Override public List<Integer> findDepartmentIdsOfStaff(int staffId) { return List.of(2); }
+        @Override public Map<Integer, List<Integer>> findSubApprovers() { return Map.of(); }
+        @Override public List<com.example.approval.domain.model.ApprovalRoute> findApprovalRoutes() { return List.of(); }
         @Override public int findMaxLevels(RequestType requestType) { return 1; }
     };
 
     private final ApprovalStepPort steps = new ApprovalStepPort() {
-        @Override public void replaceSteps(RequestType requestType, int requestId, List<Integer> approverStaffIds) { }
+        @Override public void replaceSteps(RequestType requestType, int requestId, List<List<Integer>> levels) { }
         @Override public List<ApprovalStep> findSteps(RequestType requestType, int requestId) { return List.of(); }
         @Override public Map<Integer, List<ApprovalStep>> findSteps(RequestType requestType, Collection<Integer> requestIds) { return Map.of(); }
-        @Override public void recordDecision(RequestType requestType, int requestId, int level, String decision) { }
+        @Override public void recordDecision(RequestType requestType, int requestId, int level, int approverStaffId, String decision) { }
     };
 
     private final LoadAttendanceRecordPort attendance = new LoadAttendanceRecordPort() {

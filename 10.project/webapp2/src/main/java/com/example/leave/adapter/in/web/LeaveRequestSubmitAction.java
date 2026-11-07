@@ -31,7 +31,9 @@ public class LeaveRequestSubmitAction implements Action {
         try {
             LocalDate date = LocalDate.parse(request.getParameter("targetDate"));
             int abstractId = Integer.parseInt(request.getParameter("abstractId"));
-            leaveRequestUseCase.submit(employeeId, date, abstractId, request.getParameter("reason"));
+            String departmentParam = request.getParameter("departmentId");
+            Integer departmentId = departmentParam == null || departmentParam.isBlank() ? null : Integer.valueOf(departmentParam);
+            leaveRequestUseCase.submit(employeeId, date, abstractId, request.getParameter("reason"), departmentId);
         } catch (Exception e) {
             session.setAttribute("leaveRequestErrorMessage", e.getMessage());
         }

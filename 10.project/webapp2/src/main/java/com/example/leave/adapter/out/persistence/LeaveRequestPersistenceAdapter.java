@@ -51,6 +51,9 @@ public class LeaveRequestPersistenceAdapter implements LeaveRequestPort {
         return query(SELECT_BASE +
                 "JOIN approval_step a ON a.request_type = 'LEAVE' AND a.request_id = r.id AND a.level = r.current_level " +
                 "WHERE r.status = 'PENDING' AND a.decision IS NULL AND a.approver_staff_id = ? " +
+                // 同じ段のほかの候補者（副承認者など）がすでに判定していたら出さない
+                "AND NOT EXISTS (SELECT 1 FROM approval_step x WHERE x.request_type = a.request_type " +
+                "AND x.request_id = a.request_id AND x.level = a.level AND x.decision IS NOT NULL) " +
                 "ORDER BY r.target_date ASC", approverId);
     }
 
@@ -77,6 +80,22 @@ public class LeaveRequestPersistenceAdapter implements LeaveRequestPort {
     public void resubmit(int requestId, int abstractId, String reason) {
         update("UPDATE leave_request SET abstract_id = ?, reason = ?, status = 'PENDING', current_level = 1, " +
                 "created_at = CURRENT_TIMESTAMP WHERE id = ?", abstractId, reason, requestId);
+    }
+
+    @Override
+    public void updateDepartment(int requestId, Integer departmentId) {
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement("UPDATE leave_request SET department_id = ? WHERE id = ?")) {
+            if (departmentId == null) {
+                ps.setNull(1, java.sql.Types.INTEGER);
+            } else {
+                ps.setInt(1, departmentId);
+            }
+            ps.setInt(2, requestId);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to set department of leave request.", e);
+        }
     }
 
     @Override

@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
 	pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -44,6 +45,17 @@
 					</c:forEach>
 				</select>
 			</div>
+			<%-- 兼任している人だけ：どの部署の業務か（承認ルートが部署で変わる） --%>
+			<c:if test="${fn:length(myDepartments) > 1}">
+				<div class="form-group">
+					<label class="form-label" for="departmentId">業務の部署</label>
+					<select id="departmentId" name="departmentId" class="form-input">
+						<c:forEach var="d" items="${myDepartments}" varStatus="st">
+							<option value="${d.id}"><c:out value="${d.name}" /><c:if test="${st.first}">（主所属）</c:if></option>
+						</c:forEach>
+					</select>
+				</div>
+			</c:if>
 			<div class="form-group" style="flex: 1; min-width: 200px;">
 				<label class="form-label">理由</label>
 				<input type="text" name="reason" class="form-input" maxlength="255" placeholder="例: 私用のため" style="width: 100%;">

@@ -135,6 +135,22 @@ public class OvertimeRequestPersistenceAdapter implements OvertimeRequestPort {
     }
 
     @Override
+    public void updateDepartment(int requestId, Integer departmentId) {
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement("UPDATE overtime_request SET department_id = ? WHERE id = ?")) {
+            if (departmentId == null) {
+                ps.setNull(1, java.sql.Types.INTEGER);
+            } else {
+                ps.setInt(1, departmentId);
+            }
+            ps.setInt(2, requestId);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to set department of overtime request.", e);
+        }
+    }
+
+    @Override
     public void resubmit(int requestId, int plannedOvertimeMinutes, String plannedStartTime, String plannedEndTime, String reason) {
         String sql = readSqlFile("resubmit_overtime_request.sql");
         try (Connection con = ConnectionBase.getConnection();

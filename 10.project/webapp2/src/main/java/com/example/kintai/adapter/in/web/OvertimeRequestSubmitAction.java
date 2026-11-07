@@ -51,7 +51,10 @@ public class OvertimeRequestSubmitAction implements Action {
             } catch (DateTimeParseException | NullPointerException e) {
                 throw new IllegalArgumentException("対象日を入力してください。");
             }
-            boolean autoApproved = submitOvertimeRequestUseCase.submit(employeeId, date, plannedStartTime, plannedEndTime, reason);
+            String departmentParam = request.getParameter("departmentId");
+            Integer departmentId = departmentParam == null || departmentParam.isBlank() ? null : Integer.valueOf(departmentParam);
+            boolean autoApproved = submitOvertimeRequestUseCase.submit(employeeId, date, plannedStartTime, plannedEndTime,
+                    reason, departmentId);
             if (session != null) {
                 session.setAttribute("overtimeRequestSuccessMessage", autoApproved
                         ? date + " の残業事前申請を出しました。組織図で上位の承認者がいないため、自動で承認しました。"
@@ -66,6 +69,7 @@ public class OvertimeRequestSubmitAction implements Action {
                 form.put("plannedStartTime", plannedStartTime);
                 form.put("plannedEndTime", plannedEndTime);
                 form.put("reason", reason);
+                form.put("departmentId", request.getParameter("departmentId"));
                 session.setAttribute("overtimeRequestForm", form);
             }
         }

@@ -26,6 +26,10 @@ public interface LeaveRequestPort {
     /** 却下された申請を、内容を変えて申請中・1段目に戻す。 */
     void resubmit(int requestId, int abstractId, String reason);
 
+    /** どの部署の業務としての申請か（兼任者用。null なら主所属） */
+    default void updateDepartment(int requestId, Integer departmentId) {
+    }
+
     void updateStatus(int requestId, String status);
 
     void advanceLevel(int requestId);

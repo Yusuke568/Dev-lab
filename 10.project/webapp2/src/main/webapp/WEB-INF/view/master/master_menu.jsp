@@ -44,13 +44,17 @@
 		<c:if test="${sessionScope.can.MASTER_DEPARTMENT}">
 		<a class="master-link" href="${pageContext.request.contextPath}/masterDepartment.do">
 			<h3>🏢 組織図</h3>
-			<p>部署の親子関係と承認者、社員の所属部署を設定します。承認ルートはここから作られます。</p>
+			<p>部署の親子関係と承認者・副承認者、社員の所属部署・兼任部署を設定します。</p>
 		</a>
 		</c:if>
 		<c:if test="${sessionScope.can.MASTER_APPROVAL_ROUTE}">
 		<a class="master-link" href="${pageContext.request.contextPath}/masterApprovalRoute.do">
 			<h3>🔀 承認ルート設定</h3>
 			<p>残業事前申請・休暇申請を、組織図の何段上まで承認するかを設定します。</p>
+		</a>
+		<a class="master-link" href="${pageContext.request.contextPath}/masterApprovalRouteDef.do">
+			<h3>🧭 承認ルート</h3>
+			<p>段ごとに承認者（複数可）を並べたルートを作り、社員や部署に割り当てます。兼任や派遣先ごとの承認者に使います。</p>
 		</a>
 		</c:if>
 		<c:if test="${sessionScope.can.MASTER_ABSTRACT}">

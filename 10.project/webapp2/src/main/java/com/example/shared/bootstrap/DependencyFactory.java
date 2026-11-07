@@ -302,7 +302,8 @@ public class DependencyFactory {
         actionMap.put("CorrectionMasterRegister", new CorrectionMasterRegisterAction(this.registerCorrectionMasterUseCase));
 
         // Overtime Request Actions
-        actionMap.put("OvertimeRequestMenu", new OvertimeRequestMenuAction(this.getMyOvertimeRequestsUseCase, this.getMonthlyAttendanceUseCase));
+        actionMap.put("OvertimeRequestMenu", new OvertimeRequestMenuAction(this.getMyOvertimeRequestsUseCase, this.getMonthlyAttendanceUseCase,
+                this.approvalWorkflowService));
         actionMap.put("WorkReportExport", new WorkReportExportAction(this.exportWorkReportUseCase));
         actionMap.put("WorkReportImport", new com.example.kintai.adapter.in.web.WorkReportImportAction(this.importWorkReportUseCase));
         actionMap.put("WeeklyWorkReportSave", new WeeklyWorkReportSaveAction(this.saveWeeklyWorkReportsUseCase, this.attendanceAccessUseCase));
@@ -327,6 +328,7 @@ public class DependencyFactory {
         actionMap.put("MasterAbstract", new com.example.master.adapter.in.web.MasterAbstractAction(this.masterMaintenanceUseCase));
         actionMap.put("MasterLeaveRule", new com.example.master.adapter.in.web.MasterLeaveRuleAction(this.masterMaintenanceUseCase));
         actionMap.put("MasterApprovalRoute", new com.example.master.adapter.in.web.MasterApprovalRouteAction(this.masterMaintenanceUseCase));
+        actionMap.put("MasterApprovalRouteDef", new com.example.master.adapter.in.web.MasterApprovalRouteDefAction(this.masterMaintenanceUseCase, this.approvalWorkflowService));
         actionMap.put("MasterCompanyHoliday", new com.example.master.adapter.in.web.MasterCompanyHolidayAction(this.masterMaintenanceUseCase));
 
         initializeFeatureMap();
@@ -355,7 +357,7 @@ public class DependencyFactory {
         requireFeature(Feature.MASTER_PERMISSION_GROUP, "MasterPermissionGroup");
         requireFeature(Feature.MASTER_JOB_CLASS, "MasterJobClass");
         requireFeature(Feature.MASTER_DEPARTMENT, "MasterDepartment");
-        requireFeature(Feature.MASTER_APPROVAL_ROUTE, "MasterApprovalRoute");
+        requireFeature(Feature.MASTER_APPROVAL_ROUTE, "MasterApprovalRoute", "MasterApprovalRouteDef");
         requireFeature(Feature.MASTER_ABSTRACT, "MasterAbstract");
         requireFeature(Feature.MASTER_LEAVE_RULE, "MasterLeaveRule");
         requireFeature(Feature.MASTER_CORRECTION, "CorrectionMasterList", "CorrectionMasterRegister");

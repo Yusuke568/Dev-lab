@@ -105,6 +105,9 @@ public class ShainPersistenceAdapter implements ShainPort {
             {"leave_request", "staff_id"},
             {"approval_step", "approver_staff_id"},
             {"notice", "author_staff_id"},
+            {"staff_department", "staff_id"},
+            {"department_approver", "staff_id"},
+            {"approval_route_step", "staff_id"},
     };
 
     @Override
@@ -118,6 +121,15 @@ public class ShainPersistenceAdapter implements ShainPort {
                 // テーブル名・列名は上の固定の一覧から組み立てる（外からの入力は入らない）
                 try (PreparedStatement ps = con.prepareStatement(
                         "UPDATE " + tc[0] + " SET " + tc[1] + " = ? WHERE " + tc[1] + " = ?")) {
+                    ps.setInt(1, to.getIntValue());
+                    ps.setInt(2, from.getIntValue());
+                    ps.executeUpdate();
+                }
+            }
+            // 承認ルートの「社員」への割り当て（target_id は部署IDのこともあるので種類で絞る）
+            if (tableExists(con, "approval_route_assignment")) {
+                try (PreparedStatement ps = con.prepareStatement(
+                        "UPDATE approval_route_assignment SET target_id = ? WHERE target_type = 'STAFF' AND target_id = ?")) {
                     ps.setInt(1, to.getIntValue());
                     ps.setInt(2, from.getIntValue());
                     ps.executeUpdate();

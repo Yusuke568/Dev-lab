@@ -43,7 +43,8 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
     }
 
     @Override
-    public boolean submit(String employeeId, LocalDate date, String plannedStartTime, String plannedEndTime, String reason) {
+    public boolean submit(String employeeId, LocalDate date, String plannedStartTime, String plannedEndTime, String reason,
+                          Integer departmentId) {
         EmployeeId id = new EmployeeId(employeeId);
         int plannedOvertimeMinutes = OvertimeRequest.calculatePlannedOvertimeMinutes(plannedStartTime, plannedEndTime);
         // 時間外には補正・間接の時間も含めるので、出退勤が 9:00〜18:00 の中でも時間外になる日がある。
@@ -60,7 +61,7 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
                     date + " はすでに申請済みです（" + existing.get().getStatusLabel() + "）。却下された場合のみ再申請できます。");
         }
         // 承認者がいないまま申請だけ残らないよう、保存前にルートが組めるか確かめる
-        approvalWorkflowService.checkRouteAvailable(RequestType.OVERTIME, employeeId);
+        approvalWorkflowService.checkRouteAvailable(RequestType.OVERTIME, employeeId, departmentId);
 
         int requestId;
         if (existing.isPresent()) {
@@ -69,7 +70,8 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
         } else {
             requestId = overtimeRequestPort.insert(id, date, plannedOvertimeMinutes, plannedStartTime, plannedEndTime, reason);
         }
-        boolean autoApproved = approvalWorkflowService.startRoute(RequestType.OVERTIME, requestId, employeeId);
+        overtimeRequestPort.updateDepartment(requestId, departmentId);
+        boolean autoApproved = approvalWorkflowService.startRoute(RequestType.OVERTIME, requestId, employeeId, departmentId);
         if (autoApproved) {
             overtimeRequestPort.decide(requestId, true, employeeId);
         }

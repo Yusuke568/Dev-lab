@@ -8,19 +8,20 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 申請ごとの承認ステップ（approval_step）の永続化操作を定義するポート。
+ * 申請ごとの承認ステップ（approval_step）を扱う出力ポート。
+ * 1つの段に候補者が複数いるときは、候補者ごとに1行持つ。誰か1人が判定すればその段は終わる。
  */
 public interface ApprovalStepPort {
 
-    /** 申請の承認ステップを、渡した承認者の並びで作り直す（再申請時は古いステップを消す）。 */
-    void replaceSteps(RequestType requestType, int requestId, List<Integer> approverStaffIds);
+    /** 申請の承認ルートを作り直す（levels は段ごとの候補者。1段目から）。 */
+    void replaceSteps(RequestType requestType, int requestId, List<List<Integer>> levels);
 
-    /** 申請の承認ステップを1段目から順に返す。 */
+    /** 申請の承認ステップ（段・候補者の順）。 */
     List<ApprovalStep> findSteps(RequestType requestType, int requestId);
 
-    /** 複数の申請の承認ステップをまとめて返す（申請ID → ステップ）。 */
+    /** 複数の申請の承認ステップ（申請ID → ステップ）。 */
     Map<Integer, List<ApprovalStep>> findSteps(RequestType requestType, Collection<Integer> requestIds);
 
-    /** 指定した段の判定を記録する。 */
-    void recordDecision(RequestType requestType, int requestId, int level, String decision);
+    /** 段の判定を、判定した候補者の行に記録する。 */
+    void recordDecision(RequestType requestType, int requestId, int level, int approverStaffId, String decision);
 }

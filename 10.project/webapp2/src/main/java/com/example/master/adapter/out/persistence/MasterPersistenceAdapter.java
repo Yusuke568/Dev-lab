@@ -1,6 +1,8 @@
 package com.example.master.adapter.out.persistence;
 
+import com.example.approval.domain.model.ApprovalRoute;
 import com.example.approval.domain.model.RequestType;
+import com.example.approval.domain.model.RouteAssignment;
 import com.example.approval.domain.port.out.OrganizationPort;
 import com.example.entity.WorkType;
 import com.example.leave.domain.model.LeaveGrantRule;
@@ -185,9 +187,9 @@ public class MasterPersistenceAdapter implements MasterPort, OrganizationPort {
     }
 
     @Override
-    public void saveDepartment(Integer id, String name, Integer parentId, Integer approverStaffId, int sortOrder) {
+    public int saveDepartment(Integer id, String name, Integer parentId, Integer approverStaffId, int sortOrder) {
         String sql = id == null
-                ? "INSERT INTO department (name, parent_id, approver_staff_id, sort_order) VALUES (?, ?, ?, ?)"
+                ? "INSERT INTO department (name, parent_id, approver_staff_id, sort_order) VALUES (?, ?, ?, ?) RETURNING id"
                 : "UPDATE department SET name = ?, parent_id = ?, approver_staff_id = ?, sort_order = ? WHERE id = ?";
         try (Connection con = ConnectionBase.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -197,10 +199,96 @@ public class MasterPersistenceAdapter implements MasterPort, OrganizationPort {
             ps.setInt(4, sortOrder);
             if (id != null) {
                 ps.setInt(5, id);
+                ps.executeUpdate();
+                return id;
             }
-            ps.executeUpdate();
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getInt(1);
+            }
         } catch (Exception e) {
             throw new RuntimeException("Failed to save department.", e);
+        }
+    }
+
+    @Override
+    public Map<Integer, List<Integer>> findSubApprovers() {
+        return loadIdGroups("SELECT department_id, staff_id FROM department_approver ORDER BY department_id, staff_id",
+                "department_id", "staff_id", "Failed to load sub approvers.");
+    }
+
+    @Override
+    public void replaceSubApprovers(int departmentId, List<Integer> staffIds) {
+        replaceIds("DELETE FROM department_approver WHERE department_id = ?",
+                "INSERT INTO department_approver (department_id, staff_id) VALUES (?, ?)",
+                departmentId, staffIds, "Failed to save sub approvers.");
+    }
+
+    @Override
+    public List<Integer> findConcurrentDepartmentIds(int staffId) {
+        return findAllConcurrentDepartments().getOrDefault(staffId, new ArrayList<>());
+    }
+
+    @Override
+    public Map<Integer, List<Integer>> findAllConcurrentDepartments() {
+        return loadIdGroups("SELECT staff_id, department_id FROM staff_department ORDER BY staff_id, department_id",
+                "staff_id", "department_id", "Failed to load concurrent departments.");
+    }
+
+    @Override
+    public void replaceConcurrentDepartments(int staffId, List<Integer> departmentIds) {
+        replaceIds("DELETE FROM staff_department WHERE staff_id = ?",
+                "INSERT INTO staff_department (staff_id, department_id) VALUES (?, ?)",
+                staffId, departmentIds, "Failed to save concurrent departments.");
+    }
+
+    @Override
+    public List<Integer> findDepartmentIdsOfStaff(int staffId) {
+        List<Integer> ids = new ArrayList<>();
+        Integer primary = findDepartmentIdOfStaff(staffId);
+        if (primary != null) {
+            ids.add(primary);
+        }
+        for (Integer d : findConcurrentDepartmentIds(staffId)) {
+            if (!ids.contains(d)) {
+                ids.add(d);
+            }
+        }
+        return ids;
+    }
+
+    /** 2列の結果を「1列目 → 2列目の並び」にまとめる */
+    private static Map<Integer, List<Integer>> loadIdGroups(String sql, String keyColumn, String valueColumn, String error) {
+        Map<Integer, List<Integer>> map = new LinkedHashMap<>();
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                map.computeIfAbsent(rs.getInt(keyColumn), k -> new ArrayList<>()).add(rs.getInt(valueColumn));
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(error, e);
+        }
+        return map;
+    }
+
+    /** owner の行をすべて消して ids を入れ直す */
+    private static void replaceIds(String deleteSql, String insertSql, int owner, List<Integer> ids, String error) {
+        try (Connection con = ConnectionBase.getConnection()) {
+            try (PreparedStatement ps = con.prepareStatement(deleteSql)) {
+                ps.setInt(1, owner);
+                ps.executeUpdate();
+            }
+            try (PreparedStatement ps = con.prepareStatement(insertSql)) {
+                for (Integer id : ids) {
+                    ps.setInt(1, owner);
+                    ps.setInt(2, id);
+                    ps.addBatch();
+                }
+                ps.executeBatch();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(error, e);
         }
     }
 
@@ -491,6 +579,156 @@ public class MasterPersistenceAdapter implements MasterPort, OrganizationPort {
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to save approval route setting.", e);
+        }
+    }
+
+    // ------------------------------------------------------------------ 承認ルートマスタ
+
+    @Override
+    public List<ApprovalRoute> findApprovalRoutes() {
+        Map<Integer, String[]> heads = new LinkedHashMap<>();
+        Map<Integer, Map<Integer, List<Integer>>> steps = new LinkedHashMap<>();
+        Map<Integer, List<RouteAssignment>> assignments = new LinkedHashMap<>();
+        try (Connection con = ConnectionBase.getConnection()) {
+            try (PreparedStatement ps = con.prepareStatement(
+                    "SELECT id, name, request_type, note FROM approval_route ORDER BY id");
+                 ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    heads.put(rs.getInt("id"), new String[]{rs.getString("name"), rs.getString("request_type"), rs.getString("note")});
+                }
+            }
+            try (PreparedStatement ps = con.prepareStatement(
+                    "SELECT route_id, level, staff_id FROM approval_route_step ORDER BY route_id, level, staff_id");
+                 ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    steps.computeIfAbsent(rs.getInt("route_id"), k -> new java.util.TreeMap<>())
+                            .computeIfAbsent(rs.getInt("level"), k -> new ArrayList<>())
+                            .add(rs.getInt("staff_id"));
+                }
+            }
+            try (PreparedStatement ps = con.prepareStatement(
+                    "SELECT a.route_id, a.target_type, a.target_id, " +
+                    "CASE WHEN a.target_type = 'STAFF' THEN s.name ELSE d.name END AS target_name " +
+                    "FROM approval_route_assignment a " +
+                    "LEFT JOIN staff_table s ON a.target_type = 'STAFF' AND s.id = a.target_id " +
+                    "LEFT JOIN department d ON a.target_type = 'DEPARTMENT' AND d.id = a.target_id " +
+                    "ORDER BY a.route_id, a.target_type, a.target_id");
+                 ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    assignments.computeIfAbsent(rs.getInt("route_id"), k -> new ArrayList<>())
+                            .add(new RouteAssignment(rs.getString("target_type"), rs.getInt("target_id"), rs.getString("target_name")));
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load approval routes.", e);
+        }
+        List<ApprovalRoute> routes = new ArrayList<>();
+        heads.forEach((id, head) -> {
+            RequestType type = null;
+            if (head[1] != null && !head[1].isBlank()) {
+                try {
+                    type = RequestType.valueOf(head[1]);
+                } catch (IllegalArgumentException ignored) {
+                    // 廃止した申請種別は「両方」として扱う
+                }
+            }
+            List<List<Integer>> levels = new ArrayList<>(steps.getOrDefault(id, Map.of()).values());
+            routes.add(new ApprovalRoute(id, head[0], type, head[2], levels, assignments.getOrDefault(id, new ArrayList<>())));
+        });
+        return routes;
+    }
+
+    @Override
+    public int saveApprovalRoute(ApprovalRoute route) {
+        try (Connection con = ConnectionBase.getConnection()) {
+            // ルート・段・割り当て先はまとめて保存する（途中で失敗したら全部取り消す）
+            boolean autoCommit = con.getAutoCommit();
+            con.setAutoCommit(false);
+            try {
+                int saved = saveApprovalRoute(con, route);
+                con.commit();
+                return saved;
+            } catch (Exception e) {
+                con.rollback();
+                throw e;
+            } finally {
+                con.setAutoCommit(autoCommit);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to save approval route.", e);
+        }
+    }
+
+    private static int saveApprovalRoute(Connection con, ApprovalRoute route) throws SQLException {
+        {
+            int id;
+            if (route.getId() == null) {
+                try (PreparedStatement ps = con.prepareStatement(
+                        "INSERT INTO approval_route (name, request_type, note) VALUES (?, ?, ?) RETURNING id")) {
+                    ps.setString(1, route.getName());
+                    ps.setString(2, route.getRequestType() != null ? route.getRequestType().name() : null);
+                    ps.setString(3, route.getNote());
+                    try (ResultSet rs = ps.executeQuery()) {
+                        rs.next();
+                        id = rs.getInt(1);
+                    }
+                }
+            } else {
+                id = route.getId();
+                try (PreparedStatement ps = con.prepareStatement(
+                        "UPDATE approval_route SET name = ?, request_type = ?, note = ? WHERE id = ?")) {
+                    ps.setString(1, route.getName());
+                    ps.setString(2, route.getRequestType() != null ? route.getRequestType().name() : null);
+                    ps.setString(3, route.getNote());
+                    ps.setInt(4, id);
+                    ps.executeUpdate();
+                }
+            }
+            try (PreparedStatement ps = con.prepareStatement("DELETE FROM approval_route_step WHERE route_id = ?")) {
+                ps.setInt(1, id);
+                ps.executeUpdate();
+            }
+            try (PreparedStatement ps = con.prepareStatement(
+                    "INSERT INTO approval_route_step (route_id, level, staff_id) VALUES (?, ?, ?)")) {
+                int level = 1;
+                for (List<Integer> approvers : route.getLevels()) {
+                    for (Integer staffId : approvers) {
+                        ps.setInt(1, id);
+                        ps.setInt(2, level);
+                        ps.setInt(3, staffId);
+                        ps.addBatch();
+                    }
+                    level++;
+                }
+                ps.executeBatch();
+            }
+            try (PreparedStatement ps = con.prepareStatement("DELETE FROM approval_route_assignment WHERE route_id = ?")) {
+                ps.setInt(1, id);
+                ps.executeUpdate();
+            }
+            try (PreparedStatement ps = con.prepareStatement(
+                    "INSERT INTO approval_route_assignment (route_id, target_type, target_id) VALUES (?, ?, ?)")) {
+                for (RouteAssignment a : route.getAssignments()) {
+                    ps.setInt(1, id);
+                    ps.setString(2, a.getTargetType());
+                    ps.setInt(3, a.getTargetId());
+                    ps.addBatch();
+                }
+                ps.executeBatch();
+            }
+            return id;
+        }
+    }
+
+    @Override
+    public void deleteApprovalRoute(int id) {
+        // 段と割り当て先は ON DELETE CASCADE で一緒に消える
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement("DELETE FROM approval_route WHERE id = ?")) {
+            ps.setInt(1, id);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete approval route.", e);
         }
     }
 

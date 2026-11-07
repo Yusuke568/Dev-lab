@@ -6,6 +6,7 @@
 --   ・申請がどの部署の業務か（overtime_request / leave_request の department_id）
 --   ・承認ステップに同じ段の候補者を複数持てるようにする（approval_step の一意制約の変更）
 -- 何度実行しても安全。
+-- 1文ずつ「;」で区切って実行するツール（DBeaver・pgAdmin など）でも動くよう、DO ブロックは使わない。
 -- ============================================================================
 
 -- 兼任部署（主所属は今までどおり staff_table.department_id）
@@ -53,12 +54,8 @@ ALTER TABLE overtime_request ADD COLUMN IF NOT EXISTS department_id integer;
 ALTER TABLE leave_request ADD COLUMN IF NOT EXISTS department_id integer;
 
 -- 承認ステップ：同じ段に候補者を複数行で持てるようにする
+-- （DO ブロックを使わず、いったん外してから付け直す。何度実行しても同じ結果になる）
 ALTER TABLE approval_step DROP CONSTRAINT IF EXISTS uq_approval_step;
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'uq_approval_step_candidate') THEN
-        ALTER TABLE approval_step
-            ADD CONSTRAINT uq_approval_step_candidate UNIQUE (request_type, request_id, level, approver_staff_id);
-    END IF;
-END
-$$;
+ALTER TABLE approval_step DROP CONSTRAINT IF EXISTS uq_approval_step_candidate;
+ALTER TABLE approval_step
+    ADD CONSTRAINT uq_approval_step_candidate UNIQUE (request_type, request_id, level, approver_staff_id);

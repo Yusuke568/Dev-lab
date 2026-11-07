@@ -15,20 +15,15 @@ CREATE TABLE IF NOT EXISTS applied_migration (
     applied_at  timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-DO $$
-BEGIN
-    IF EXISTS (SELECT 1 FROM applied_migration WHERE name = '20261111_overtime_with_correction') THEN
-        RAISE NOTICE '20261111_overtime_with_correction は実行済みのため、何もしません';
-        RETURN;
-    END IF;
+-- 1文ずつ「;」で区切って実行するツールでも動くよう、DO ブロックは使わず、各文に「未実行なら」の条件を付ける。
+-- 右辺はすべて更新前の値を使う（PostgreSQL の UPDATE の決まり）
+UPDATE work_month_table
+SET total_work_time        = total_work_time + COALESCE(indirect_time, 0),
+    total_direct_work_time = total_work_time,
+    overtime               = GREATEST(0, total_work_time + COALESCE(indirect_time, 0) - 480)
+WHERE total_work_time IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM applied_migration WHERE name = '20261111_overtime_with_correction');
 
-    -- 右辺はすべて更新前の値を使う（PostgreSQL の UPDATE の決まり）
-    UPDATE work_month_table
-    SET total_work_time        = total_work_time + COALESCE(indirect_time, 0),
-        total_direct_work_time = total_work_time,
-        overtime               = GREATEST(0, total_work_time + COALESCE(indirect_time, 0) - 480)
-    WHERE total_work_time IS NOT NULL;
-
-    INSERT INTO applied_migration (name) VALUES ('20261111_overtime_with_correction');
-END
-$$;
+INSERT INTO applied_migration (name)
+SELECT '20261111_overtime_with_correction'
+WHERE NOT EXISTS (SELECT 1 FROM applied_migration WHERE name = '20261111_overtime_with_correction');

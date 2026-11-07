@@ -63,11 +63,42 @@
 .menu-card h3 {
 	margin-bottom: 1.5rem;
 }
+
+/* 画面右上のアカウント操作（パスワード変更・ログアウト） */
+.account-bar {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-bottom: 0.5rem;
+}
+
+.account-bar a {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 12px;
+	font-size: 0.85rem;
+	border: 1px solid #cbd5e0;
+	border-radius: 999px;
+	color: #4a5568;
+	background: #fff;
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+.account-bar a:hover {
+	border-color: #90cdf4;
+	color: #1a3d6d;
+}
 </style>
 <%@ include file="_icons.jspf" %>
 </head>
 <body>
 <div class="card">
+	<div class="account-bar">
+		<a href="${pageContext.request.contextPath}/passwordChange.do" title="ログインに使うパスワードを変更します">🔑 パスワード変更</a>
+		<a href="${pageContext.request.contextPath}/logout.do" title="ログアウトしてログイン画面に戻ります">↩️ ログアウト</a>
+	</div>
 	<div class="text-center">
 		<h1>メインメニュー</h1>
 		<p>実行したい操作を選んでください</p>
@@ -190,25 +221,7 @@
 				</div>
 			</div>
 		</c:if>
-		
-		<!-- パスワード変更カード（ログインしている全員） -->
-		<div class="menu-card-wrapper">
-			<div class="menu-card" style="cursor: pointer; height: 100%;" onclick="location.href='${pageContext.request.contextPath}/passwordChange.do'">
-				<div class="icon">🔑</div>
-				<h3>パスワード変更</h3>
-				<p>ログインに使うパスワードを変更します。</p>
 			</div>
-		</div>
-
-		<!-- ログイン画面へ戻るカード -->
-		<div class="menu-card-wrapper">
-			<div class="menu-card" style="cursor: pointer; height: 100%;" onclick="location.href='${pageContext.request.contextPath}/logout.do'">
-				<div class="icon">↩️</div>
-				<h3>ログアウト</h3>
-				<p>ログアウトしてログイン画面に戻ります。</p>
-			</div>
-		</div>
-	</div>
 </div>
 </body>
 </html>

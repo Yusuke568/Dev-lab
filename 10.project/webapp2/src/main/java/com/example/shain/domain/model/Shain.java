@@ -71,6 +71,14 @@ public class Shain {
         return yearsOfService;
     }
 
+    /** 入社年（西暦）から数えた勤続年数。入社年が未設定（0 以下）や未来なら 0 */
+    public static int yearsOfServiceFrom(int entryYear, int currentYear) {
+        if (entryYear <= 0) {
+            return 0;
+        }
+        return Math.max(0, currentYear - entryYear);
+    }
+
     public void setPaidLeaveDays(double paidLeaveDays) {
         this.paidLeaveDays = paidLeaveDays;
     }

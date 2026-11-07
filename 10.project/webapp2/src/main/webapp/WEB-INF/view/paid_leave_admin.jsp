@@ -18,6 +18,13 @@
 		<p>年度更新や個別での有給休暇付与を管理します。</p>
 	</div>
 	
+	<c:if test="${not empty message}">
+		<div class="status-item status-info" style="margin: 1rem 0;">✓ <c:out value="${message}" /></div>
+	</c:if>
+	<c:if test="${not empty errorMessage}">
+		<div class="error-message" style="margin: 1rem 0;"><c:out value="${errorMessage}" /></div>
+	</c:if>
+
 	<div class="page-header-actions">
 		<a href="${pageContext.request.contextPath}/shainList.do" class="btn btn-secondary">‹ 社員一覧へ戻る</a>
 	</div>
@@ -26,8 +33,11 @@
 		<!-- Action Section 1: Grant by Years of Service -->
 		<div class="card">
 			<h2>🗓️ 勤続年数で一括付与</h2>
-			<p>定義済みのルールに基づき、全社員の有給休暇を一括で更新します。</p>
-			<form action="${pageContext.request.contextPath}/grantLeaveByYear.do" method="post" class="leave-grant-form">
+			<p>マスタ管理の「有給付与ルール」に基づき、勤続年数（入社年から数えます）に合う日数を全社員の残日数に足します。
+				ルールより長く勤めている人には、一番長いルールの日数を足します。<br>
+				<strong>実行するたびに足されます。</strong>年に1回だけ実行してください。足される日数は下の一覧の「一括付与で足す日数」で確かめられます。</p>
+			<form action="${pageContext.request.contextPath}/grantLeaveByYear.do" method="post" class="leave-grant-form"
+				onsubmit="return confirm('${grantPreviewCount}人に、勤続年数に応じた有給休暇を付与します。\n実行するたびに足されます。実行しますか？');">
 				<button type="submit" class="btn btn-primary">一括付与を実行</button>
 			</form>
 		</div>
@@ -54,6 +64,7 @@
 				<th>社員ID</th>
 				<th>氏名</th>
 				<th>勤続年数</th>
+				<th>一括付与で足す日数</th>
 				<th>有給休暇残日数</th>
 				<th class="text-center">個別操作</th>
 			</tr>
@@ -65,6 +76,10 @@
 					<td><c:out value="${shain.id}" /></td>
 					<td><c:out value="${shain.name}" /></td>
 					<td><c:out value="${shain.yearsOfService}" /> 年</td>
+					<td><c:choose>
+						<c:when test="${not empty grantPreview[shain.id.toString()]}">＋<c:out value="${grantPreview[shain.id.toString()]}" /> 日</c:when>
+						<c:otherwise><span style="color:#a0aec0;">なし</span></c:otherwise>
+					</c:choose></td>
 					<td class="paid-leave-days"><c:out value="${shain.paidLeaveDaysLabel}" /> 日</td>
 					<td>
 						<div class="individual-update-form">

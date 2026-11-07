@@ -284,7 +284,7 @@ public class DependencyFactory {
         actionMap.put("Menu", new MenuAction(this.getMonthlyAttendanceUseCase));
 
         // Paid Leave Admin Actions
-        actionMap.put("PaidLeaveAdmin", new com.example.shain.adapter.in.web.PaidLeaveAdminAction(this.getShainListUseCase));
+        actionMap.put("PaidLeaveAdmin", new com.example.shain.adapter.in.web.PaidLeaveAdminAction(this.getShainListUseCase, this.grantLeaveByYearsOfServiceUseCase));
         actionMap.put("UpdateLeave", new com.example.leave.adapter.in.web.UpdateLeaveAction(this.updatePaidLeaveDaysUseCase));
         actionMap.put("GrantLeaveByYear", new com.example.leave.adapter.in.web.GrantLeaveByYearAction(this.grantLeaveByYearsOfServiceUseCase));
         actionMap.put("GrantLeaveSelected", new com.example.leave.adapter.in.web.GrantLeaveSelectedAction(this.addLeaveDaysToEmployeesUseCase));

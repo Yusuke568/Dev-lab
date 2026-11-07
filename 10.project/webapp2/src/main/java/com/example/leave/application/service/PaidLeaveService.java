@@ -8,7 +8,9 @@ import com.example.shain.domain.model.Shain;
 import com.example.shain.domain.model.ShainId;
 import com.example.shared.transaction.TransactionManager;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 有給休暇管理のユースケース実装クラス。
@@ -37,21 +39,47 @@ public class PaidLeaveService implements
     }
 
     @Override
-    public void grantLeaveByYearsOfService() {
-        transactionManager.executeInTransaction(() -> {
-            List<Shain> shains = shainPort.findAll();
+    public int grantLeaveByYearsOfService() {
+        return transactionManager.executeInTransaction(() -> {
             List<LeaveGrantRule> rules = paidLeavePort.findAllRules();
-
-            for (Shain shain : shains) {
-                for (LeaveGrantRule rule : rules) {
-                    if (shain.getYearsOfService() == rule.getYearsOfService()) {
-                        double newDays = shain.getPaidLeaveDays() + rule.getGrantDays();
-                        paidLeavePort.updateDays(shain.getId().getIntValue(), newDays);
-                        break;
-                    }
+            int granted = 0;
+            for (Shain shain : shainPort.findAll()) {
+                Integer days = grantDaysFor(shain.getYearsOfService(), rules);
+                if (days != null && days > 0) {
+                    paidLeavePort.updateDays(shain.getId().getIntValue(), shain.getPaidLeaveDays() + days);
+                    granted++;
                 }
             }
+            return granted;
         });
+    }
+
+    @Override
+    public Map<Integer, Integer> previewGrantDays() {
+        List<LeaveGrantRule> rules = paidLeavePort.findAllRules();
+        Map<Integer, Integer> result = new LinkedHashMap<>();
+        for (Shain shain : shainPort.findAll()) {
+            Integer days = grantDaysFor(shain.getYearsOfService(), rules);
+            if (days != null && days > 0) {
+                result.put(shain.getId().getIntValue(), days);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 勤続年数に合うルールの付与日数。勤続年数以下で一番長いルールを使う
+     * （ルールが 0〜6年までなら、7年以上の人には6年のルールを使う）。合うルールがなければ null
+     */
+    static Integer grantDaysFor(int yearsOfService, List<LeaveGrantRule> rules) {
+        LeaveGrantRule best = null;
+        for (LeaveGrantRule rule : rules) {
+            if (rule.getYearsOfService() <= yearsOfService
+                    && (best == null || rule.getYearsOfService() > best.getYearsOfService())) {
+                best = rule;
+            }
+        }
+        return best == null ? null : best.getGrantDays();
     }
 
     @Override

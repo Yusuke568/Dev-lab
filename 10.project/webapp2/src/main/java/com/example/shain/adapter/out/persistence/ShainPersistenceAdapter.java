@@ -183,7 +183,8 @@ public class ShainPersistenceAdapter implements ShainPort {
                 entity.getGender(),
                 entity.getJobclass(),
                 entity.getPaidLeaveDays(),
-                entity.getYearsOfService()
+                // 勤続年数は入社年から数える（DB には持たない）
+                Shain.yearsOfServiceFrom(entity.getEntryyear(), java.time.Year.now().getValue())
         );
     }
 

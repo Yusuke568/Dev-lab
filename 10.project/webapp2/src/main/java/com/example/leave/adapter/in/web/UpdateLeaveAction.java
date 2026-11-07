@@ -27,7 +27,14 @@ public class UpdateLeaveAction implements Action {
         String daysStr = request.getParameter("days");
 
         if (idStr != null && daysStr != null) {
-            updatePaidLeaveDaysUseCase.updatePaidLeaveDays(new ShainId(idStr), Double.parseDouble(daysStr.trim()));
+            try {
+                updatePaidLeaveDaysUseCase.updatePaidLeaveDays(new ShainId(idStr), Double.parseDouble(daysStr.trim()));
+                PaidLeaveFlash.message(request, "社員 " + idStr + " の有給休暇残日数を " + daysStr.trim() + " 日にしました。");
+            } catch (NumberFormatException e) {
+                PaidLeaveFlash.error(request, "有給休暇残日数は数字で入れてください。");
+            } catch (RuntimeException e) {
+                PaidLeaveFlash.error(request, e.getMessage());
+            }
         }
 
         return new View("/paidLeaveAdmin.do", true);

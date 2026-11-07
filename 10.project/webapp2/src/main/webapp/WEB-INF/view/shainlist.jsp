@@ -58,7 +58,7 @@
 						<td><c:out value="${shain.id}" /></td>
 						<td><c:out value="${shain.name}" /></td>
 						<td><c:out value="${shain.namekana}" /></td>
-						<td><c:out value="${shain.entryyear}" /></td>
+						<td><c:if test="${shain.entryyear > 0}"><c:out value="${shain.entryyear}" /></c:if></td>
 						<td><c:out value="${shain.gender}" /></td>
 						<td><c:out value="${shain.jobclass}" /></td>
 						<td class="action-cell">
@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>\${escapeHTML(shain.id)}</td>
                 <td>\${escapeHTML(shain.name)}</td>
                 <td>\${escapeHTML(shain.namekana)}</td>
-                <td>\${escapeHTML(shain.entryyear)}</td>
+                <td>\${shain.entryyear > 0 ? escapeHTML(shain.entryyear) : ''}</td>
                 <td>\${escapeHTML(shain.gender)}</td>
                 <td>\${escapeHTML(shain.jobclass)}</td>
                 <td class="action-cell">

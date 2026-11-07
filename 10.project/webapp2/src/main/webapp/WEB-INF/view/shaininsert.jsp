@@ -46,9 +46,9 @@
 					value="<c:out value='${param.namekana}'/>" required>
 			</div>
 			<div class="form-group">
-				<label for="entryyear" class="form-label">入社年</label> <select
-					id="entryyear" name="entryyear" class="form-input" required>
-					<option value="">選択してください</option>
+				<label for="entryyear" class="form-label">入社年（任意）</label> <select
+					id="entryyear" name="entryyear" class="form-input">
+					<option value="">（未設定）</option>
 					<c:forEach var="entryyear" items="${yearList}">
 						<option value="<c:out value="${entryyear}"/>" <c:if test="${param.entryyear == entryyear}">selected</c:if>>
 							<c:out value="${entryyear}" />

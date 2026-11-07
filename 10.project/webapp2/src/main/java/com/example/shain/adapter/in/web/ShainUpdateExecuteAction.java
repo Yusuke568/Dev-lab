@@ -42,13 +42,19 @@ public class ShainUpdateExecuteAction implements Action {
             return showErrors(request, response, List.of("画面の有効期限が切れました。もう一度入力してください。"));
         }
 
+        int entryYear;
+        try {
+            entryYear = ShainFormValues.entryYear(request.getParameter("entryyear"));
+        } catch (IllegalArgumentException e) {
+            return showErrors(request, response, List.of(e.getMessage()));
+        }
         String currentId = request.getParameter("id");
         UpdateShainUseCase.UpdateShainCommand command = new UpdateShainUseCase.UpdateShainCommand(
                 currentId,
                 request.getParameter("newId"),
                 request.getParameter("name"),
                 request.getParameter("namekana"),
-                Integer.parseInt(request.getParameter("entryyear")),
+                entryYear,
                 request.getParameter("gender"),
                 request.getParameter("jobclass")
         );

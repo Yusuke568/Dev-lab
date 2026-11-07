@@ -68,10 +68,9 @@
 			</div>
 
 			<div class="form-group">
-				<label for="entryyear" class="form-label">入社年</label> <input
-					type="number" id="entryyear" name="entryyear"
-					value="<c:out value="${back ? param.entryyear : shain.entryyear}"/>" class="form-input"
-					required>
+				<label for="entryyear" class="form-label">入社年（任意）</label> <input
+					type="number" id="entryyear" name="entryyear" min="1900" max="2100" placeholder="未設定"
+					value="<c:out value="${back ? param.entryyear : (shain.entryyear > 0 ? shain.entryyear : '')}"/>" class="form-input">
 			</div>
 
 			<c:set var="genderValue" value="${back ? param.gender : shain.gender}" />

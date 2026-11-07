@@ -30,7 +30,8 @@ class PaidLeaveGrantTest {
     private final List<Shain> staff = List.of(
             new Shain(ShainId.of(1), "新人", "", 2026, "", "", 0, 0),
             new Shain(ShainId.of(2), "3年目", "", 2023, "", "", 5, 3),
-            new Shain(ShainId.of(3), "ベテラン", "", 2010, "", "", 30, 16));
+            new Shain(ShainId.of(3), "ベテラン", "", 2010, "", "", 30, 16),
+            new Shain(ShainId.of(4), "入社年なし", "", 0, "", "", 3, 0));
 
     private PaidLeaveService service() {
         PaidLeavePort paidLeave = (PaidLeavePort) Proxy.newProxyInstance(PaidLeavePort.class.getClassLoader(),

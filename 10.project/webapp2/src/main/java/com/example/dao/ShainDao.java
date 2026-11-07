@@ -59,6 +59,15 @@ public class ShainDao {
      * @throws SQLException
      * @throws IOException
      */
+    /** 入社年は任意。0（未設定）なら NULL で保存する */
+    private static void setEntryYear(PreparedStatement pstmt, int index, int entryYear) throws SQLException {
+        if (entryYear > 0) {
+            pstmt.setInt(index, entryYear);
+        } else {
+            pstmt.setNull(index, java.sql.Types.INTEGER);
+        }
+    }
+
     public void create(Connection con, Shain shain) throws SQLException, IOException {
         //社員を登録するSQL
         String sql = MyUtil.loadSqlFromClasspath("sql/shainlist/insert_shain.sql");
@@ -69,7 +78,7 @@ public class ShainDao {
             pstmt.setInt(1, shain.getId());
             pstmt.setString(2, shain.getName());
             pstmt.setString(3, shain.getNamekana());
-            pstmt.setInt(4, shain.getEntryyear());
+            setEntryYear(pstmt, 4, shain.getEntryyear());
             pstmt.setString(5, shain.getGender());
             pstmt.setBigDecimal(6, java.math.BigDecimal.valueOf(shain.getPaidLeaveDays()));
             pstmt.setString(7, shain.getJobclass());
@@ -134,7 +143,7 @@ public class ShainDao {
             //パラメータをSQLにセット
             pstmt.setString(1, shain.getName());
             pstmt.setString(2, shain.getNamekana());
-            pstmt.setInt(3, shain.getEntryyear());
+            setEntryYear(pstmt, 3, shain.getEntryyear());
             pstmt.setString(4, shain.getGender());
             pstmt.setBigDecimal(5, java.math.BigDecimal.valueOf(shain.getPaidLeaveDays()));
             pstmt.setString(6, shain.getJobclass());

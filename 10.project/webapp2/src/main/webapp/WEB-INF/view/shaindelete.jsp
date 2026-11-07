@@ -40,7 +40,7 @@
 
 			<div class="form-group">
 				<label class="form-label">入社年</label>
-				<input type="text" class="form-input" value="<c:out value="${shain.entryyear}"/>" readonly>
+				<input type="text" class="form-input" value="<c:out value="${shain.entryyear > 0 ? shain.entryyear : '（未設定）'}"/>" readonly>
 			</div>
 
 			<div class="form-group">

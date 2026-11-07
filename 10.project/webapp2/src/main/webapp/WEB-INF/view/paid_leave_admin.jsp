@@ -34,7 +34,7 @@
 		<div class="card">
 			<h2>🗓️ 勤続年数で一括付与</h2>
 			<p>マスタ管理の「有給付与ルール」に基づき、勤続年数（入社年から数えます）に合う日数を全社員の残日数に足します。
-				ルールより長く勤めている人には、一番長いルールの日数を足します。<br>
+				ルールより長く勤めている人には、一番長いルールの日数を足します。入社年が未設定の社員には付与しません。<br>
 				<strong>実行するたびに足されます。</strong>年に1回だけ実行してください。足される日数は下の一覧の「一括付与で足す日数」で確かめられます。</p>
 			<form action="${pageContext.request.contextPath}/grantLeaveByYear.do" method="post" class="leave-grant-form"
 				onsubmit="return confirm('${grantPreviewCount}人に、勤続年数に応じた有給休暇を付与します。\n実行するたびに足されます。実行しますか？');">
@@ -75,7 +75,10 @@
 					<td><input type="checkbox" name="selected_ids" value="${shain.id}" form="grant-selected-form"></td>
 					<td><c:out value="${shain.id}" /></td>
 					<td><c:out value="${shain.name}" /></td>
-					<td><c:out value="${shain.yearsOfService}" /> 年</td>
+					<td><c:choose>
+						<c:when test="${shain.entryyear > 0}"><c:out value="${shain.yearsOfService}" /> 年</c:when>
+						<c:otherwise><span style="color:#a0aec0;">入社年 未設定</span></c:otherwise>
+					</c:choose></td>
 					<td><c:choose>
 						<c:when test="${not empty grantPreview[shain.id.toString()]}">＋<c:out value="${grantPreview[shain.id.toString()]}" /> 日</c:when>
 						<c:otherwise><span style="color:#a0aec0;">なし</span></c:otherwise>

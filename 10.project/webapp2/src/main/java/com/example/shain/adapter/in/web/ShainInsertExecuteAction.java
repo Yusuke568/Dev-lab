@@ -41,10 +41,16 @@ public class ShainInsertExecuteAction implements Action {
         InitialPassword initial = request.getParameter("generatePassword") != null
                 ? InitialPassword.generated()
                 : InitialPassword.specified(request.getParameter("initialPassword"), request.getParameter("initialPasswordConfirm"));
+        int entryYear;
+        try {
+            entryYear = ShainFormValues.entryYear(request.getParameter("entryyear"));
+        } catch (IllegalArgumentException e) {
+            return showErrors(request, response, List.of(e.getMessage()));
+        }
         RegisterShainUseCase.RegisterShainCommand command = new RegisterShainUseCase.RegisterShainCommand(
                 request.getParameter("name"),
                 request.getParameter("namekana"),
-                Integer.parseInt(request.getParameter("entryyear")),
+                entryYear,
                 request.getParameter("gender"),
                 request.getParameter("jobclass"),
                 parseDepartment(request),

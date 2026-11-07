@@ -44,7 +44,7 @@ public class PaidLeaveService implements
             List<LeaveGrantRule> rules = paidLeavePort.findAllRules();
             int granted = 0;
             for (Shain shain : shainPort.findAll()) {
-                Integer days = grantDaysFor(shain.getYearsOfService(), rules);
+                Integer days = grantDaysFor(shain, rules);
                 if (days != null && days > 0) {
                     paidLeavePort.updateDays(shain.getId().getIntValue(), shain.getPaidLeaveDays() + days);
                     granted++;
@@ -59,12 +59,17 @@ public class PaidLeaveService implements
         List<LeaveGrantRule> rules = paidLeavePort.findAllRules();
         Map<Integer, Integer> result = new LinkedHashMap<>();
         for (Shain shain : shainPort.findAll()) {
-            Integer days = grantDaysFor(shain.getYearsOfService(), rules);
+            Integer days = grantDaysFor(shain, rules);
             if (days != null && days > 0) {
                 result.put(shain.getId().getIntValue(), days);
             }
         }
         return result;
+    }
+
+    /** 入社年が未設定の社員には付与しない（勤続年数が分からないため） */
+    private static Integer grantDaysFor(Shain shain, List<LeaveGrantRule> rules) {
+        return shain.getEntryYear() > 0 ? grantDaysFor(shain.getYearsOfService(), rules) : null;
     }
 
     /**

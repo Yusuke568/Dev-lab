@@ -94,6 +94,15 @@ public class OvertimeRequestMenuAction implements Action {
             request.setAttribute("errorMessage", sessionForError.getAttribute("overtimeRequestErrorMessage"));
             sessionForError.removeAttribute("overtimeRequestErrorMessage");
         }
+        if (sessionForError != null && sessionForError.getAttribute("overtimeRequestSuccessMessage") != null) {
+            request.setAttribute("successMessage", sessionForError.getAttribute("overtimeRequestSuccessMessage"));
+            sessionForError.removeAttribute("overtimeRequestSuccessMessage");
+        }
+        // 申請できなかったときの入力内容（フォームに戻して、入力し直さなくて済むようにする）
+        if (sessionForError != null && sessionForError.getAttribute("overtimeRequestForm") instanceof Map) {
+            request.setAttribute("form", sessionForError.getAttribute("overtimeRequestForm"));
+            sessionForError.removeAttribute("overtimeRequestForm");
+        }
 
         return new View("/WEB-INF/view/overtime_request_menu.jsp");
     }

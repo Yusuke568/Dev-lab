@@ -7,7 +7,9 @@ import com.example.kintai.application.port.in.DecideOvertimeRequestUseCase;
 import com.example.kintai.application.port.in.GetMyOvertimeRequestsUseCase;
 import com.example.kintai.application.port.in.GetPendingOvertimeRequestsUseCase;
 import com.example.kintai.application.port.in.SubmitOvertimeRequestUseCase;
+import com.example.kintai.domain.model.attendance.AttendanceRecord;
 import com.example.kintai.domain.model.attendance.OvertimeRequest;
+import com.example.kintai.domain.port.out.LoadAttendanceRecordPort;
 import com.example.kintai.domain.model.employee.EmployeeId;
 import com.example.kintai.domain.port.out.OvertimeRequestPort;
 import java.time.LocalDate;
@@ -26,19 +28,31 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
 
     private final OvertimeRequestPort overtimeRequestPort;
     private final ApprovalWorkflowService approvalWorkflowService;
+    /** 勤怠に入力済みの時間外（補正・間接の分を含む）を見るため。null なら見ない */
+    private final LoadAttendanceRecordPort loadAttendanceRecordPort;
 
     public OvertimeRequestService(OvertimeRequestPort overtimeRequestPort, ApprovalWorkflowService approvalWorkflowService) {
+        this(overtimeRequestPort, approvalWorkflowService, null);
+    }
+
+    public OvertimeRequestService(OvertimeRequestPort overtimeRequestPort, ApprovalWorkflowService approvalWorkflowService,
+                                  LoadAttendanceRecordPort loadAttendanceRecordPort) {
         this.overtimeRequestPort = overtimeRequestPort;
         this.approvalWorkflowService = approvalWorkflowService;
+        this.loadAttendanceRecordPort = loadAttendanceRecordPort;
     }
 
     @Override
     public void submit(String employeeId, LocalDate date, String plannedStartTime, String plannedEndTime, String reason) {
+        EmployeeId id = new EmployeeId(employeeId);
         int plannedOvertimeMinutes = OvertimeRequest.calculatePlannedOvertimeMinutes(plannedStartTime, plannedEndTime);
+        // 時間外には補正・間接の時間も含めるので、出退勤が 9:00〜18:00 の中でも時間外になる日がある。
+        // その日の勤怠に時間外が入っていれば、その時間で申請できるようにする
+        int recordedOvertimeMinutes = recordedOvertimeMinutes(id, date);
+        plannedOvertimeMinutes = Math.max(plannedOvertimeMinutes, recordedOvertimeMinutes);
         if (plannedOvertimeMinutes <= 0) {
             throw new IllegalArgumentException("時間外が発生していません。標準勤務時間（09:00〜18:00）より早い出勤時刻、または遅い退勤時刻を入力してください。");
         }
-        EmployeeId id = new EmployeeId(employeeId);
         Optional<OvertimeRequest> existing = overtimeRequestPort.findByEmployeeAndDate(id, date);
 
         if (existing.isPresent() && !existing.get().isRejected()) {
@@ -56,6 +70,14 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
             requestId = overtimeRequestPort.insert(id, date, plannedOvertimeMinutes, plannedStartTime, plannedEndTime, reason);
         }
         approvalWorkflowService.startRoute(RequestType.OVERTIME, requestId, employeeId);
+    }
+
+    /** その日の勤怠に保存されている時間外（分）。勤怠がない・見られないときは0 */
+    private int recordedOvertimeMinutes(EmployeeId id, LocalDate date) {
+        if (loadAttendanceRecordPort == null) return 0;
+        return loadAttendanceRecordPort.loadByEmployeeAndDate(id, date)
+                .map(AttendanceRecord::getOvertimeMinutes)
+                .orElse(0);
     }
 
     @Override

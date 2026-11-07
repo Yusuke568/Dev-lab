@@ -23,10 +23,19 @@
 	</div>
 
 	<c:if test="${not empty errorMessage}">
-		<div class="error-message" style="margin: 1rem 0;"><c:out value="${errorMessage}" /></div>
+		<div class="status-banner status-danger" role="alert" style="margin: 1rem 0;">
+			<span class="icon">⚠️</span>
+			<span class="msg"><strong>申請できませんでした。</strong><c:out value="${errorMessage}" /></span>
+		</div>
+	</c:if>
+	<c:if test="${not empty successMessage}">
+		<div class="status-banner status-success" role="status" style="margin: 1rem 0; background-color: #e8f8e8; color: #1a7f1a;">
+			<span class="icon">✔️</span>
+			<span class="msg"><c:out value="${successMessage}" /></span>
+		</div>
 	</c:if>
 
-	<c:if test="${not empty prefillDate}">
+	<c:if test="${not empty prefillDate and empty form}">
 		<div class="status-item status-info" style="margin: 1rem 0;">
 			ℹ <c:out value="${prefillDate}" /> の勤怠実績から予定出勤・予定退勤時刻を自動入力しました。内容を確認のうえ申請してください。
 		</div>
@@ -38,24 +47,27 @@
 			style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;">
 			<div class="form-group">
 				<label class="form-label">対象日</label>
-				<input type="date" id="targetDate" name="targetDate" class="form-input" value="${prefillDate}" required>
+				<input type="date" id="targetDate" name="targetDate" class="form-input" value="<c:out value='${not empty form ? form.targetDate : prefillDate}' />" required>
 			</div>
 			<div class="form-group">
 				<label class="form-label">予定出勤時刻</label>
-				<input type="time" id="plannedStartTime" name="plannedStartTime" class="form-input" value="${prefillStartTime}">
+				<input type="time" id="plannedStartTime" name="plannedStartTime" class="form-input" value="<c:out value='${not empty form ? form.plannedStartTime : prefillStartTime}' />">
 			</div>
 			<div class="form-group">
 				<label class="form-label">予定退勤時刻</label>
-				<input type="time" id="plannedEndTime" name="plannedEndTime" class="form-input" value="${prefillEndTime}">
+				<input type="time" id="plannedEndTime" name="plannedEndTime" class="form-input" value="<c:out value='${not empty form ? form.plannedEndTime : prefillEndTime}' />">
 			</div>
 			<div class="form-group" style="flex: 1; min-width: 200px;">
 				<label class="form-label">申請理由</label>
-				<input type="text" name="reason" class="form-input" placeholder="例: 月末締め作業のため" style="width: 100%;">
+				<input type="text" name="reason" class="form-input" placeholder="例: 月末締め作業のため" style="width: 100%;"
+					value="<c:out value='${form.reason}' />">
 			</div>
 			<button type="submit" class="btn btn-primary">申請</button>
 		</form>
 		<p style="font-size: 0.85rem; color: #666; margin-top: 0.5rem;">
 			※ 標準勤務時間（09:00〜18:00）より早い予定出勤・遅い予定退勤の分が、それぞれ早出・残業として時間外申請されます（両方入力すれば同日で両方申請できます）。標準どおりの時刻は空欄のままで構いません。<br>
+			※ 予定退勤が予定出勤より前の時刻なら、日をまたいだ翌日の退勤として数えます（例：13:00〜1:30 は翌1:30まで）。<br>
+			※ 補正・間接の時間で時間外になった日は、勤怠に入力済みの時間外で申請できます（出退勤が 9:00〜18:00 の中でも申請できます）。<br>
 			※ 却下された対象日については、同じ対象日を指定して再度申請するとその申請が更新され、再度承認待ちになります。
 		</p>
 	</div>

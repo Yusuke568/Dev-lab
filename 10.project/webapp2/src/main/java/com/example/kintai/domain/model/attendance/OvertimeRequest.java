@@ -99,7 +99,7 @@ public class OvertimeRequest {
 
     /** 予定退勤時刻が標準（18:00）より遅い場合の残業時間（分）。残業でなければ0。 */
     public int getPlannedLateMinutes() {
-        return calculateLateMinutes(plannedEndTime);
+        return calculateLateMinutes(plannedStartTime, plannedEndTime);
     }
 
     public String getPlannedEarlyMinutesFormatted() { return formatMinutes(getPlannedEarlyMinutes()); }
@@ -117,7 +117,14 @@ public class OvertimeRequest {
 
     /** 予定出勤・退勤時刻（"HH:mm"、未入力可）から、早出+残業の合計時間外分数を計算する。 */
     public static int calculatePlannedOvertimeMinutes(String plannedStartTime, String plannedEndTime) {
-        return calculateEarlyMinutes(plannedStartTime) + calculateLateMinutes(plannedEndTime);
+        return calculateEarlyMinutes(plannedStartTime) + calculateLateMinutes(plannedStartTime, plannedEndTime);
+    }
+
+    /** 予定退勤が予定出勤（未入力なら 09:00）より前の時刻なら、日をまたいだ翌日の退勤とみなす（例：13:00〜翌1:30） */
+    public static boolean isPlannedEndNextDay(String startTime, String endTime) {
+        if (endTime == null || endTime.isBlank()) return false;
+        LocalTime start = startTime == null || startTime.isBlank() ? STANDARD_START : LocalTime.parse(startTime);
+        return LocalTime.parse(endTime).isBefore(start);
     }
 
     private static int calculateEarlyMinutes(String startTime) {
@@ -126,9 +133,14 @@ public class OvertimeRequest {
         return t.isBefore(STANDARD_START) ? (int) Duration.between(t, STANDARD_START).toMinutes() : 0;
     }
 
-    private static int calculateLateMinutes(String endTime) {
+    private static int calculateLateMinutes(String startTime, String endTime) {
         if (endTime == null || endTime.isBlank()) return 0;
         LocalTime t = LocalTime.parse(endTime);
+        if (isPlannedEndNextDay(startTime, endTime)) {
+            // 18:00〜24:00 の6時間 ＋ 翌日0:00から退勤までの時間
+            int untilMidnight = 24 * 60 - STANDARD_END.toSecondOfDay() / 60;
+            return untilMidnight + t.toSecondOfDay() / 60;
+        }
         return t.isAfter(STANDARD_END) ? (int) Duration.between(STANDARD_END, t).toMinutes() : 0;
     }
 

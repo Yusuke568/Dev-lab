@@ -68,6 +68,9 @@ public class WeeklyWorkReportPersistenceAdapter implements WeeklyWorkReportPort 
             setNullableString(ps, 7, report.getProgressDetail());
             setNullableString(ps, 8, report.getPersonalNote());
             setNullableString(ps, 9, report.getProblemCountermeasure());
+            // リーダー所見は取り込みのときだけ書き換える（画面からの保存では今の値を残す）
+            setNullableString(ps, 10, report.isLeaderCommentIncluded() ? report.getLeaderComment() : null);
+            ps.setBoolean(11, report.isLeaderCommentIncluded());
             ps.executeUpdate();
         } catch (Exception e) {
             throw new RuntimeException("Failed to save weekly work report.", e);
@@ -95,7 +98,8 @@ public class WeeklyWorkReportPersistenceAdapter implements WeeklyWorkReportPort 
         String problemCountermeasure = rs.getString("problem_countermeasure");
 
         return new WeeklyWorkReport(employeeId, weekStartDate, weekEndDate,
-                clientName, projectName, processName, progressStatus, progressDetail, personalNote, problemCountermeasure);
+                clientName, projectName, processName, progressStatus, progressDetail, personalNote, problemCountermeasure)
+                .withLeaderComment(rs.getString("leader_comment"));
     }
 
     private String readSqlFile(String fileName) {

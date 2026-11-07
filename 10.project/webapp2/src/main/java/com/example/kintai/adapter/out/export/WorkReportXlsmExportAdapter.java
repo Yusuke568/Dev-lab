@@ -163,7 +163,7 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
 
     /**
      * 週次作業報告（客先名・PJ名・工程名・作業進捗・本人所感）を、月の週ブロック構成に従って
-     * AR/AS/AT列の該当ブロックへ書き込む。リーダー所見（AU列）は対象外（様式側で手入力）。
+     * AR/AS/AT列の該当ブロックへ書き込む。リーダー所見（AU列）は、取り込んだ所見があればそのまま書き戻す。
      */
     private void writeWeeklyWorkReports(Sheet sheet, List<WeeklyWorkReport> weeklyWorkReports) {
         if (weeklyWorkReports == null) {
@@ -188,6 +188,8 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
             writeProblemCountermeasure(sheet, baseRow, report.getProblemCountermeasure());
 
             writeLines(sheet, "AT", baseRow, 10, report.getPersonalNote(), MAX_LEN_PERSONAL_NOTE_LINE);
+            // リーダー所見は取り込んだ文をそのまま戻す（文字数で切らない）
+            writeLines(sheet, "AU", baseRow, 10, report.getLeaderComment(), Integer.MAX_VALUE);
         }
     }
 

@@ -408,6 +408,9 @@
 .leave-dialog .leave-dialog-what { font-weight: 700; color: #c05621; }
 .leave-dialog-buttons { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
 .leave-dialog-buttons .btn { min-height: 44px; width: 100%; }
+/* 週次作業報告のリーダー所見（表示だけ） */
+.wwr-leader { white-space: pre-wrap; min-height: 3em; padding: 8px 10px; background: #f7fafc; border: 1px dashed #cbd5e0; border-radius: 6px; font-size: 0.9rem; color: #2d3748; }
+.wwr-leader-empty { color: #a0aec0; }
 .save-bar .dirty-indicator {
     font-size: 0.9rem;
     color: #718096;
@@ -1701,7 +1704,7 @@ body.kintai-calendar-view .table-responsive {
 	<div class="card" id="weekly-report-card">
 		<h4>週次作業報告（木～翌水、作業報告書Excel出力に反映されます）</h4>
 		<p style="font-size: 0.85rem; color: #666; margin-top: -0.5rem;">
-			作業報告書Excelの週ごとの欄と同じ並びです。リーダー所見欄はExcel出力後に手入力してください。
+			作業報告書Excelの週ごとの欄と同じ並びです。リーダー所見はExcelに記入したものを取り込むと表示されます（ここでは編集できません）。
 		</p>
 		<div style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1rem;">
 			<button type="button" class="btn btn-secondary" id="wwr-prev-btn" onclick="moveWeeklyReportCard(-1)">◀ 前の週</button>
@@ -1806,7 +1809,13 @@ body.kintai-calendar-view .table-responsive {
 								data-auto-wrap="true" data-line-unit="列"><c:out value="${week.personalNote}" /></textarea>
 							<div class="wwr-counter" aria-live="polite"></div>
 						</div>
-						<p class="wwr-limit">リーダー所見は、Excel出力後にリーダーが記入します。</p>
+					</section>
+
+					<section class="wwr-section">
+						<h5 class="wwr-heading">リーダー所見</h5>
+						<%-- 作業報告書（Excel）の取り込みでだけ入る。ここでは編集できない --%>
+						<div class="wwr-leader" aria-label="リーダー所見（編集できません）"><c:choose><c:when test="${not empty week.leaderComment}"><c:out value="${week.leaderComment}" /></c:when><c:otherwise><span class="wwr-leader-empty">（まだありません）</span></c:otherwise></c:choose></div>
+						<p class="wwr-limit">リーダーが作業報告書（Excel）に記入した所見を、「作業報告書(Excel)取込」で取り込むと表示されます。ここでは編集できません。</p>
 					</section>
 				</div>
 			</div>

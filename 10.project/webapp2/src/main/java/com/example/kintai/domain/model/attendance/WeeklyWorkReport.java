@@ -26,6 +26,10 @@ public class WeeklyWorkReport {
     private final String progressDetail;
     private final String personalNote;
     private final String problemCountermeasure; // 問題点・対処（2行）
+    /** リーダー所見（作業報告書の AU列）。画面では編集できず、作業報告書の取り込みでだけ入る */
+    private String leaderComment;
+    /** 保存するときにリーダー所見も書き換えるか（取り込みのときだけ true。画面からの保存では今の所見を残す） */
+    private boolean leaderCommentIncluded;
 
     public WeeklyWorkReport(String employeeId, LocalDate weekStartDate, LocalDate weekEndDate,
                              String clientName, String projectName, String processName,
@@ -60,6 +64,21 @@ public class WeeklyWorkReport {
     public String getProgressDetail() { return progressDetail; }
     public String getPersonalNote() { return personalNote; }
     public String getProblemCountermeasure() { return problemCountermeasure; }
+    public String getLeaderComment() { return leaderComment; }
+    public boolean isLeaderCommentIncluded() { return leaderCommentIncluded; }
+
+    /** 読み込んだリーダー所見を持たせる（DB・作業報告書から読んだとき） */
+    public WeeklyWorkReport withLeaderComment(String leaderComment) {
+        this.leaderComment = leaderComment;
+        return this;
+    }
+
+    /** 保存のときにリーダー所見も書き換えるようにする（作業報告書の取り込み用） */
+    public WeeklyWorkReport replacingLeaderComment(String leaderComment) {
+        this.leaderComment = leaderComment;
+        this.leaderCommentIncluded = true;
+        return this;
+    }
 
     /** 工程名・作業名等の各行（作業報告書の週ブロック3〜7行目。空行も位置を保つ）。 */
     public java.util.List<String> getProcessNameLines() { return toLines(processName, 5); }

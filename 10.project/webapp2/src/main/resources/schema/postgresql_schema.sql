@@ -151,6 +151,9 @@ COMMENT ON COLUMN weekly_work_report.week_end_date IS '当該週の水曜日（�
 COMMENT ON COLUMN weekly_work_report.progress_status IS '作業進捗（オンスケ/〇日遅れ等）';
 COMMENT ON COLUMN weekly_work_report.progress_detail IS '作業進捗、作業内容と状況';
 COMMENT ON COLUMN weekly_work_report.personal_note IS '本人所感';
+-- リーダー所見（作業報告書の取り込みでだけ入る。画面では編集しない。migrations/20261116_weekly_leader_comment.sql と同じ）
+ALTER TABLE weekly_work_report ADD COLUMN IF NOT EXISTS leader_comment text;
+COMMENT ON COLUMN weekly_work_report.leader_comment IS 'リーダー所見（作業報告書の AU列から取り込む）';
 COMMENT ON TABLE weekly_work_report IS '週次作業報告（木～翌水の週単位、作業報告書Excel出力用）';
 
 CREATE TRIGGER trg_weekly_work_report_updated_at

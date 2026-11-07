@@ -113,14 +113,16 @@ public class WorkReportXlsmImportAdapter implements WorkReportImportPort {
             String progressDetail = joinLines(sheet, "AS", baseRow + 1, 6);
             String personalNote = joinLines(sheet, "AT", baseRow, 10);
             String problemCountermeasure = readProblemCountermeasure(sheet, baseRow);
+            // リーダー所見（AU列、本人所感と同じ10行）
+            String leaderComment = joinLines(sheet, "AU", baseRow, 10);
 
             boolean hasAnyContent = hasText(clientName) || hasText(projectName) || hasText(processName)
                     || hasText(progressStatus) || hasText(progressDetail) || hasText(personalNote)
-                    || hasText(problemCountermeasure);
+                    || hasText(problemCountermeasure) || hasText(leaderComment);
             if (hasAnyContent) {
                 reports.add(new WeeklyWorkReport(null, weekStart, weekEnd,
                         clientName, projectName, processName, progressStatus, progressDetail, personalNote,
-                        problemCountermeasure));
+                        problemCountermeasure).withLeaderComment(leaderComment));
             }
         }
         return reports;

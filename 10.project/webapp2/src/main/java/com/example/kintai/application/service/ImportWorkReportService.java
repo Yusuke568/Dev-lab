@@ -99,7 +99,7 @@ public class ImportWorkReportService implements ImportWorkReportUseCase {
                         parsed.getClientName(), parsed.getProjectName(), parsed.getProcessName(),
                         parsed.getProgressStatus(), parsed.getProgressDetail(), parsed.getPersonalNote(),
                         parsed.getProblemCountermeasure()
-                );
+                ).replacingLeaderComment(parsed.getLeaderComment());
                 try {
                     saveWeeklyWorkReportsUseCase.saveWeeklyWorkReports(employeeId, Collections.singletonList(report));
                 } catch (Exception e) {

@@ -164,6 +164,43 @@ class WorkReportXlsmExportAdapterTest {
         assertEquals("住民情報システム", imported.getProjectName());
     }
 
+    /** リーダー所見（AU列）を取り込み、出力し直しても消えない */
+    @Test
+    void リーダー所見を取り込み_出力し直しても残る() throws Exception {
+        MonthlyAttendanceDto month = new MonthlyAttendanceDto(YearMonth.of(2026, 11), List.of(), "0:00", 0, 0, 0, "山田 太郎");
+        com.example.kintai.domain.model.attendance.WeeklyWorkReport week1 = new com.example.kintai.domain.model.attendance.WeeklyWorkReport(
+                "126", LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 4),
+                "BCC", null, null, null, null, null, null)
+                .withLeaderComment("進捗良好。\n来週はレビュー対応を優先してください。");
+
+        byte[] xlsm = new WorkReportXlsmExportAdapter().generate(month, "山田 太郎", List.of(), List.of(week1));
+
+        try (XSSFWorkbook book = new XSSFWorkbook(new ByteArrayInputStream(xlsm))) {
+            Sheet sheet = book.getSheet("11月");
+            assertEquals("進捗良好。", text(sheet, "AU5"));
+            assertEquals("来週はレビュー対応を優先してください。", text(sheet, "AU6"));
+        }
+
+        com.example.kintai.domain.model.attendance.WeeklyWorkReport imported = new WorkReportXlsmImportAdapter()
+                .parse(new ByteArrayInputStream(xlsm)).stream()
+                .filter(m -> m.getYearMonth().equals(YearMonth.of(2026, 11)))
+                .findFirst().orElseThrow()
+                .getWeeklyWorkReports().get(0);
+        assertEquals("進捗良好。\n来週はレビュー対応を優先してください。", imported.getLeaderComment());
+    }
+
+    @Test
+    void 画面からの保存ではリーダー所見を書き換えず_取り込みのときだけ書き換える() {
+        com.example.kintai.domain.model.attendance.WeeklyWorkReport fromScreen = new com.example.kintai.domain.model.attendance.WeeklyWorkReport(
+                "126", LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 4), "BCC", null, null, null, null, null, null);
+        assertEquals(false, fromScreen.isLeaderCommentIncluded());
+
+        com.example.kintai.domain.model.attendance.WeeklyWorkReport fromImport = new com.example.kintai.domain.model.attendance.WeeklyWorkReport(
+                "126", LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 4), "BCC", null, null, null, null, null, null)
+                .replacingLeaderComment(null);
+        assertEquals(true, fromImport.isLeaderCommentIncluded());
+    }
+
     /** 日をまたいだ退勤は「25:00」のように24時間を足して出力し、取り込むと翌日の退勤（1:00）に戻る */
     @Test
     void 日またぎの退勤は25時として出力し_取り込むと元の時刻に戻る() throws Exception {

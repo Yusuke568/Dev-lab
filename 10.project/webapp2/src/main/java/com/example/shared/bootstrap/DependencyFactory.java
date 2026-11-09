@@ -306,6 +306,8 @@ public class DependencyFactory {
                 this.approvalWorkflowService));
         actionMap.put("WorkReportExport", new WorkReportExportAction(this.exportWorkReportUseCase));
         actionMap.put("WorkReportImport", new com.example.kintai.adapter.in.web.WorkReportImportAction(this.importWorkReportUseCase));
+        actionMap.put("WorkReportBulkImport", new com.example.kintai.adapter.in.web.WorkReportBulkImportAction(
+                this.importWorkReportUseCase, this.attendanceAccessUseCase));
         actionMap.put("WeeklyWorkReportSave", new WeeklyWorkReportSaveAction(this.saveWeeklyWorkReportsUseCase, this.attendanceAccessUseCase));
         actionMap.put("OvertimeRequestSubmit", new OvertimeRequestSubmitAction(this.submitOvertimeRequestUseCase));
         actionMap.put("OvertimeRequestExecute", new OvertimeRequestExecuteAction(this.decideOvertimeRequestUseCase));
@@ -353,6 +355,7 @@ public class DependencyFactory {
         requireFeature(Feature.SHAIN_ADMIN, "ShainList", "ShainUpdateForm", "ShainUpdateExecute", "ShainInsertForm",
                 "ShainInsertExecute", "ShainDeleteForm", "ShainDeleteExecute", "SearchShainApi", "ShainIdCheckApi",
                 "PasswordResetForm", "PasswordResetExecute");
+        requireFeature(Feature.WEEKLY_REPORT_ADMIN, "WorkReportBulkImport");
         requireFeature(Feature.PAID_LEAVE_ADMIN, "PaidLeaveAdmin", "UpdateLeave", "GrantLeaveByYear", "GrantLeaveSelected");
         // マスタはマスタごとに権限を分ける。マスタ管理のトップは、どれか1つのマスタを使えれば開ける
         requireFeature(Feature.MASTER_PERMISSION_GROUP, "MasterPermissionGroup");

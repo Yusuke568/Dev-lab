@@ -20,4 +20,10 @@ public interface AttendanceAccessUseCase {
 
     /** 勤怠表を参照・編集できる配下の社員。承認権限がなければ空。 */
     List<Subordinate> getSubordinates(String loginUser, Set<String> features);
+
+    /**
+     * 週報担当（WEEKLY_REPORT_ADMIN）が作業報告書を取り込める社員：所属部署（兼任を含む）とその下の部署の社員。
+     * 週報担当でなければ空。
+     */
+    List<Subordinate> getWeeklyReportTargets(String loginUser, Set<String> features);
 }

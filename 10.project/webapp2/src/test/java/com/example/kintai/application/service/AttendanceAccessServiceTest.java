@@ -33,7 +33,19 @@ class AttendanceAccessServiceTest {
             return MANAGED.getOrDefault(approverId, Set.of()).stream().sorted()
                     .map(id -> new Subordinate(id, "社員" + id, "開発1課")).toList();
         }
+
+        @Override
+        public List<Subordinate> findStaffInMyDepartments(String staffId) {
+            return List.of(new Subordinate(staffId, "本人", "開発1課"), new Subordinate("301", "社員301", "開発1課"));
+        }
     });
+
+    @Test
+    void 週報担当だけが所属部署の社員の作業報告書を取り込める() {
+        assertEquals(2, service.getWeeklyReportTargets("300", Set.of("ATTENDANCE", "WEEKLY_REPORT_ADMIN")).size());
+        assertTrue(service.getWeeklyReportTargets("300", APPROVER).isEmpty(), "承認権限だけでは取り込めない");
+        assertTrue(service.getWeeklyReportTargets(null, Set.of("WEEKLY_REPORT_ADMIN")).isEmpty());
+    }
 
     @Test
     void 本人の勤怠表は誰でも扱える() {

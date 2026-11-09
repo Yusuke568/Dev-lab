@@ -62,6 +62,26 @@ public class WorkReportXlsmImportAdapter implements WorkReportImportPort {
         return results;
     }
 
+    /** 月のシートの「名前：」欄（AP2。出力のときに社員名を書く場所）を、最初に見つかったシートから読む */
+    @Override
+    public String readStaffName(InputStream xlsmInputStream) {
+        try (XSSFWorkbook workbook = new XSSFWorkbook(xlsmInputStream)) {
+            for (String sheetName : MONTH_SHEET_NAMES) {
+                Sheet sheet = workbook.getSheet(sheetName);
+                if (sheet == null) {
+                    continue;
+                }
+                String name = getStringValue(sheet, "AP2");
+                if (name != null && !name.isBlank()) {
+                    return name.trim();
+                }
+            }
+            return null;
+        } catch (Exception e) {
+            throw new RuntimeException("作業報告書の読み込みに失敗しました。ファイル形式をご確認ください。", e);
+        }
+    }
+
     private YearMonth resolveYearMonth(Sheet sheet) {
         Double year = getNumericValue(sheet, "A1");
         Double month = getNumericValue(sheet, "F1");

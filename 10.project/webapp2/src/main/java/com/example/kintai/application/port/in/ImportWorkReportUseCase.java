@@ -13,6 +13,34 @@ public interface ImportWorkReportUseCase {
     ImportResult importFile(EmployeeId employeeId, InputStream xlsmInputStream);
 
     /**
+     * 取り込む前の確認用に、作業報告書の中身（データのある月・勤怠の日数・週次作業報告の週数・名前欄）を読む。保存はしない。
+     */
+    default Preview preview(byte[] xlsm) {
+        throw new UnsupportedOperationException();
+    }
+
+    /** 取り込む前の確認用の中身 */
+    class Preview implements java.io.Serializable {
+        private static final long serialVersionUID = 1L;
+        private final List<String> months;
+        private final int dayCount;
+        private final int weekCount;
+        private final String staffName;
+
+        public Preview(List<String> months, int dayCount, int weekCount, String staffName) {
+            this.months = months;
+            this.dayCount = dayCount;
+            this.weekCount = weekCount;
+            this.staffName = staffName;
+        }
+
+        public List<String> getMonths() { return months; }
+        public int getDayCount() { return dayCount; }
+        public int getWeekCount() { return weekCount; }
+        public String getStaffName() { return staffName; }
+    }
+
+    /**
      * 取り込み結果。1日単位でエラーを捕捉するため、一部の日・月が失敗しても
      * 残りは取り込まれる。失敗した項目は理由付きでskippedに記録する。
      */

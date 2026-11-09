@@ -16,6 +16,8 @@ public enum Feature {
     APPROVAL("承認", null),
     SHAIN_ADMIN("社員管理", null),
     PAID_LEAVE_ADMIN("有給休暇管理", null),
+    /** 週報担当：所属部署とその下の部署の社員の作業報告書（Excel）をまとめて取り込む */
+    WEEKLY_REPORT_ADMIN("週報担当", null),
     MASTER_PERMISSION_GROUP("権限グループ", Feature.MASTER_GROUP),
     MASTER_JOB_CLASS("役職", Feature.MASTER_GROUP),
     MASTER_DEPARTMENT("組織図", Feature.MASTER_GROUP),

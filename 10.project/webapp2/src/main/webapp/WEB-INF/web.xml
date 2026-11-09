@@ -16,7 +16,7 @@
         <servlet-class>com.example.shared.web.FrontController</servlet-class>
         <multipart-config>
             <max-file-size>10485760</max-file-size> <!-- 10MB -->
-            <max-request-size>10485760</max-request-size>
+            <max-request-size>104857600</max-request-size> <!-- 100MB（作業報告書をまとめて取り込むため） -->
         </multipart-config>
     </servlet>
 

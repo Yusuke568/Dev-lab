@@ -42,6 +42,14 @@ public class AttendanceAccessService implements AttendanceAccessUseCase {
         return subordinatePort.findManagedStaff(loginUser);
     }
 
+    @Override
+    public List<Subordinate> getWeeklyReportTargets(String loginUser, Set<String> features) {
+        if (loginUser == null || features == null || !features.contains(Feature.WEEKLY_REPORT_ADMIN.name())) {
+            return Collections.emptyList();
+        }
+        return subordinatePort.findStaffInMyDepartments(loginUser);
+    }
+
     private static boolean hasApproval(Set<String> features) {
         return features != null && features.contains(Feature.APPROVAL.name());
     }

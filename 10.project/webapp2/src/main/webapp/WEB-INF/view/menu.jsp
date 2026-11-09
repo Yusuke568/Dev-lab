@@ -171,6 +171,17 @@
 			</div>
 		</c:if>
 
+		<c:if test="${sessionScope.can.WEEKLY_REPORT_ADMIN}">
+			<!-- 週報担当：部下の作業報告書をまとめて取り込む -->
+			<div class="menu-card-wrapper">
+				<div class="menu-card" style="cursor: pointer; height: 100%;" onclick="location.href='${pageContext.request.contextPath}/workReportBulkImport.do'">
+					<div class="icon">📥</div>
+					<h3>作業報告書の取込（週報担当）</h3>
+					<p>所属部署とその下の部署の社員の作業報告書（Excel）をまとめて取り込みます。リーダー所見も入ります。</p>
+				</div>
+			</div>
+		</c:if>
+
 		<c:if test="${sessionScope.can.PAID_LEAVE_ADMIN}">
 			<!-- 有給休暇管理カード -->
 			<div class="menu-card-wrapper">

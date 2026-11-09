@@ -391,6 +391,25 @@ public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, S
     }
 
     @Override
+    public List<com.example.kintai.domain.model.attendance.Subordinate> findStaffInMyDepartments(String staffId) {
+        List<com.example.kintai.domain.model.attendance.Subordinate> result = new java.util.ArrayList<>();
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(readSqlFile("find_staff_in_my_departments.sql"))) {
+            ps.setInt(1, Integer.parseInt(staffId));
+            ps.setInt(2, Integer.parseInt(staffId));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    result.add(new com.example.kintai.domain.model.attendance.Subordinate(
+                            String.valueOf(rs.getInt("staff_id")), rs.getString("staff_name"), rs.getString("department_name")));
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to find staff in departments of: " + staffId, e);
+        }
+        return result;
+    }
+
+    @Override
     public java.util.Map<LocalDate, String> findCompanyHolidays(LocalDate from, LocalDate to) {
         java.util.Map<LocalDate, String> holidays = new java.util.TreeMap<>();
         try (Connection con = ConnectionBase.getConnection();

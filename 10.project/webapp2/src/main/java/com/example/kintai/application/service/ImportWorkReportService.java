@@ -126,6 +126,23 @@ public class ImportWorkReportService implements ImportWorkReportUseCase {
         return new ImportResult(importedMonthCount, skipped, savedDays, savedWeeks, monthLabels);
     }
 
+    @Override
+    public Preview preview(byte[] xlsm) {
+        List<ImportedMonthData> months = workReportImportPort.parse(new java.io.ByteArrayInputStream(xlsm));
+        List<String> labels = new ArrayList<>();
+        int days = 0;
+        int weeks = 0;
+        for (ImportedMonthData month : months) {
+            if (!month.getDays().isEmpty() || !month.getWeeklyWorkReports().isEmpty()) {
+                labels.add(month.getYearMonth().toString());
+            }
+            days += month.getDays().size();
+            weeks += month.getWeeklyWorkReports().size();
+        }
+        String staffName = workReportImportPort.readStaffName(new java.io.ByteArrayInputStream(xlsm));
+        return new Preview(labels, days, weeks, staffName);
+    }
+
     private static boolean hasText(String value) {
         return value != null && !value.isBlank();
     }

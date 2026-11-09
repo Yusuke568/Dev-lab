@@ -43,6 +43,13 @@ public class KintaiDisplayAction implements Action {
     private final com.example.kintai.application.port.in.GetHolidaysUseCase getHolidaysUseCase;
     private final com.example.notice.application.port.in.NoticeUseCase noticeUseCase;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    /** 週40時間の時間外を画面で計算するための、月の外の日（最初と最後の週）。null なら渡さない */
+    private com.example.kintai.application.service.WeeklyOvertimeService weeklyOvertimeService;
+
+    public KintaiDisplayAction withWeeklyOvertime(com.example.kintai.application.service.WeeklyOvertimeService service) {
+        this.weeklyOvertimeService = service;
+        return this;
+    }
 
     /**
      * コンストラクタ、E
@@ -152,6 +159,20 @@ public class KintaiDisplayAction implements Action {
             request.setAttribute("weeklyWorkReports", weeklyWorkReports);
             // 各週の「累計/残業時間」（作業報告書Excelでは数式で計算される欄。画面では確認用に表示する）
             request.setAttribute("weeklyWorkSummaries", getWeeklyWorkSummariesUseCase.getWeeklyWorkSummaries(employeeId, yearMonth));
+            // 週40時間：月の最初と最後の週の、表にない日（前月・翌月）の勤務。画面の時間外の計算に使う
+            java.util.List<java.util.Map<String, Object>> outsideDays = new java.util.ArrayList<>();
+            if (weeklyOvertimeService != null) {
+                for (com.example.kintai.domain.service.WeeklyOvertimeCalculator.Day day
+                        : weeklyOvertimeService.outsideMonthDays(employeeId, yearMonth)) {
+                    java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+                    m.put("date", day.date().toString());
+                    m.put("total", day.totalMinutes());
+                    m.put("holiday", day.holiday());
+                    m.put("leave", day.leaveCreditMinutes());
+                    outsideDays.add(m);
+                }
+            }
+            request.setAttribute("outsideWeekDaysJson", objectMapper.writeValueAsString(outsideDays));
 
             // 作業報告書Excelインポート等、他アクションからのセッション経由メッセージ
             HttpSession messageSession = request.getSession(false);

@@ -1328,6 +1328,7 @@ body.kintai-calendar-view .table-responsive {
 		data-proxy-mode="${proxyMode ? 'true' : 'false'}"
 		data-work-types-json='${workTypesJson}'
 		data-break-periods='${breakPeriodsJson}'
+		data-outside-week-days='${outsideWeekDaysJson}'
 		data-year="${attendanceData.yearMonth.year}"
 		data-month="${attendanceData.yearMonth.monthValue}">
 		<div class="kintai-header">
@@ -1834,12 +1835,12 @@ body.kintai-calendar-view .table-responsive {
 	</select>
 
 	<script
-		src="${pageContext.request.contextPath}/resources/js/kintai/kintai.js?v=20261115"
+		src="${pageContext.request.contextPath}/resources/js/kintai/kintai.js?v=20261109w"
 		type="module">
 	</script>
 	<%-- カレンダー表示と入力ポップアップ。kintai.js の後に読み込む --%>
 	<script
-		src="${pageContext.request.contextPath}/resources/js/kintai/month-calendar.js"
+		src="${pageContext.request.contextPath}/resources/js/kintai/month-calendar.js?v=20261109w"
 		type="module">
 	</script>
 

@@ -1,7 +1,7 @@
 import {
   collectAttendanceRecords, collectRowRecord, getMinutes, calculateTotalWorkMinutes, calculateOvertime,
-  localDateString, currentTimeString, getTimeInput, isNextDayEnd
-} from "./utils.js";
+  localDateString, currentTimeString, getTimeInput, isNextDayEnd, holidayOvertimeByDate
+} from "./utils.js?v=20261109w";
 
 // Get data from the root element's dataset
 const rootEl = document.getElementById("kintai-app-root");
@@ -450,6 +450,8 @@ function applyCorrectionMasterToRow(select) {
 }
 
 function updateOvertimePerRow() {
+  // 休日出勤の日（土日・祝日・会社休日）の時間外は、週40時間の決まりで数える
+  const holidayOvertime = holidayOvertimeByDate();
   rows.forEach((row) => {
     const start = getTimeInput(row, "kintaifrom").value;
     const end = getTimeInput(row, "kintaito").value;
@@ -462,7 +464,9 @@ function updateOvertimePerRow() {
     if (start && end) {
       const addMinutes = getRowAddMinutes(row);
       workTimeCell.textContent = formatHm(calculateTotalWorkMinutes(start, end, addMinutes));
-      const overtime = calculateOvertime(start, end, addMinutes);
+      const overtime = holidayOvertime.has(row.dataset.date)
+        ? holidayOvertime.get(row.dataset.date)
+        : calculateOvertime(start, end, addMinutes);
       overtimeCell.textContent = overtime > 0 ? formatHm(overtime) : "ー";
     } else {
       workTimeCell.textContent = "";

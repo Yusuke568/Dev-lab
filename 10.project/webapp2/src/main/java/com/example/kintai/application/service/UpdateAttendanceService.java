@@ -9,6 +9,7 @@ import com.example.kintai.domain.model.employee.EmployeeId;
 import com.example.kintai.domain.port.out.LoadAttendanceRecordPort;
 import com.example.kintai.domain.port.out.OvertimeRequestPort;
 import com.example.kintai.domain.port.out.SaveAttendanceRecordPort;
+import com.example.kintai.domain.service.WeeklyOvertimeCalculator;
 import com.example.leave.domain.port.out.PaidLeavePort;
 import com.example.shared.transaction.TransactionManager;
 
@@ -36,6 +37,8 @@ public class UpdateAttendanceService implements UpdateAttendanceUseCase {
     private final TransactionManager transactionManager;
     private final WorkTypePort workTypePort;
     private final OvertimeRequestPort overtimeRequestPort;
+    /** 週40時間の時間外（休日出勤の日の分）を計算し直す。null なら日ごとの計算だけ */
+    private final WeeklyOvertimeService weeklyOvertimeService;
 
     public UpdateAttendanceService(SaveAttendanceRecordPort saveAttendanceRecordPort,
                                     LoadAttendanceRecordPort loadAttendanceRecordPort,
@@ -43,6 +46,18 @@ public class UpdateAttendanceService implements UpdateAttendanceUseCase {
                                     TransactionManager transactionManager,
                                     WorkTypePort workTypePort,
                                     OvertimeRequestPort overtimeRequestPort) {
+        this(saveAttendanceRecordPort, loadAttendanceRecordPort, paidLeavePort, transactionManager, workTypePort,
+                overtimeRequestPort, null);
+    }
+
+    public UpdateAttendanceService(SaveAttendanceRecordPort saveAttendanceRecordPort,
+                                    LoadAttendanceRecordPort loadAttendanceRecordPort,
+                                    PaidLeavePort paidLeavePort,
+                                    TransactionManager transactionManager,
+                                    WorkTypePort workTypePort,
+                                    OvertimeRequestPort overtimeRequestPort,
+                                    WeeklyOvertimeService weeklyOvertimeService) {
+        this.weeklyOvertimeService = weeklyOvertimeService;
         this.saveAttendanceRecordPort = saveAttendanceRecordPort;
         this.loadAttendanceRecordPort = loadAttendanceRecordPort;
         this.paidLeavePort = paidLeavePort;
@@ -159,6 +174,45 @@ public class UpdateAttendanceService implements UpdateAttendanceUseCase {
 
                 saveAttendanceRecordPort.save(record);
             }
+
+            // 週40時間：保存した日を含む週（日曜〜土曜）の、休日出勤の日の時間外を計算し直す
+            if (weeklyOvertimeService != null) {
+                java.util.Set<String> weeks = new java.util.LinkedHashSet<>();
+                for (AttendanceUpdateCommand cmd : commands) {
+                    weeks.add(cmd.getEmployeeId() + "/" + WeeklyOvertimeCalculator.weekStart(cmd.getDate()));
+                }
+                for (String key : weeks) {
+                    String[] parts = key.split("/");
+                    recalculateHolidayOvertime(new EmployeeId(parts[0]), LocalDate.parse(parts[1]), paidLeaveUse);
+                }
+            }
+        });
+    }
+
+    /**
+     * 週の休日出勤の日の時間外を、週40時間の決まりで計算し直して保存する。
+     * 提出済み（一時保存でない）の日は、時間外が変われば承認の要否も決め直す。
+     */
+    private void recalculateHolidayOvertime(EmployeeId employeeId, LocalDate weekStart, java.util.Map<Integer, Double> paidLeaveUse) {
+        java.util.Map<Integer, Integer> credits = new java.util.HashMap<>();
+        paidLeaveUse.forEach((id, days) -> credits.put(id, (int) Math.round(days * WeeklyOvertimeCalculator.DAILY_MINUTES)));
+        java.util.Map<LocalDate, Integer> overtime = WeeklyOvertimeCalculator.holidayOvertime(
+                weeklyOvertimeService.loadWeek(employeeId, weekStart, credits));
+        overtime.forEach((date, minutes) -> {
+            Optional<AttendanceRecord> found = loadAttendanceRecordPort.loadByEmployeeAndDate(employeeId, date);
+            if (found.isEmpty() || found.get().getOvertimeMinutes() == minutes) {
+                return;
+            }
+            AttendanceRecord record = found.get();
+            record.setOvertimeMinutes(minutes);
+            if (record.getApprovalStatus() != STATUS_DRAFT) {
+                boolean isPaidLeave = record.getAbstractId() != null && paidLeaveUse.getOrDefault(record.getAbstractId(), 0.0) > 0;
+                boolean hasApprovedOvertimeRequest = minutes > 0
+                        && overtimeRequestPort.findByEmployeeAndDate(employeeId, date).map(r -> r.isApproved()).orElse(false);
+                boolean needsApproval = isPaidLeave || (minutes > 0 && !hasApprovedOvertimeRequest);
+                record.setApprovalStatus(needsApproval ? STATUS_PENDING_APPROVAL : STATUS_APPROVED);
+            }
+            saveAttendanceRecordPort.save(record);
         });
     }
 }

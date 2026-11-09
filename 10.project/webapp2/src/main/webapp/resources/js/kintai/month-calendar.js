@@ -8,7 +8,7 @@
  * 「決定」で行の入力欄に書き戻して input / change イベントを送る。これで未保存の印・時間の再計算・
  * 有給残日数・保存（kintai.js）は表で入力したときと同じように動く。
  */
-import { calculateTotalWorkMinutes, calculateOvertime, isNextDayEnd, getMinutes, localDateString } from "./utils.js";
+import { calculateTotalWorkMinutes, calculateOvertime, isNextDayEnd, getMinutes, localDateString, holidayOvertimeByDate } from "./utils.js?v=20261109w";
 
 const VIEW_KEY = "kintaiView";
 const WEEK_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
@@ -76,7 +76,11 @@ function addMinutesOf(v) {
  */
 function overtimeInfo(row) {
   const v = readRow(row);
-  const minutes = v.kintaifrom && v.kintaito ? calculateOvertime(v.kintaifrom, v.kintaito, addMinutesOf(v)) : 0;
+  // 休日出勤の日は週40時間の決まりで数える（kintai.js の表の時間外と同じ）
+  const weekly = holidayOvertimeByDate();
+  const minutes = !(v.kintaifrom && v.kintaito) ? 0
+    : weekly.has(row.dataset.date) ? weekly.get(row.dataset.date)
+    : calculateOvertime(v.kintaifrom, v.kintaito, addMinutesOf(v));
   if (minutes <= 0) return { minutes: 0, state: null, label: "" };
   const cell = row.cells[9];
   const text = cell ? cell.textContent.replace(/\s+/g, "") : "";

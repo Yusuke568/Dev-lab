@@ -151,3 +151,71 @@ export function collectRowRecord(row, staffId) {
       totalDirectWorkTime
     };
 }
+
+// -------- 週40時間（休日出勤の日の時間外） --------
+
+const WEEKLY_MINUTES = 40 * 60;
+
+/** "YYYY-MM-DD" を、その日を含む週の日曜日の "YYYY-MM-DD" にする（週は日曜〜土曜） */
+function weekStartOf(dateText) {
+  const [y, m, d] = dateText.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  date.setDate(date.getDate() - date.getDay());
+  return localDateString(date);
+}
+
+function isWeekdayText(dateText) {
+  const [y, m, d] = dateText.split("-").map(Number);
+  const dow = new Date(y, m - 1, d).getDay();
+  return dow !== 0 && dow !== 6;
+}
+
+/**
+ * 休日出勤の日（土日・祝日・会社休日）の時間外を、週40時間の決まりで計算する（サーバーの WeeklyOvertimeCalculator と同じ）。
+ *   月〜金の「所定に数える時間」（その日の総勤務のうち8時間まで。休日の平日・有給は8時間、半休は4時間＋働いた分）を足し、
+ *   休日出勤の勤務は日付順に40時間に足りない分を埋め（1日8時間まで）、残りを時間外にする。
+ * 表にない前月・翌月の日は、サーバーが #kintai-app-root の data-outside-week-days に入れた分を使う。
+ * @returns {Map<string, number>} 休日の日付 → 時間外（分）
+ */
+export function holidayOvertimeByDate() {
+  const root = document.getElementById("kintai-app-root");
+  let workTypes = [];
+  let outside = [];
+  try { workTypes = JSON.parse((root && root.dataset.workTypesJson) || "[]"); } catch (e) { workTypes = []; }
+  try { outside = JSON.parse((root && root.dataset.outsideWeekDays) || "[]"); } catch (e) { outside = []; }
+  const leaveCredit = new Map(workTypes.map((w) => [String(w.id), Math.round((Number(w.paidLeaveDays) || 0) * STANDARD_WORK_MINUTES)]));
+
+  const days = outside.map((d) => ({ date: d.date, total: Number(d.total) || 0, holiday: !!d.holiday, leave: Number(d.leave) || 0 }));
+  document.querySelectorAll("#calendar-log tbody tr").forEach((row) => {
+    if (!row.dataset.date) return;
+    const rec = collectRowRecord(row, null);
+    days.push({
+      date: row.dataset.date,
+      total: rec.totalWorkTime || 0,
+      holiday: row.classList.contains("saturday") || row.classList.contains("sunday") || row.classList.contains("holiday"),
+      leave: rec.abstractId != null ? (leaveCredit.get(String(rec.abstractId)) || 0) : 0
+    });
+  });
+
+  const weeks = new Map();
+  days.forEach((d) => {
+    const key = weekStartOf(d.date);
+    if (!weeks.has(key)) weeks.set(key, []);
+    weeks.get(key).push(d);
+  });
+
+  const result = new Map();
+  weeks.forEach((week) => {
+    const baseline = week.reduce((sum, d) => {
+      if (!isWeekdayText(d.date)) return sum;
+      return sum + (d.holiday ? STANDARD_WORK_MINUTES : Math.min(STANDARD_WORK_MINUTES, d.total + d.leave));
+    }, 0);
+    let remaining = Math.max(0, WEEKLY_MINUTES - baseline);
+    week.filter((d) => d.holiday).sort((a, b) => a.date.localeCompare(b.date)).forEach((d) => {
+      const regular = Math.min(d.total, remaining, STANDARD_WORK_MINUTES);
+      remaining -= regular;
+      result.set(d.date, d.total - regular);
+    });
+  });
+  return result;
+}

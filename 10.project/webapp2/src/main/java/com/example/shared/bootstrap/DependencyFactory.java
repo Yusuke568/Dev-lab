@@ -86,6 +86,7 @@ public class DependencyFactory {
     private final ClassmasterPort classmasterPort;
     private final TransactionManager transactionManager;
     private final WorkTypePort workTypePort;
+    private final com.example.kintai.application.service.WeeklyOvertimeService weeklyOvertimeService;
     private final PaidLeavePort paidLeavePort;
     private final ApprovalHistoryPersistenceAdapter approvalHistoryPersistenceAdapter;
     private final CorrectionMasterPersistenceAdapter correctionMasterPersistenceAdapter;
@@ -144,6 +145,8 @@ public class DependencyFactory {
         this.classmasterPort = new ClassmasterPersistenceAdapter();
         this.transactionManager = new TransactionManagerImpl();
         this.workTypePort = new WorkTypePersistenceAdapter();
+        this.weeklyOvertimeService = new com.example.kintai.application.service.WeeklyOvertimeService(
+                this.attendancePersistenceAdapter, this.attendancePersistenceAdapter, this.workTypePort);
         this.paidLeavePort = new PaidLeavePersistenceAdapter();
         this.approvalHistoryPersistenceAdapter = new ApprovalHistoryPersistenceAdapter();
         this.correctionMasterPersistenceAdapter = new CorrectionMasterPersistenceAdapter();
@@ -215,7 +218,8 @@ public class DependencyFactory {
                 this.paidLeavePort,
                 this.transactionManager,
                 this.workTypePort,
-                this.overtimeRequestPersistenceAdapter
+                this.overtimeRequestPersistenceAdapter,
+                this.weeklyOvertimeService
         );
         this.importWorkReportUseCase = new com.example.kintai.application.service.ImportWorkReportService(
                 this.workReportImportPort,
@@ -264,7 +268,7 @@ public class DependencyFactory {
         actionMap.put("KintaiDisplay", new KintaiDisplayAction(this.getMonthlyAttendanceUseCase, this.getWorkTypesUseCase, this.getCorrectionMastersUseCase, this.getMyOvertimeRequestsUseCase, this.getWeeklyWorkReportsUseCase, this.attendanceAccessUseCase,
                 new com.example.kintai.application.service.WeeklyWorkSummaryService(this.attendancePersistenceAdapter),
                 new com.example.kintai.application.service.HolidayService(this.attendancePersistenceAdapter),
-                this.noticeUseCase));
+                this.noticeUseCase).withWeeklyOvertime(this.weeklyOvertimeService));
 
         // Shain Actions (New Context)
         actionMap.put("ShainList", new com.example.shain.adapter.in.web.ShainListAction(this.getShainListUseCase, this.getAllClassmastersUseCase));

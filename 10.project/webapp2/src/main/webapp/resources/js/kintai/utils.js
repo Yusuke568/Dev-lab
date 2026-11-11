@@ -172,7 +172,7 @@ function isWeekdayText(dateText) {
 
 /**
  * 休日出勤の日（土日・祝日・会社休日）の時間外を、週40時間の決まりで計算する（サーバーの WeeklyOvertimeCalculator と同じ）。
- *   月〜金の「所定に数える時間」（その日の総勤務のうち8時間まで。休日の平日・有給は8時間、半休は4時間＋働いた分）を足し、
+ *   月〜金の「所定に数える時間」（その日の総勤務のうち8時間まで。休日の平日は0時間、有給は8時間、半休は4時間＋働いた分）を足し、
  *   休日出勤の勤務は日付順に40時間に足りない分を埋め（1日8時間まで）、残りを時間外にする。
  * 表にない前月・翌月の日は、サーバーが #kintai-app-root の data-outside-week-days に入れた分を使う。
  * @returns {Map<string, number>} 休日の日付 → 時間外（分）
@@ -207,8 +207,8 @@ export function holidayOvertimeByDate() {
   const result = new Map();
   weeks.forEach((week) => {
     const baseline = week.reduce((sum, d) => {
-      if (!isWeekdayText(d.date)) return sum;
-      return sum + (d.holiday ? STANDARD_WORK_MINUTES : Math.min(STANDARD_WORK_MINUTES, d.total + d.leave));
+      if (!isWeekdayText(d.date) || d.holiday) return sum;
+      return sum + Math.min(STANDARD_WORK_MINUTES, d.total + d.leave);
     }, 0);
     let remaining = Math.max(0, WEEKLY_MINUTES - baseline);
     week.filter((d) => d.holiday).sort((a, b) => a.date.localeCompare(b.date)).forEach((d) => {

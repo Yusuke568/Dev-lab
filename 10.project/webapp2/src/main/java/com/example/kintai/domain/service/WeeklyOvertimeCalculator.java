@@ -12,12 +12,13 @@ import java.util.Map;
  * 週40時間の時間外（休日出勤の日の分）を計算する。
  *
  * 週は日曜〜土曜。月〜金に毎日8時間（週40時間）働く前提で、
- *   1. 月〜金の「所定に数える時間」を足す：その日の総勤務のうち8時間まで。祝日・会社休日は8時間、
- *      有給は8時間、半休は4時間（＋働いた分、合わせて8時間まで）として数える
+ *   1. 月〜金の「所定に数える時間」を足す：その日の総勤務のうち8時間まで。祝日・会社休日は0時間
+ *      （その日に働いた分は休日出勤として 2. で数える）、有給は8時間、半休は4時間（＋働いた分、合わせて8時間まで）として数える
  *   2. 休日出勤の日（土日・平日の祝日・会社休日）の勤務は、日付順に「40時間に足りない分」を埋め、
  *      埋めきった残りを時間外にする（1日に埋められるのは8時間まで）
  * 例：月〜金に8時間ずつ（40時間）働いた週の土曜の2時間 → 時間外2時間
  *     月〜金のうち1日が6時間（38時間）の週の土曜の4時間 → 2時間は40時間に足し、時間外2時間
+ *     祝日のある週（月〜金のうち4日を8時間ずつ＝32時間）の土曜の8時間 → 全部40時間に足し、時間外なし
  * 平日（休日でない月〜金）の時間外は今までどおり、その日の総勤務のうち8時間を超えた分（ここでは扱わない）。
  */
 public final class WeeklyOvertimeCalculator {
@@ -47,13 +48,10 @@ public final class WeeklyOvertimeCalculator {
         return d != DayOfWeek.SATURDAY && d != DayOfWeek.SUNDAY;
     }
 
-    /** 月〜金の所定に数える時間（休日の平日は8時間） */
+    /** 月〜金の所定に数える時間（休日の平日は0時間。働いた分は休日出勤として数える） */
     static int weekdayCredit(Day day) {
-        if (!isWeekday(day.date())) {
+        if (!isWeekday(day.date()) || day.holiday()) {
             return 0;
-        }
-        if (day.holiday()) {
-            return DAILY_MINUTES;
         }
         return Math.min(DAILY_MINUTES, day.totalMinutes() + day.leaveCreditMinutes());
     }

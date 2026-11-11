@@ -1,7 +1,7 @@
 import {
   collectAttendanceRecords, collectRowRecord, getMinutes, calculateTotalWorkMinutes, calculateOvertime,
   localDateString, currentTimeString, getTimeInput, isNextDayEnd, holidayOvertimeByDate
-} from "./utils.js?v=20261109w";
+} from "./utils.js?v=20261112b";
 
 // Get data from the root element's dataset
 const rootEl = document.getElementById("kintai-app-root");

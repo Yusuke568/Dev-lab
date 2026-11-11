@@ -53,12 +53,21 @@ class WeeklyOvertimeCalculatorTest {
     }
 
     @Test
-    void 祝日と有給は8時間として数える() {
-        // 月は祝日（休み）、水は有給、ほかは8時間 → 40時間に達しているので土曜は全部時間外
+    void 祝日は0時間_有給は8時間として数える() {
+        // 月は祝日（休み）、水は有給、ほかは8時間 → 32時間。土曜の3時間は全部40時間に足し、時間外なし
         List<Day> week = new ArrayList<>(List.of(holiday(1, 0), weekday(2, 8, 0),
                 new Day(SUN.plusDays(3), 0, false, 480), weekday(4, 8, 0), weekday(5, 8, 0), holiday(6, 180)));
 
-        assertEquals(180, WeeklyOvertimeCalculator.holidayOvertime(week).get(SUN.plusDays(6)));
+        assertEquals(0, WeeklyOvertimeCalculator.holidayOvertime(week).get(SUN.plusDays(6)));
+    }
+
+    @Test
+    void 祝日のある週の土曜は40時間に足りない分まで時間外にならない() {
+        // 2026/11/1〜7：月 7:45、火（文化の日）0、水・木 8時間、金 7:45 → 31:30。土曜 2時間は時間外なし
+        List<Day> week = List.of(weekday(1, 7, 45), holiday(2, 0), weekday(3, 10, 0), weekday(4, 13, 0),
+                weekday(5, 7, 45), holiday(6, 120));
+
+        assertEquals(0, WeeklyOvertimeCalculator.holidayOvertime(week).get(SUN.plusDays(6)));
     }
 
     @Test
@@ -72,10 +81,13 @@ class WeeklyOvertimeCalculatorTest {
 
     @Test
     void 平日の祝日に働いた分も休出として数える() {
-        // 月（祝日）に3時間働き、火〜金は8時間 → 祝日を8時間と数えて40時間、祝日の3時間は時間外
+        // 月（祝日）に3時間働き、火〜金は8時間（32時間）→ 祝日の3時間は40時間に足し、時間外なし
         List<Day> week = List.of(holiday(1, 180), weekday(2, 8, 0), weekday(3, 8, 0), weekday(4, 8, 0), weekday(5, 8, 0));
+        assertEquals(0, WeeklyOvertimeCalculator.holidayOvertime(week).get(SUN.plusDays(1)));
 
-        assertEquals(180, WeeklyOvertimeCalculator.holidayOvertime(week).get(SUN.plusDays(1)));
+        // 祝日に10時間働いた → 8時間は40時間に足し、2時間は時間外
+        List<Day> longDay = List.of(holiday(1, 600), weekday(2, 8, 0), weekday(3, 8, 0), weekday(4, 8, 0), weekday(5, 8, 0));
+        assertEquals(120, WeeklyOvertimeCalculator.holidayOvertime(longDay).get(SUN.plusDays(1)));
     }
 
     @Test

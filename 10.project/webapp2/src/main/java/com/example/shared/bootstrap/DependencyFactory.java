@@ -295,7 +295,9 @@ public class DependencyFactory {
 
         // Approval Actions
         actionMap.put("ApprovalList", new ApprovalListAction(this.getPendingApprovalsUseCase, this.getPendingOvertimeRequestsUseCase,
-                this.leaveRequestUseCase, this.approvalWorkflowService));
+                this.leaveRequestUseCase, this.approvalWorkflowService).withOvertimeStatus(
+                new com.example.kintai.application.service.OvertimeStatusService(
+                        this.attendancePersistenceAdapter, this.overtimeRequestPersistenceAdapter, this.approvalWorkflowService)));
         actionMap.put("ApprovalExecute", new ApprovalExecuteAction(this.approveAttendanceUseCase));
         actionMap.put("ApprovalHistory", new ApprovalHistoryAction(this.getApprovalHistoryUseCase));
         actionMap.put("SubordinateAttendance", new com.example.kintai.adapter.in.web.SubordinateAttendanceAction(this.attendanceAccessUseCase));

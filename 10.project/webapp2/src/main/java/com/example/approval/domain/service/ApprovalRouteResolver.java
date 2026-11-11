@@ -73,6 +73,29 @@ public class ApprovalRouteResolver {
         return fromOrganization(applicantStaffId, departmentId, org);
     }
 
+    /**
+     * 申請者に効く承認ルート（社員への割り当て → 部署（上位部署へたどる）への割り当て）。組織図で決まる人は空。
+     * 承認画面で、条件つきの段の基準（当月の時間外○時間以上）を出すのに使う。
+     */
+    public Optional<ApprovalRoute> applicableRoute(int applicantStaffId, Integer departmentId, RequestType requestType,
+                                                   OrganizationSnapshot org) {
+        Optional<ApprovalRoute> staffRoute = findRoute(org, requestType, RouteAssignment.STAFF, applicantStaffId);
+        if (staffRoute.isPresent()) {
+            return staffRoute;
+        }
+        Set<Integer> visited = new HashSet<>();
+        Integer current = departmentId;
+        while (current != null && visited.add(current)) {
+            Optional<ApprovalRoute> deptRoute = findRoute(org, requestType, RouteAssignment.DEPARTMENT, current);
+            if (deptRoute.isPresent()) {
+                return deptRoute;
+            }
+            Department dept = org.departments().get(current);
+            current = dept != null ? dept.getParentId() : null;
+        }
+        return Optional.empty();
+    }
+
     /** 割り当てが合うルート。申請種別を指定したルートを、種別を指定していないルートより優先する */
     private static Optional<ApprovalRoute> findRoute(OrganizationSnapshot org, RequestType type, String targetType, int targetId) {
         return org.routes().stream()

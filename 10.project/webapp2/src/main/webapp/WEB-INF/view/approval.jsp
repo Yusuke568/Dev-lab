@@ -10,6 +10,45 @@
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/style.css">
 <%@ include file="_icons.jspf" %>
+<style>
+/* 残業事前申請ごとの、申請者のその月の時間外の累計（折れ線・基準線） */
+.ot-chart-row td { background: #fcfcfb; padding: 4px 12px 12px !important; border-top: 0 !important; }
+.otc { --actual: #2a78d6; --proj: #eb6834; --approved: #1baf7a; --pending: #6250d6; --ink: #0b0b0b; --ink2: #52514e; --grid: #e6e5e0;
+  font-size: 0.82rem; color: var(--ink); max-width: 760px; }
+.otc-head { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; margin-bottom: 2px; }
+.otc-next { color: var(--ink2); }
+.otc-flag { font-weight: 700; border-radius: 999px; padding: 0 8px; }
+.otc-flag.is-law { background: #fdecec; color: #8a1c1c; }
+.otc-flag.is-route { background: #fff4d6; color: #6b4a00; }
+.otc-svg { display: block; width: 100%; height: auto; }
+.otc-grid { stroke: var(--grid); stroke-width: 1; }
+.otc-tick { fill: var(--ink2); font-size: 11px; }
+.otc-ref { stroke: var(--ink2); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.otc-ref.is-law { stroke: var(--ink); stroke-width: 2; stroke-dasharray: none; }
+.otc-ref-label { fill: var(--ink2); font-size: 11px; font-weight: 700; }
+.otc-ref-label.is-law { fill: var(--ink); }
+.otc-actual { fill: none; stroke: var(--actual); stroke-width: 2.5; stroke-linejoin: round; }
+.otc-proj { fill: none; stroke: var(--proj); stroke-width: 2; stroke-dasharray: 6 4; stroke-linejoin: round; }
+.otc-dot { stroke: #fcfcfb; stroke-width: 2; }
+.otc-dot.k-actual { fill: var(--actual); }
+.otc-dot.k-approved { fill: var(--approved); }
+.otc-dot.k-pending { fill: var(--pending); }
+.otc-dot.k-this { fill: var(--proj); }
+.otc-this-label { fill: var(--ink); font-size: 11px; font-weight: 700; }
+.otc-end-label { fill: var(--ink2); font-size: 11px; font-weight: 700; }
+.otc-cross { stroke: var(--ink2); stroke-width: 1; }
+.otc-hit { fill: transparent; cursor: crosshair; }
+.otc-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 2px; color: var(--ink2); }
+.otc-legend-item { display: inline-flex; align-items: center; gap: 5px; }
+.otc-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+.otc-swatch.line-actual { width: 16px; height: 0; border-radius: 0; border-top: 3px solid var(--actual); }
+.otc-swatch.line-proj { width: 16px; height: 0; border-radius: 0; border-top: 2px dashed var(--proj); }
+.otc-swatch.k-approved { background: var(--approved); }
+.otc-swatch.k-pending { background: var(--pending); }
+.otc-swatch.k-this { background: var(--proj); }
+.otc-tip { position: absolute; z-index: 50; background: #0b0b0b; color: #fff; font-size: 0.78rem; padding: 6px 9px; border-radius: 6px; pointer-events: none; }
+.otc-tip-title { font-weight: 700; }
+</style>
 </head>
 <body>
 
@@ -74,6 +113,10 @@
 							</form>
 						</div>
 					</td>
+				</tr>
+				<%-- 申請者のその月の時間外（グラフは approval-overtime-chart.js が描く） --%>
+				<tr class="ot-chart-row">
+					<td colspan="10"><div class="ot-chart" data-request-id="${req.id}"></div></td>
 				</tr>
 			</c:forEach>
 			<c:if test="${empty pendingOvertimeRequests}">
@@ -217,6 +260,8 @@
 	</table>
 </div>
 
+<script type="application/json" id="overtime-status">${overtimeStatusJson}</script>
+<script src="${pageContext.request.contextPath}/resources/js/approval-overtime-chart.js?v=20261112"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 	const employeeIdInput = document.getElementById('filterEmployeeId');

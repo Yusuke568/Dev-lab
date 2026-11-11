@@ -113,6 +113,25 @@ public class ApprovalWorkflowService {
         return result;
     }
 
+    /**
+     * 残業事前申請で、申請者のルートの「当月の時間外が○時間以上」で段を足す基準（分 → 条件の説明）。
+     * 申請の部署が分からなければ主所属で決める。組織図で決まる人や基準のないルートは空。
+     */
+    public Map<Integer, String> monthlyOvertimeThresholds(int applicantStaffId, Integer departmentId) {
+        Integer dept = departmentId != null ? departmentId : organizationPort.findDepartmentIdOfStaff(applicantStaffId);
+        OrganizationSnapshot org = new OrganizationSnapshot(
+                organizationPort.findAllDepartments(),
+                organizationPort.findSubApprovers(),
+                organizationPort.findApprovalRoutes(),
+                organizationPort.findMaxLevels(RequestType.OVERTIME));
+        Map<Integer, String> result = new TreeMap<>();
+        resolver.applicableRoute(applicantStaffId, dept, RequestType.OVERTIME, org).ifPresent(route ->
+                route.getExtraLevels().stream()
+                        .filter(e -> com.example.approval.domain.model.ExtraLevel.MONTHLY_OVERTIME.equals(e.getCondition()))
+                        .forEach(e -> result.put(e.getThresholdMinutes(), "承認ルート「" + route.getName() + "」の追加の段")));
+        return result;
+    }
+
     /** 社員が所属するすべての部署ID（主所属が先頭）。申請画面で兼任先を選ばせるのに使う。 */
     public List<Integer> getDepartmentIdsOfStaff(int staffId) {
         return organizationPort.findDepartmentIdsOfStaff(staffId);

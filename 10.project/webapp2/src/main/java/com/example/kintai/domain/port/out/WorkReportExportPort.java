@@ -20,4 +20,17 @@ public interface WorkReportExportPort {
      */
     byte[] generate(MonthlyAttendanceDto monthlyData, String employeeName, List<WorkType> workTypes,
                      List<WeeklyWorkReport> weeklyWorkReports);
+
+    /** 1か月分（勤怠と週次作業報告） */
+    record MonthData(MonthlyAttendanceDto monthlyData, List<WeeklyWorkReport> weeklyWorkReports) {
+    }
+
+    /**
+     * 前年12月〜当年12月の作業報告書を1ファイルで作る。
+     * すべての月のシートに年と氏名を入れ、months にある月のシートに勤怠と週次作業報告を書く。
+     * @param year 当年（前年12月のシートは year − 1 年）
+     */
+    default byte[] generateYear(int year, String employeeName, List<WorkType> workTypes, List<MonthData> months) {
+        throw new UnsupportedOperationException("generateYear");
+    }
 }

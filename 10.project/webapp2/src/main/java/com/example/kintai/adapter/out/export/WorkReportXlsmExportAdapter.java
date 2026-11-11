@@ -72,31 +72,10 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
             }
             try (XSSFWorkbook workbook = new XSSFWorkbook(templateStream)) {
                 YearMonth yearMonth = monthlyData.getYearMonth();
-                String sheetName = yearMonth.getMonthValue() + "月";
-                Sheet sheet = workbook.getSheet(sheetName);
-                if (sheet == null) {
-                    throw new IllegalStateException("テンプレートにシートが見つかりません: " + sheetName);
-                }
-
+                Sheet sheet = sheetOf(workbook, yearMonth, yearMonth.getYear());
                 setNumericValue(sheet, "A1", yearMonth.getYear());
                 setStringValue(sheet, "AP2", employeeName);
-
-                // 勤務区分ID → 摘要欄の値（様式のプルダウンにある値だけ）
-                List<String> categoryOptions = readCategoryOptions(sheet);
-                Map<Integer, String> categoryByWorkTypeId = new HashMap<>();
-                if (workTypes != null) {
-                    for (WorkType workType : workTypes) {
-                        WorkReportCategoryMapper.toCategory(workType, categoryOptions)
-                                .ifPresent(category -> categoryByWorkTypeId.put(workType.getId(), category));
-                    }
-                }
-
-                for (DailyAttendanceDto daily : monthlyData.getDailyRecords()) {
-                    int row = FIRST_DAY_ROW + daily.getDate().getDayOfMonth() - 1;
-                    writeDay(sheet, row, daily, categoryByWorkTypeId);
-                }
-
-                writeWeeklyWorkReports(sheet, weeklyWorkReports);
+                writeMonth(sheet, monthlyData, weeklyWorkReports, workTypes);
 
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 workbook.write(out);
@@ -105,6 +84,63 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
         } catch (IOException e) {
             throw new RuntimeException("作業報告書の生成に失敗しました。", e);
         }
+    }
+
+    @Override
+    public byte[] generateYear(int year, String employeeName, List<WorkType> workTypes, List<MonthData> months) {
+        try (InputStream templateStream = getClass().getResourceAsStream(TEMPLATE_PATH)) {
+            if (templateStream == null) {
+                throw new IllegalStateException("作業報告書テンプレートが見つかりません: " + TEMPLATE_PATH);
+            }
+            try (XSSFWorkbook workbook = new XSSFWorkbook(templateStream)) {
+                // すべての月のシート（前年12月・1月〜12月）に年と氏名を入れる。データのない月も年がずれないように
+                for (int m = 0; m <= 12; m++) {
+                    YearMonth ym = m == 0 ? YearMonth.of(year - 1, 12) : YearMonth.of(year, m);
+                    Sheet sheet = sheetOf(workbook, ym, year);
+                    setNumericValue(sheet, "A1", ym.getYear());
+                    setStringValue(sheet, "AP2", employeeName);
+                }
+                for (MonthData month : months) {
+                    YearMonth ym = month.monthlyData().getYearMonth();
+                    writeMonth(sheetOf(workbook, ym, year), month.monthlyData(), month.weeklyWorkReports(), workTypes);
+                }
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                workbook.write(out);
+                return out.toByteArray();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("作業報告書の生成に失敗しました。", e);
+        }
+    }
+
+    /** 月のシート。当年の月は「○月」、前年の12月は「前年12月」 */
+    private static Sheet sheetOf(XSSFWorkbook workbook, YearMonth yearMonth, int year) {
+        String sheetName = yearMonth.getYear() == year - 1 && yearMonth.getMonthValue() == 12
+                ? "前年12月" : yearMonth.getMonthValue() + "月";
+        Sheet sheet = workbook.getSheet(sheetName);
+        if (sheet == null) {
+            throw new IllegalStateException("テンプレートにシートが見つかりません: " + sheetName);
+        }
+        return sheet;
+    }
+
+    /** 1か月分の勤怠（各日の行）と週次作業報告を、その月のシートに書く */
+    private void writeMonth(Sheet sheet, MonthlyAttendanceDto monthlyData, List<WeeklyWorkReport> weeklyWorkReports,
+                            List<WorkType> workTypes) {
+        // 勤務区分ID → 摘要欄の値（様式のプルダウンにある値だけ）
+        List<String> categoryOptions = readCategoryOptions(sheet);
+        Map<Integer, String> categoryByWorkTypeId = new HashMap<>();
+        if (workTypes != null) {
+            for (WorkType workType : workTypes) {
+                WorkReportCategoryMapper.toCategory(workType, categoryOptions)
+                        .ifPresent(category -> categoryByWorkTypeId.put(workType.getId(), category));
+            }
+        }
+        for (DailyAttendanceDto daily : monthlyData.getDailyRecords()) {
+            int row = FIRST_DAY_ROW + daily.getDate().getDayOfMonth() - 1;
+            writeDay(sheet, row, daily, categoryByWorkTypeId);
+        }
+        writeWeeklyWorkReports(sheet, weeklyWorkReports);
     }
 
     private void writeDay(Sheet sheet, int row, DailyAttendanceDto daily, Map<Integer, String> categoryByWorkTypeId) {

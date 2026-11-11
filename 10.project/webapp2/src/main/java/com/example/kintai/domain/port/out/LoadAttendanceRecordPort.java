@@ -42,4 +42,12 @@ public interface LoadAttendanceRecordPort {
      * @return 当該年の時間外分数の合計
      */
     long sumOvertimeMinutesByEmployeeAndYear(EmployeeId employeeId, int year);
+
+    /**
+     * その月に勤怠の行が1つでもあるか（読むだけ。月の勤怠を読むときのように、ない日の行を作らない）。
+     * 作業報告書をまとめて出力するとき、データのある月だけを書くのに使う。
+     */
+    default boolean hasAnyRecord(EmployeeId employeeId, YearMonth yearMonth) {
+        return true;
+    }
 }

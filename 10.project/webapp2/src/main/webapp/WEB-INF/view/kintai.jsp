@@ -1389,7 +1389,7 @@ body.kintai-calendar-view .table-responsive {
 							<c:param name="year" value="${attendanceData.yearMonth.year}" />
 							<c:param name="month" value="${attendanceData.yearMonth.monthValue}" />
 						</c:url>
-						<a href="${workReportExportUrl}" class="btn btn-secondary">📊 作業報告書(Excel)出力</a>
+						<a href="${workReportExportUrl}" class="btn btn-secondary" title="前年12月〜当年12月のうち、データのある月をまとめて1つのファイルに出力します">📊 作業報告書(Excel)出力</a>
 						<form id="work-report-import-form" action="${pageContext.request.contextPath}/workReportImport.do"
 							method="post" enctype="multipart/form-data" style="display: inline;">
 							<input type="file" id="work-report-import-file" name="workReportFile" accept=".xlsm"

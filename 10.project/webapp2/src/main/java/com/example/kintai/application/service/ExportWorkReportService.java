@@ -23,6 +23,13 @@ public class ExportWorkReportService implements ExportWorkReportUseCase {
     private final GetWeeklyWorkReportsUseCase getWeeklyWorkReportsUseCase;
     private final WorkReportExportPort workReportExportPort;
     private final com.example.kintai.domain.port.out.WorkReportArchivePort workReportArchivePort;
+    /** データのある月を調べる（読むだけ）。null なら表示中の月だけを出力する */
+    private com.example.kintai.domain.port.out.LoadAttendanceRecordPort loadAttendanceRecordPort;
+
+    public ExportWorkReportService withAttendanceCheck(com.example.kintai.domain.port.out.LoadAttendanceRecordPort port) {
+        this.loadAttendanceRecordPort = port;
+        return this;
+    }
 
     public ExportWorkReportService(GetMonthlyAttendanceUseCase getMonthlyAttendanceUseCase,
                                     GetWorkTypesUseCase getWorkTypesUseCase,
@@ -45,7 +52,26 @@ public class ExportWorkReportService implements ExportWorkReportUseCase {
 
         List<WeeklyWorkReport> weeklyWorkReports = getWeeklyWorkReportsUseCase.getWeeklyWorkReports(employeeId, yearMonth);
 
-        byte[] content = workReportExportPort.generate(monthlyData, monthlyData.getEmployeeName(), workTypes, weeklyWorkReports);
+        byte[] content;
+        if (loadAttendanceRecordPort == null) {
+            content = workReportExportPort.generate(monthlyData, monthlyData.getEmployeeName(), workTypes, weeklyWorkReports);
+        } else {
+            // 前年12月〜当年12月のうち、勤怠のある月（と表示中の月）をまとめて1ファイルにする
+            int year = yearMonth.getYear();
+            List<com.example.kintai.domain.port.out.WorkReportExportPort.MonthData> months = new java.util.ArrayList<>();
+            for (int m = 0; m <= 12; m++) {
+                YearMonth ym = m == 0 ? YearMonth.of(year - 1, 12) : YearMonth.of(year, m);
+                if (ym.equals(yearMonth)) {
+                    months.add(new com.example.kintai.domain.port.out.WorkReportExportPort.MonthData(monthlyData, weeklyWorkReports));
+                } else if (loadAttendanceRecordPort.hasAnyRecord(employeeId, ym)) {
+                    MonthlyAttendanceDto other = getMonthlyAttendanceUseCase.getMonthlyAttendance(
+                            new GetMonthlyAttendanceUseCase.GetMonthlyAttendanceCommand(employeeId, ym));
+                    months.add(new com.example.kintai.domain.port.out.WorkReportExportPort.MonthData(other,
+                            getWeeklyWorkReportsUseCase.getWeeklyWorkReports(employeeId, ym)));
+                }
+            }
+            content = workReportExportPort.generateYear(year, monthlyData.getEmployeeName(), workTypes, months);
+        }
 
         // サーバーの所定フォルダにも置く。置けなくてもダウンロードは止めない
         if (workReportArchivePort == null || !workReportArchivePort.isEnabled()) {

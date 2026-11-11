@@ -81,6 +81,22 @@ public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, S
         return records;
     }
 
+    @Override
+    public boolean hasAnyRecord(EmployeeId employeeId, YearMonth yearMonth) {
+        String sql = "SELECT EXISTS (SELECT 1 FROM work_month_table WHERE staff_id = ? AND work_date >= ? AND work_date < ?)";
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, Integer.parseInt(employeeId.getValue()));
+            ps.setDate(2, java.sql.Date.valueOf(yearMonth.atDay(1)));
+            ps.setDate(3, java.sql.Date.valueOf(yearMonth.plusMonths(1).atDay(1)));
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getBoolean(1);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to check monthly attendance.", e);
+        }
+    }
+
     private void autoInsertMissingDays(EmployeeId employeeId, YearMonth yearMonth, List<AttendanceRecord> existingRecords) {
         int daysInMonth = yearMonth.lengthOfMonth();
         List<LocalDate> existingDates = existingRecords.stream()

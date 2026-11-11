@@ -62,6 +62,35 @@ class WorkReportXlsmExportAdapterTest {
         }
     }
 
+    /** 前年12月〜当年12月をまとめて出力し、取り込むと両方の月が戻る。データのない月も年と氏名は入る */
+    @Test
+    void 前年12月から当年12月までをまとめて出力する() throws Exception {
+        List<WorkType> workTypes = List.of(workType(1, "出勤", false));
+        DailyAttendanceDto dec = new DailyAttendanceDto(LocalDate.of(2025, 12, 1), "09:00", "18:00", "", "", 1,
+                null, null, null, null, 0, 0);
+        MonthlyAttendanceDto prevDec = new MonthlyAttendanceDto(YearMonth.of(2025, 12), List.of(dec), "8:00", 480, 0, 0, "山田 太郎");
+        MonthlyAttendanceDto nov = new MonthlyAttendanceDto(YearMonth.of(2026, 11), List.of(day(2, "09:00", "18:00", 1)),
+                "8:00", 480, 0, 0, "山田 太郎");
+
+        byte[] xlsm = new WorkReportXlsmExportAdapter().generateYear(2026, "山田 太郎", workTypes, List.of(
+                new com.example.kintai.domain.port.out.WorkReportExportPort.MonthData(prevDec, List.of()),
+                new com.example.kintai.domain.port.out.WorkReportExportPort.MonthData(nov, List.of())));
+
+        try (XSSFWorkbook book = new XSSFWorkbook(new ByteArrayInputStream(xlsm))) {
+            assertEquals(2025.0, book.getSheet("前年12月").getRow(0).getCell(0).getNumericCellValue());
+            assertEquals(2026.0, book.getSheet("1月").getRow(0).getCell(0).getNumericCellValue());
+            assertEquals("山田 太郎", text(book.getSheet("5月"), "AP2"), "データのない月も氏名が入る");
+            assertEquals("出勤", an(book.getSheet("前年12月"), 1));
+            assertEquals("出勤", an(book.getSheet("11月"), 2));
+        }
+
+        List<YearMonth> imported = new WorkReportXlsmImportAdapter().parse(new ByteArrayInputStream(xlsm)).stream()
+                .filter(m -> !m.getDays().isEmpty())
+                .map(com.example.kintai.domain.model.attendance.ImportedMonthData::getYearMonth)
+                .sorted().toList();
+        assertEquals(List.of(YearMonth.of(2025, 12), YearMonth.of(2026, 11)), imported);
+    }
+
     /** 週次作業報告の「問題点・対処」は、週ブロックの「問題点・対処：」の下の2行（AS列）に出る */
     @Test
     void 問題点と対処を週ブロックの2行に出力する() throws Exception {

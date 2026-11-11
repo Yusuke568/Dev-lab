@@ -208,7 +208,7 @@
 			<c:when test="${not empty summaries}">
 				<p class="sum-note">
 					当月は ${targetYear}年${targetMonth}月、年間は ${targetYear}年1月〜${targetMonth}月の累計です。
-					時間外は、月 ${monthLimitHours}時間・年 ${yearLimitHours}時間（36協定の原則の上限）と比べ、80%以上で「注意」、上限以上で「超過」と出します。
+					時間外は、月 ${monthLimitHours}時間・年 ${yearLimitHours}時間（36協定の上限）と比べ、80%以上で「注意」、上限以上で「超過」と出します。
 				</p>
 				<div class="sum-wrap">
 				<table class="sum-table">

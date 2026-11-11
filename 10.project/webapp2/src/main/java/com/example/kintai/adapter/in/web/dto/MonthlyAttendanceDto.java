@@ -11,7 +11,9 @@ public class MonthlyAttendanceDto {
 
     // 36協定における時間外労働の一般的な上限（原則）。特別条項は考慮しない。
     private static final long MONTHLY_OVERTIME_LIMIT_MINUTES = 45L * 60;
-    private static final long ANNUAL_OVERTIME_LIMIT_MINUTES = 540L * 60;
+    /** 年間の時間外の上限（部下の勤怠表のサマリーと同じ値） */
+    private static final long ANNUAL_OVERTIME_LIMIT_MINUTES =
+            com.example.kintai.domain.service.StaffWorkSummaryCalculator.YEARLY_LIMIT_MINUTES;
 
     private final YearMonth yearMonth;
     private final List<DailyAttendanceDto> dailyRecords;

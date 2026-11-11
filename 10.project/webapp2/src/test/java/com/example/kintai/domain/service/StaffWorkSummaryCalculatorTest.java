@@ -99,6 +99,6 @@ class StaffWorkSummaryCalculatorTest {
     void 上限との割合() {
         Summary s = summarize(List.of(work("2026-11-02", 44, 36)), List.of());
         assertEquals(80, s.monthOvertimePercent());
-        assertEquals(10, s.yearOvertimePercent());
+        assertEquals(7, s.yearOvertimePercent()); // 36時間 ÷ 540時間
     }
 }

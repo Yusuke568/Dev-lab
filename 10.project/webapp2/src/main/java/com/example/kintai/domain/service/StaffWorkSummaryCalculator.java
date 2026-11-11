@@ -12,12 +12,12 @@ import java.util.function.Predicate;
 /**
  * 部下のサマリー（当月と年間）の集計。
  *   年間は、その年の1月1日から表示する月の月末まで（年初からの累計）。
- *   時間外の上限は、当月が原則45時間、年間が原則360時間（労働基準法・36協定の原則）。
+ *   時間外の上限は、当月が45時間、年間が540時間（36協定。勤怠画面の年間時間外のチェックと同じ）。
  */
 public final class StaffWorkSummaryCalculator {
 
     public static final int MONTHLY_LIMIT_MINUTES = 45 * 60;
-    public static final int YEARLY_LIMIT_MINUTES = 360 * 60;
+    public static final int YEARLY_LIMIT_MINUTES = 540 * 60;
 
     private StaffWorkSummaryCalculator() {
     }
@@ -49,7 +49,7 @@ public final class StaffWorkSummaryCalculator {
             return percent(month.overtimeMinutes(), MONTHLY_LIMIT_MINUTES);
         }
 
-        /** 年間の時間外の、上限（360時間）に対する割合（%） */
+        /** 年間の時間外の、上限（540時間）に対する割合（%） */
         public int yearOvertimePercent() {
             return percent(year.overtimeMinutes(), YEARLY_LIMIT_MINUTES);
         }

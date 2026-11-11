@@ -17,4 +17,5 @@ STAFF_ID
 from work_month_table
 where STAFF_ID = ?
 AND WORK_DATE >= ?
-AND WORK_DATE < ?;
+AND WORK_DATE < ?
+ORDER BY WORK_DATE;

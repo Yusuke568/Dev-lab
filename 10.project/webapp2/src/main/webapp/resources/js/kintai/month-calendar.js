@@ -150,15 +150,17 @@ function buildCalendar() {
 
   grid = document.createElement("div");
   grid.className = "mc-grid";
-  if (rows.length > 0) {
-    for (let i = 0; i < dateParts(rows[0]).dow; i++) {
+  // 表の行の並びに関係なく、日付の順に並べる（DB から日付順で来なくてもカレンダーが崩れないように）
+  const days = rows.slice().sort((a, b) => a.dataset.date.localeCompare(b.dataset.date));
+  if (days.length > 0) {
+    for (let i = 0; i < dateParts(days[0]).dow; i++) {
       const blank = document.createElement("div");
       blank.className = "mc-blank";
       blank.setAttribute("aria-hidden", "true");
       grid.appendChild(blank);
     }
   }
-  rows.forEach((row) => {
+  days.forEach((row) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "mc-day";
@@ -622,12 +624,13 @@ function buildBulkDialog() {
   });
 
   const grid = $("bk-grid");
-  for (let i = 0; i < dateParts(rows[0]).dow; i++) {
+  const days = rows.slice().sort((a, b) => a.dataset.date.localeCompare(b.dataset.date));
+  for (let i = 0; i < dateParts(days[0]).dow; i++) {
     const blank = document.createElement("div");
     blank.className = "mc-blank";
     grid.appendChild(blank);
   }
-  rows.forEach((row) => {
+  days.forEach((row) => {
     const { d } = dateParts(row);
     const cell = document.createElement("button");
     cell.type = "button";

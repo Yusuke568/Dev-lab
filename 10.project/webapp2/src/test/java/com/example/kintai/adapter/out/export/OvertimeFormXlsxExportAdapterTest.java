@@ -39,8 +39,12 @@ class OvertimeFormXlsxExportAdapterTest {
         FormRow r2 = new FormRow(d2, "週報",
                 OvertimeFormCalculator.planned(t(7, 0), t(20, 0), t(4, 0)), "⑤その他", marks,
                 OvertimeFormCalculator.actual(t(7, 0), t(20, 30), false, t(4, 0)), "週報纏め");
+        // 補正つき：申請 18:00〜22:00（3:30）＋ 補正 0:30 ＋ 補正（深夜）0:15、実績は時間外 4:45（深夜の補正 0:15 を含む）
+        FormRow r3 = new FormRow(LocalDate.of(2026, 10, 9), "税保守",
+                OvertimeFormCalculator.planned(null, t(22, 0), t(4, 45), 30, 15), "⑤その他", marks,
+                OvertimeFormCalculator.actual(t(9, 0), t(22, 0), false, t(4, 45), 15), "補正あり");
         OvertimeForm form = new OvertimeForm(YearMonth.of(2026, 10), "第二システム部 第一開発課", "山田　太郎",
-                "課長A", "部長B", List.of(r1, r2));
+                "課長A", "部長B", List.of(r1, r2, r3));
 
         byte[] bytes = new OvertimeFormXlsxExportAdapter().write(form);
 
@@ -65,6 +69,11 @@ class OvertimeFormXlsxExportAdapterTest {
             // 早出と残業の両方：申請は 18:00〜20:00（1:30）＋ 早出 7:00〜9:00（1:30）
             assertEquals(t(3, 0), minutes(ev, sh, "L11"));
             assertEquals(t(4, 0), minutes(ev, sh, "AA11"));
+            // 補正：申請は通常 3:30＋0:30、深夜 0:15。実績の合計は勤怠表の時間外と合う
+            assertEquals(t(4, 0), minutes(ev, sh, "H12"));
+            assertEquals(15, minutes(ev, sh, "K12"));
+            assertEquals(t(4, 45), minutes(ev, sh, "AA12"));
+            assertEquals(15, minutes(ev, sh, "Z12"));
             // 当月累計
             assertEquals(t(8, 0), minutes(ev, sh, "AC11"));
         }

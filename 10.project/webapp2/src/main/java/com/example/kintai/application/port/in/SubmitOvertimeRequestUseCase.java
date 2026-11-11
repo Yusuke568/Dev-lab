@@ -33,8 +33,19 @@ public interface SubmitOvertimeRequestUseCase {
      * @param projectName PJ名（申請画面からは必須。null なら入れない）
      * @param category    摘要（OvertimeRequest.CATEGORIES のどれか。null なら入れない）
      */
+    default boolean submit(String employeeId, LocalDate date, String plannedStartTime, String plannedEndTime, String reason,
+                           Integer departmentId, String projectName, String category) {
+        return submit(employeeId, date, plannedStartTime, plannedEndTime, reason, departmentId, projectName, category,
+                null, null);
+    }
+
+    /**
+     * @param correctionMinutes    補正（通常）の分。null ならその日の勤怠の補正（勤怠がなければ0）
+     * @param correctionMidMinutes 補正（深夜）の分。null ならその日の勤怠の補正（勤怠がなければ0）
+     */
     boolean submit(String employeeId, LocalDate date, String plannedStartTime, String plannedEndTime, String reason,
-                   Integer departmentId, String projectName, String category);
+                   Integer departmentId, String projectName, String category,
+                   Integer correctionMinutes, Integer correctionMidMinutes);
 
     /**
      * 自分の申請中の申請を取り下げる（承認・却下される前だけ）。取り下げた日は、もう一度申請できる。

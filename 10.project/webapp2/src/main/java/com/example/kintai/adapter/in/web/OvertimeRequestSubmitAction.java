@@ -42,6 +42,8 @@ public class OvertimeRequestSubmitAction implements Action {
         String reason = request.getParameter("reason");
         String projectName = request.getParameter("projectName");
         String category = request.getParameter("category");
+        String correctionTime = request.getParameter("correctionTime");
+        String correctionMidTime = request.getParameter("correctionMidTime");
 
         try {
             if (employeeId == null) {
@@ -57,7 +59,8 @@ public class OvertimeRequestSubmitAction implements Action {
             Integer departmentId = departmentParam == null || departmentParam.isBlank() ? null : Integer.valueOf(departmentParam);
             boolean autoApproved = submitOvertimeRequestUseCase.submit(employeeId, date, plannedStartTime, plannedEndTime,
                     reason, departmentId, projectName == null ? "" : projectName,
-                    category == null || category.isBlank() ? null : category);
+                    category == null || category.isBlank() ? null : category,
+                    minutesOf(correctionTime, "補正（通常）"), minutesOf(correctionMidTime, "補正（深夜）"));
             if (session != null) {
                 session.setAttribute("overtimeRequestSuccessMessage", autoApproved
                         ? date + " の残業事前申請を出しました。組織図で上位の承認者がいないため、自動で承認しました。"
@@ -74,12 +77,26 @@ public class OvertimeRequestSubmitAction implements Action {
                 form.put("reason", reason);
                 form.put("projectName", projectName);
                 form.put("category", category);
+                form.put("correctionTime", correctionTime);
+                form.put("correctionMidTime", correctionMidTime);
                 form.put("departmentId", request.getParameter("departmentId"));
                 session.setAttribute("overtimeRequestForm", form);
             }
         }
 
         return new View("/overtimeRequestMenu.do", true);
+    }
+
+    /** 「H:mm」「HH:mm」を分に。空なら null（その日の勤怠の補正を使う） */
+    static Integer minutesOf(String value, String label) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d{1,2}):(\\d{2})").matcher(value.strip());
+        if (!m.matches() || Integer.parseInt(m.group(2)) >= 60) {
+            throw new IllegalArgumentException(label + "は「1:30」のように時:分で入れてください。");
+        }
+        return Integer.parseInt(m.group(1)) * 60 + Integer.parseInt(m.group(2));
     }
 
     /**

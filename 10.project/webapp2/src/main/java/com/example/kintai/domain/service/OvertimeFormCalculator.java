@@ -13,8 +13,10 @@ import java.util.List;
  * 1区間に入らない分（早出と残業の両方がある日の早出の分など）は「調整」欄で足す。
  *
  * 申請時：予定の残業の区間（18:00〜予定退勤。早出だけなら予定出勤〜9:00）を入れる。時間は様式の式どおり（休憩を除く）。
+ *         補正（通常）は通常の調整、補正（深夜）は深夜の調整で足す。
  *         区間がない申請（補正・間接で時間外になる日）は、申請した時間外を調整で入れる。
- * 実績：勤怠表の出退勤から同じように区間を入れ、勤怠表の時間外と合うように差を調整で入れる
+ * 実績：勤怠表の出退勤から同じように区間を入れ、勤怠の補正（深夜）を深夜の調整に、
+ *       残りの差を通常の調整に入れて、勤怠表の時間外と合わせる
  *       （勤怠表の時間外は補正・間接・週40時間を含むので、様式の式だけでは合わないことがある）。
  */
 public final class OvertimeFormCalculator {
@@ -35,12 +37,16 @@ public final class OvertimeFormCalculator {
     public record Span(int start, int end) {
     }
 
-    /** 様式1行の時刻と調整（調整は分。正なら「+」、負なら「-」） */
-    public record TimeCells(Span span, int adjustMinutes) {
-        public static final TimeCells EMPTY = new TimeCells(null, 0);
+    /** 様式1行の時刻と調整（調整は分。正なら「+」、負なら「-」。通常と深夜で別の欄） */
+    public record TimeCells(Span span, int adjustMinutes, int nightAdjustMinutes) {
+        public static final TimeCells EMPTY = new TimeCells(null, 0, 0);
+
+        public TimeCells(Span span, int adjustMinutes) {
+            this(span, adjustMinutes, 0);
+        }
 
         public boolean isEmpty() {
-            return span == null && adjustMinutes == 0;
+            return span == null && adjustMinutes == 0 && nightAdjustMinutes == 0;
         }
     }
 
@@ -61,19 +67,28 @@ public final class OvertimeFormCalculator {
      * @param plannedMinutes アプリで申請した時間外（分）
      */
     public static TimeCells planned(Integer plannedStart, Integer plannedEnd, int plannedMinutes) {
+        return planned(plannedStart, plannedEnd, plannedMinutes, 0, 0);
+    }
+
+    /**
+     * @param correction    補正（通常）の分（plannedMinutes に含まれている）
+     * @param correctionMid 補正（深夜）の分（plannedMinutes に含まれている）
+     */
+    public static TimeCells planned(Integer plannedStart, Integer plannedEnd, int plannedMinutes,
+                                    int correction, int correctionMid) {
         int start = plannedStart == null ? STANDARD_START : plannedStart;
         int end = plannedEnd == null ? STANDARD_END : plannedEnd;
         Span early = start < STANDARD_START ? new Span(start, STANDARD_START) : null;
         Span late = end > STANDARD_END ? new Span(Math.max(start, STANDARD_END), end) : null;
         if (late != null) {
             int adjust = early != null ? plannedFormMinutes(early) : 0;
-            return new TimeCells(late, adjust);
+            return new TimeCells(late, adjust + correction, correctionMid);
         }
         if (early != null) {
-            return new TimeCells(early, 0);
+            return new TimeCells(early, correction, correctionMid);
         }
-        // 出退勤は標準どおりでも、補正・間接で時間外になる日
-        return plannedMinutes > 0 ? new TimeCells(null, plannedMinutes) : TimeCells.EMPTY;
+        // 出退勤は標準どおりでも、補正・間接で時間外になる日（深夜の補正のほかは通常の調整に入れる）
+        return plannedMinutes > 0 ? new TimeCells(null, plannedMinutes - correctionMid, correctionMid) : TimeCells.EMPTY;
     }
 
     /**
@@ -84,6 +99,11 @@ public final class OvertimeFormCalculator {
      * @param overtimeMinutes 勤怠表の時間外（分）
      */
     public static TimeCells actual(Integer workStart, Integer workEnd, boolean holiday, int overtimeMinutes) {
+        return actual(workStart, workEnd, holiday, overtimeMinutes, 0);
+    }
+
+    /** @param correctionMid 勤怠の補正（深夜）の分（深夜の調整に入れる） */
+    public static TimeCells actual(Integer workStart, Integer workEnd, boolean holiday, int overtimeMinutes, int correctionMid) {
         if (workStart == null || workEnd == null || overtimeMinutes <= 0) {
             return TimeCells.EMPTY;
         }
@@ -102,7 +122,7 @@ public final class OvertimeFormCalculator {
             }
         }
         int formMinutes = (span == null ? 0 : actualFormMinutes(span)) + extra;
-        return new TimeCells(span, extra + (overtimeMinutes - formMinutes));
+        return new TimeCells(span, extra + (overtimeMinutes - formMinutes) - correctionMid, correctionMid);
     }
 
     /** 様式の申請時の式で出る時間（通常＋深夜） */

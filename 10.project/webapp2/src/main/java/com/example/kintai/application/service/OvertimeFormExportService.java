@@ -79,7 +79,8 @@ public class OvertimeFormExportService {
             OvertimeRequest req = fr.request();
             List<Step> steps = fr.steps();
             TimeCells planned = OvertimeFormCalculator.planned(minutes(req.getPlannedStartTime()),
-                    plannedEnd(req.getPlannedStartTime(), req.getPlannedEndTime()), req.getPlannedOvertimeMinutes());
+                    plannedEnd(req.getPlannedStartTime(), req.getPlannedEndTime()), req.getPlannedOvertimeMinutes(),
+                    req.getCorrectionMinutes(), req.getCorrectionMidMinutes());
             LocalDate date = req.getTargetDate();
             boolean holiday = StaffWorkSummaryCalculator.isWeekend(date) || JapaneseHolidayCalendar.isHoliday(date)
                     || companyHolidays.containsKey(date);
@@ -104,7 +105,7 @@ public class OvertimeFormExportService {
         }
         WorkTime wt = record.getWorkTime();
         return OvertimeFormCalculator.actual(wt.getStartMinuteOfDay(), wt.getEndMinuteFromStartDay(), holiday,
-                record.getOvertimeMinutes());
+                record.getOvertimeMinutes(), record.getCorrectionMidTime() == null ? 0 : record.getCorrectionMidTime());
     }
 
     private static Integer minutes(String hhmm) {

@@ -69,7 +69,7 @@ public class OvertimeRequestPersistenceAdapter implements OvertimeRequestPort {
     @Override
     public Optional<OvertimeRequest> findById(int requestId) {
         String sql = "SELECT id, staff_id, target_date, planned_overtime_minutes, planned_start_time, planned_end_time, reason, " +
-                "status, decided_by, decided_at, created_at, current_level, project_name, category FROM overtime_request WHERE id = ?";
+                "status, decided_by, decided_at, created_at, current_level, project_name, category, correction_minutes, correction_mid_minutes FROM overtime_request WHERE id = ?";
         try (Connection con = ConnectionBase.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, requestId);
@@ -186,6 +186,20 @@ public class OvertimeRequestPersistenceAdapter implements OvertimeRequestPort {
     }
 
     @Override
+    public void updateCorrection(int requestId, int correctionMinutes, int correctionMidMinutes) {
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "UPDATE overtime_request SET correction_minutes = ?, correction_mid_minutes = ? WHERE id = ?")) {
+            ps.setInt(1, correctionMinutes);
+            ps.setInt(2, correctionMidMinutes);
+            ps.setInt(3, requestId);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to set correction of overtime request.", e);
+        }
+    }
+
+    @Override
     public void updateDetails(int requestId, String projectName, String category) {
         if (projectName == null && category == null) {
             return; // 古い呼び出し（PJ名・摘要を入れない）は、入っている値を消さない
@@ -282,7 +296,18 @@ public class OvertimeRequestPersistenceAdapter implements OvertimeRequestPort {
         return new OvertimeRequest(id, employeeId, employeeName, targetDate, plannedOvertimeMinutes,
                 plannedStartTime, plannedEndTime, reason, status, decidedBy, decidedAt, createdAt,
                 currentLevel > 0 ? currentLevel : 1)
-                .withDetails(optionalString(rs, "project_name"), optionalString(rs, "category"));
+                .withDetails(optionalString(rs, "project_name"), optionalString(rs, "category"))
+                .withCorrection(optionalInt(rs, "correction_minutes"), optionalInt(rs, "correction_mid_minutes"));
+    }
+
+    /** SELECT に列がない・NULL なら null */
+    private static Integer optionalInt(ResultSet rs, String column) {
+        try {
+            int v = rs.getInt(column);
+            return rs.wasNull() ? null : v;
+        } catch (java.sql.SQLException e) {
+            return null;
+        }
     }
 
     /** SELECT に列がなければ null（PJ名・摘要を読まない古いクエリ用） */

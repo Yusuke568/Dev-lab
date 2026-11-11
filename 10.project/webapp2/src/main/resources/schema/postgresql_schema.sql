@@ -379,4 +379,9 @@ ALTER TABLE overtime_request ADD COLUMN IF NOT EXISTS project_name varchar(100);
 ALTER TABLE overtime_request ADD COLUMN IF NOT EXISTS category varchar(10);
 COMMENT ON COLUMN overtime_request.project_name IS 'PJ名（時間外申請書の PJ名欄）';
 COMMENT ON COLUMN overtime_request.category IS '摘要（①自責 / ②他責 / ③緊急 / ④客先都合 / ⑤その他）';
+-- 補正（通常・深夜）。申請の時間外に含める（migrations/20261118_overtime_request_correction.sql と同じ）
+ALTER TABLE overtime_request ADD COLUMN IF NOT EXISTS correction_minutes integer;
+ALTER TABLE overtime_request ADD COLUMN IF NOT EXISTS correction_mid_minutes integer;
+COMMENT ON COLUMN overtime_request.correction_minutes IS '補正（通常）の分。申請の時間外に含める';
+COMMENT ON COLUMN overtime_request.correction_mid_minutes IS '補正（深夜）の分。申請の時間外に含める';
 ALTER TABLE leave_request ADD COLUMN IF NOT EXISTS department_id integer;

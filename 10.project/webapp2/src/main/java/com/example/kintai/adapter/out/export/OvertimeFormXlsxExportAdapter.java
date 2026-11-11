@@ -57,10 +57,10 @@ public class OvertimeFormXlsxExportAdapter implements OvertimeFormExportPort {
     private static void writeRow(Sheet sh, int r, FormRow row) {
         setDate(sh, "A" + r, row.date());
         setText(sh, "C" + r, row.projectName());
-        writeTimes(sh, r, row.planned(), "D", "E", "F", "G");
+        writeTimes(sh, r, row.planned(), "D", "E", "F", "G", "I", "J");
         setText(sh, "O" + r, row.category());
         writeApprovals(sh, r, row.approvals(), PLANNED_APPROVAL_COLUMNS);
-        writeTimes(sh, r, row.actual(), "S", "T", "U", "V");
+        writeTimes(sh, r, row.actual(), "S", "T", "U", "V", "X", "Y");
         if (!row.actual().isEmpty()) {
             // 実績報告の承認も、事前申請の承認日を入れる
             writeApprovals(sh, r, row.approvals(), ACTUAL_APPROVAL_COLUMNS);
@@ -68,14 +68,20 @@ public class OvertimeFormXlsxExportAdapter implements OvertimeFormExportPort {
         setText(sh, "AG" + r, row.remarks());
     }
 
-    private static void writeTimes(Sheet sh, int r, TimeCells t, String startCol, String endCol, String signCol, String adjustCol) {
+    private static void writeTimes(Sheet sh, int r, TimeCells t, String startCol, String endCol,
+                                   String signCol, String adjustCol, String nightSignCol, String nightAdjustCol) {
         if (t.span() != null) {
             setTime(sh, startCol + r, t.span().start());
             setTime(sh, endCol + r, t.span().end());
         }
-        if (t.adjustMinutes() != 0) {
-            setText(sh, signCol + r, t.adjustMinutes() > 0 ? "+" : "-");
-            setTime(sh, adjustCol + r, Math.abs(t.adjustMinutes()));
+        writeAdjust(sh, r, t.adjustMinutes(), signCol, adjustCol);
+        writeAdjust(sh, r, t.nightAdjustMinutes(), nightSignCol, nightAdjustCol);
+    }
+
+    private static void writeAdjust(Sheet sh, int r, int minutes, String signCol, String adjustCol) {
+        if (minutes != 0) {
+            setText(sh, signCol + r, minutes > 0 ? "+" : "-");
+            setTime(sh, adjustCol + r, Math.abs(minutes));
         }
     }
 

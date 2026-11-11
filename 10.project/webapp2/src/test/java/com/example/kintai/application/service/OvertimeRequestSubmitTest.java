@@ -59,10 +59,15 @@ class OvertimeRequestSubmitTest {
         @Override public void resubmit(int requestId, int plannedOvertimeMinutes, String start, String end, String reason) { }
         @Override public void decide(int requestId, boolean approve, String decidedBy) { decided.add(requestId + ":" + approve + ":" + decidedBy); }
         @Override public void advanceLevel(int requestId) { }
+        @Override public void updateCorrection(int requestId, int correctionMinutes, int correctionMidMinutes) {
+            corrections.add(correctionMinutes + "/" + correctionMidMinutes);
+        }
         @Override public void updateDetails(int requestId, String projectName, String category) {
             details.add(projectName + "/" + category);
         }
     };
+    /** updateCorrection で入れた「補正（通常）/補正（深夜）」 */
+    private final List<String> corrections = new ArrayList<>();
     /** updateDetails で入れた「PJ名/摘要」 */
     private final List<String> details = new ArrayList<>();
 
@@ -132,6 +137,36 @@ class OvertimeRequestSubmitTest {
     void 承認者がいる人の申請は承認待ちのまま() {
         assertFalse(service.submit("126", DAY, "09:00", "20:00", "障害対応"));
         assertTrue(decided.isEmpty());
+    }
+
+    // ---- 補正 ----
+
+    @Test
+    void 事前の申請は入力した補正を予定の時間に足す() {
+        // 9:00〜20:00 の残業 2:00 ＋ 補正（通常）0:30 ＋ 補正（深夜）0:15
+        service.submit("126", DAY, "09:00", "20:00", "障害対応", null, "税保守", "⑤その他", 30, 15);
+
+        assertEquals(List.of(2 * 60 + 45), inserted);
+        assertEquals(List.of("30/15"), corrections);
+    }
+
+    @Test
+    void 勤怠の実績からの申請は勤怠の補正を自動で足す() {
+        recorded = new AttendanceRecord(new EmployeeId("126"), DAY, new WorkTime(LocalTime.of(9, 0), LocalTime.of(20, 0)));
+        recorded.setCorrectionUsTime(30);
+        recorded.setOvertimeMinutes(150);
+
+        service.submit("126", DAY, "09:00", "20:00", "障害対応", null, "税保守", "⑤その他", null, null);
+
+        assertEquals(List.of(150), inserted);
+        assertEquals(List.of("30/0"), corrections);
+    }
+
+    @Test
+    void 補正だけでも時間外として申請できる() {
+        service.submit("126", DAY, "09:00", "18:00", "障害対応", null, "税保守", "⑤その他", 45, null);
+
+        assertEquals(List.of(45), inserted);
     }
 
     // ---- PJ名・摘要（時間外申請書に出す） ----

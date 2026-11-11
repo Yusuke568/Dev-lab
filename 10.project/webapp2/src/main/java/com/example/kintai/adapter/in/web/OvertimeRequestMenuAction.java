@@ -91,6 +91,9 @@ public class OvertimeRequestMenuAction implements Action {
                 if (!"-".equals(actual.getEndTime())) {
                     request.setAttribute("prefillEndTime", actual.getEndTime());
                 }
+                // 勤怠に入っている補正も入れる（申請の時間外に足す）
+                request.setAttribute("prefillCorrection", hhmm(actual.getCorrectionUsTime()));
+                request.setAttribute("prefillCorrectionMid", hhmm(actual.getCorrectionMidTime()));
             }
         }
 
@@ -121,5 +124,13 @@ public class OvertimeRequestMenuAction implements Action {
         } catch (DateTimeParseException e) {
             return null;
         }
+    }
+
+    /** 分を「HH:mm」に（0・null なら空） */
+    private static String hhmm(Integer minutes) {
+        if (minutes == null || minutes <= 0) {
+            return "";
+        }
+        return String.format("%02d:%02d", minutes / 60, minutes % 60);
     }
 }

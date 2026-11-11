@@ -47,12 +47,25 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
 
     @Override
     public boolean submit(String employeeId, LocalDate date, String plannedStartTime, String plannedEndTime, String reason,
-                          Integer departmentId, String projectName, String category) {
+                          Integer departmentId, String projectName, String category,
+                          Integer correctionMinutes, Integer correctionMidMinutes) {
         EmployeeId id = new EmployeeId(employeeId);
-        int plannedOvertimeMinutes = OvertimeRequest.calculatePlannedOvertimeMinutes(plannedStartTime, plannedEndTime);
-        // 時間外には補正・間接の時間も含めるので、出退勤が 9:00〜18:00 の中でも時間外になる日がある。
+        // 補正（通常・深夜）。入力がなければ、その日の勤怠に入っている補正を使う（勤怠の実績からの申請）
+        Optional<AttendanceRecord> record = loadAttendanceRecordPort == null ? Optional.empty()
+                : loadAttendanceRecordPort.loadByEmployeeAndDate(id, date);
+        int correction = correctionMinutes != null ? correctionMinutes
+                : record.map(AttendanceRecord::getCorrectionUsTime).orElse(0);
+        int correctionMid = correctionMidMinutes != null ? correctionMidMinutes
+                : record.map(AttendanceRecord::getCorrectionMidTime).orElse(0);
+        if (correction < 0 || correctionMid < 0 || correction + correctionMid > 24 * 60) {
+            throw new IllegalArgumentException("補正の時間が正しくありません。");
+        }
+        // 予定の出退勤から出した時間に、補正を足す
+        int plannedOvertimeMinutes = OvertimeRequest.calculatePlannedOvertimeMinutes(plannedStartTime, plannedEndTime)
+                + correction + correctionMid;
+        // 時間外には間接の時間も含めるので、出退勤が 9:00〜18:00 の中でも時間外になる日がある。
         // その日の勤怠に時間外が入っていれば、その時間で申請できるようにする
-        int recordedOvertimeMinutes = recordedOvertimeMinutes(id, date);
+        int recordedOvertimeMinutes = record.map(AttendanceRecord::getOvertimeMinutes).orElse(0);
         plannedOvertimeMinutes = Math.max(plannedOvertimeMinutes, recordedOvertimeMinutes);
         if (plannedOvertimeMinutes <= 0) {
             throw new IllegalArgumentException("時間外が発生していません。標準勤務時間（09:00〜18:00）より早い出勤時刻、または遅い退勤時刻を入力してください。");
@@ -87,7 +100,7 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
         // 承認ルートの条件つきの段（当月の時間外が○時間以上・深夜）を決めるための申請の中身
         RequestFacts facts = new RequestFacts(
                 monthlyOvertimeMinutesExcept(id, date) + plannedOvertimeMinutes,
-                isNight(plannedStartTime, plannedEndTime));
+                isNight(plannedStartTime, plannedEndTime) || correctionMid > 0);
         // 承認者がいないまま申請だけ残らないよう、保存前にルートが組めるか確かめる
         approvalWorkflowService.checkRouteAvailable(RequestType.OVERTIME, employeeId, departmentId, facts);
 
@@ -100,19 +113,12 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
         }
         overtimeRequestPort.updateDepartment(requestId, departmentId);
         overtimeRequestPort.updateDetails(requestId, projectName, category);
+        overtimeRequestPort.updateCorrection(requestId, correction, correctionMid);
         boolean autoApproved = approvalWorkflowService.startRoute(RequestType.OVERTIME, requestId, employeeId, departmentId, facts);
         if (autoApproved) {
             overtimeRequestPort.decide(requestId, true, employeeId);
         }
         return autoApproved;
-    }
-
-    /** その日の勤怠に保存されている時間外（分）。勤怠がない・見られないときは0 */
-    private int recordedOvertimeMinutes(EmployeeId id, LocalDate date) {
-        if (loadAttendanceRecordPort == null) return 0;
-        return loadAttendanceRecordPort.loadByEmployeeAndDate(id, date)
-                .map(AttendanceRecord::getOvertimeMinutes)
-                .orElse(0);
     }
 
     /** 申請日と同じ月の、申請日以外の日の時間外の実績（分）。申請日の分は今回の申請の予定で数える */

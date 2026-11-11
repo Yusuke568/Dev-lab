@@ -45,6 +45,8 @@ public class OvertimeRequest {
     private final int currentLevel; // 承認ルートの何段目の承認待ちか（1始まり）
     private String projectName; // PJ名（未入力の古い申請は null）
     private String category;    // 摘要（CATEGORIES のどれか。未入力の古い申請は null）
+    private int correctionMinutes;    // 補正（通常）の分。申請の時間外に含まれている
+    private int correctionMidMinutes; // 補正（深夜）の分。申請の時間外に含まれている
 
     public OvertimeRequest(int id, String employeeId, String employeeName, LocalDate targetDate,
                             int plannedOvertimeMinutes, String plannedStartTime, String plannedEndTime, String reason,
@@ -86,6 +88,16 @@ public class OvertimeRequest {
     public int getCurrentLevel() { return currentLevel; }
     public String getProjectName() { return projectName; }
     public String getCategory() { return category; }
+
+    public int getCorrectionMinutes() { return correctionMinutes; }
+    public int getCorrectionMidMinutes() { return correctionMidMinutes; }
+
+    /** DB から読んだ補正（通常・深夜）を足す */
+    public OvertimeRequest withCorrection(Integer correctionMinutes, Integer correctionMidMinutes) {
+        this.correctionMinutes = correctionMinutes == null ? 0 : correctionMinutes;
+        this.correctionMidMinutes = correctionMidMinutes == null ? 0 : correctionMidMinutes;
+        return this;
+    }
 
     /** DB から読んだ PJ名・摘要を足す */
     public OvertimeRequest withDetails(String projectName, String category) {
@@ -133,6 +145,8 @@ public class OvertimeRequest {
         List<String> parts = new ArrayList<>();
         if (early > 0) parts.add("早出" + formatMinutes(early));
         if (late > 0) parts.add("残業" + formatMinutes(late));
+        if (correctionMinutes > 0) parts.add("補正" + formatMinutes(correctionMinutes));
+        if (correctionMidMinutes > 0) parts.add("補正(深夜)" + formatMinutes(correctionMidMinutes));
         return parts.isEmpty() ? formatMinutes(plannedOvertimeMinutes) : String.join(" / ", parts);
     }
 

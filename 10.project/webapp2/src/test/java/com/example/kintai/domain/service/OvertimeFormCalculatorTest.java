@@ -46,6 +46,29 @@ class OvertimeFormCalculatorTest {
     }
 
     @Test
+    void 申請の補正は通常と深夜の調整に分けて入れる() {
+        // 18:00〜22:00（様式 3:30）＋ 補正 0:30 ＋ 補正（深夜）0:15
+        TimeCells cells = OvertimeFormCalculator.planned(null, t(22, 0), t(4, 45), 30, 15);
+        assertEquals(new Span(t(18, 0), t(22, 0)), cells.span());
+        assertEquals(30, cells.adjustMinutes());
+        assertEquals(15, cells.nightAdjustMinutes());
+
+        // 補正だけの申請
+        TimeCells only = OvertimeFormCalculator.planned(null, null, 45, 30, 15);
+        assertEquals(null, only.span());
+        assertEquals(30, only.adjustMinutes());
+        assertEquals(15, only.nightAdjustMinutes());
+    }
+
+    @Test
+    void 実績の補正深夜は深夜の調整に入れ_残りの差を通常の調整に入れる() {
+        // 9:00〜22:00、時間外 4:30（補正（深夜）0:30 を含む）→ 様式 3:30 ＋ 通常 +0:30 ＋ 深夜 +0:30
+        TimeCells a = OvertimeFormCalculator.actual(t(9, 0), t(22, 0), false, t(4, 30), 30);
+        assertEquals(30, a.adjustMinutes());
+        assertEquals(30, a.nightAdjustMinutes());
+    }
+
+    @Test
     void 補正や間接だけで時間外になる申請は調整だけで入れる() {
         TimeCells cells = OvertimeFormCalculator.planned(t(9, 0), t(17, 45), t(2, 0));
         assertEquals(null, cells.span());

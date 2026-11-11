@@ -51,6 +51,10 @@ public interface OvertimeRequestPort {
         return List.of();
     }
 
+    /** 補正（通常・深夜）を入れる */
+    default void updateCorrection(int requestId, int correctionMinutes, int correctionMidMinutes) {
+    }
+
     /** PJ名と摘要を入れる（時間外申請書の出力用） */
     default void updateDetails(int requestId, String projectName, String category) {
     }

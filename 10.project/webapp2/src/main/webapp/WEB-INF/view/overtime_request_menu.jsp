@@ -58,6 +58,18 @@
 				<label class="form-label">予定退勤時刻</label>
 				<input type="time" id="plannedEndTime" name="plannedEndTime" class="form-input" value="<c:out value='${not empty form ? form.plannedEndTime : prefillEndTime}' />">
 			</div>
+			<div class="form-group">
+				<label class="form-label" for="correctionTime">補正（通常）</label>
+				<input type="text" id="correctionTime" name="correctionTime" class="form-input" style="width: 6.5rem;"
+					placeholder="0:30" inputmode="numeric" pattern="\d{1,2}:[0-5]\d" title="時:分で入れてください（例 0:30）"
+					value="<c:out value='${not empty form ? form.correctionTime : prefillCorrection}' />">
+			</div>
+			<div class="form-group">
+				<label class="form-label" for="correctionMidTime">補正（深夜）</label>
+				<input type="text" id="correctionMidTime" name="correctionMidTime" class="form-input" style="width: 6.5rem;"
+					placeholder="0:30" inputmode="numeric" pattern="\d{1,2}:[0-5]\d" title="時:分で入れてください（例 0:30）"
+					value="<c:out value='${not empty form ? form.correctionMidTime : prefillCorrectionMid}' />">
+			</div>
 			<%-- 兼任している人だけ：どの部署の業務か（承認ルートが部署で変わる） --%>
 			<c:if test="${fn:length(myDepartments) > 1}">
 				<div class="form-group">
@@ -94,7 +106,9 @@
 		<p style="font-size: 0.85rem; color: #666; margin-top: 0.5rem;">
 			※ 標準勤務時間（09:00〜18:00）より早い予定出勤・遅い予定退勤の分が、それぞれ早出・残業として時間外申請されます（両方入力すれば同日で両方申請できます）。標準どおりの時刻は空欄のままで構いません。<br>
 			※ 予定退勤が予定出勤より前の時刻なら、日をまたいだ翌日の退勤として数えます（例：13:00〜1:30 は翌1:30まで）。<br>
-			※ 補正・間接の時間で時間外になった日は、勤怠に入力済みの時間外で申請できます（出退勤が 9:00〜18:00 の中でも申請できます）。<br>
+			※ 補正（通常・深夜）は、予定の出退勤から出した時間に足して申請します。勤怠を入力済みの日は、空欄なら勤怠の補正を自動で使います。<br>
+			※ 補正（深夜）を入れた申請は、深夜残業として承認ルートが決まります。<br>
+			※ 間接の時間で時間外になった日は、勤怠に入力済みの時間外で申請できます（出退勤が 9:00〜18:00 の中でも申請できます）。<br>
 			※ 却下された対象日については、同じ対象日を指定して再度申請するとその申請が更新され、再度承認待ちになります。
 		</p>
 	</div>

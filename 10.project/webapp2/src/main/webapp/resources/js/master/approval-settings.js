@@ -307,7 +307,8 @@
       tbody.appendChild(el("tr", { className: d.approverId === null && d.subIds.length === 0 ? "ng" : "" },
         el("td", { "data-label": "部署", className: "as-who" },
           el("span", { className: "as-indent", text: "　".repeat(d.depth || 0) + (d.depth ? "└ " : "") }),
-          el("strong", { text: d.name })),
+          el("strong", { text: d.name }),
+          d.reportName ? el("div", { className: "as-muted", text: "所属名称：" + d.reportName }) : null),
         el("td", { "data-label": "承認者" },
           d.approverId !== null ? staffName(d.approverId) : el("span", { className: "as-error", text: "未設定" })),
         el("td", { "data-label": "副承認者" },
@@ -531,6 +532,9 @@
     const approvers = [{ value: null, label: "（未設定）" }, ...D.staff.map((s) => ({ value: s.id, label: s.id + " " + s.name }))];
     const body = [
       field("部署名", el("input", { type: "text", name: "name", id: "dlg-dname", className: "form-input", required: true, maxlength: "100", value: d ? d.name : "" }), null, "dlg-dname"),
+      field("所属名称", el("input", { type: "text", name: "reportName", id: "dlg-rptname", className: "form-input", maxlength: "100",
+        placeholder: d ? d.name : "例: 第二システム部 第一開発課", value: d && d.reportName ? d.reportName : "" }),
+        "作業報告書（Excel）の「所属：」欄に出します。空欄なら部署名を出します。", "dlg-rptname"),
       field("上位部署", selectEl("parentId", parents, d ? d.parentId : null, "dlg-parent"), null, "dlg-parent"),
       field("承認者", selectEl("approverStaffId", approvers, d ? d.approverId : null, "dlg-approver"), null, "dlg-approver"),
       field("副承認者", pickList("subApproverIds", staffOptions(), d ? d.subIds : [], "社員ID・氏名で絞り込み"),

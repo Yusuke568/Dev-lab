@@ -208,6 +208,10 @@ CREATE TABLE IF NOT EXISTS department (
 
 ALTER TABLE staff_table ADD COLUMN IF NOT EXISTS department_id integer REFERENCES department (id);
 
+-- 所属名称（作業報告書の「所属：」欄。空なら部署名。migrations/20261119_department_report_name.sql と同じ）
+ALTER TABLE department ADD COLUMN IF NOT EXISTS report_name varchar(100);
+COMMENT ON COLUMN department.report_name IS '所属名称（作業報告書の「所属：」欄。空なら部署名）';
+
 -- ----------------------------------------------------------------------------
 -- 承認ルート設定（申請種別ごとに、組織図を何段上までたどるか）
 -- ----------------------------------------------------------------------------

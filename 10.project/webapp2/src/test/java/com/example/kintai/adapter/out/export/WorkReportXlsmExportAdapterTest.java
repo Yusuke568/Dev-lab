@@ -72,7 +72,7 @@ class WorkReportXlsmExportAdapterTest {
         MonthlyAttendanceDto nov = new MonthlyAttendanceDto(YearMonth.of(2026, 11), List.of(day(2, "09:00", "18:00", 1)),
                 "8:00", 480, 0, 0, "山田 太郎");
 
-        byte[] xlsm = new WorkReportXlsmExportAdapter().generateYear(2026, "山田 太郎", workTypes, List.of(
+        byte[] xlsm = new WorkReportXlsmExportAdapter().generateYear(2026, "山田 太郎", "第二システム部 第一開発課", workTypes, List.of(
                 new com.example.kintai.domain.port.out.WorkReportExportPort.MonthData(prevDec, List.of()),
                 new com.example.kintai.domain.port.out.WorkReportExportPort.MonthData(nov, List.of())));
 
@@ -80,6 +80,8 @@ class WorkReportXlsmExportAdapterTest {
             assertEquals(2025.0, book.getSheet("前年12月").getRow(0).getCell(0).getNumericCellValue());
             assertEquals(2026.0, book.getSheet("1月").getRow(0).getCell(0).getNumericCellValue());
             assertEquals("山田 太郎", text(book.getSheet("5月"), "AP2"), "データのない月も氏名が入る");
+            assertEquals("第二システム部 第一開発課", text(book.getSheet("5月"), "D2"), "すべての月に所属名称が入る");
+            assertEquals("第二システム部 第一開発課", text(book.getSheet("前年12月"), "D2"));
             assertEquals("出勤", an(book.getSheet("前年12月"), 1));
             assertEquals("出勤", an(book.getSheet("11月"), 2));
         }

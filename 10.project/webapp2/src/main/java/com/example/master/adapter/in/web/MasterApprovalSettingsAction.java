@@ -100,6 +100,7 @@ public class MasterApprovalSettingsAction extends MasterActionSupport {
             m.put("approverId", d.getApproverStaffId());
             m.put("subIds", subs.getOrDefault(d.getId(), List.of()));
             m.put("sortOrder", d.getSortOrder());
+            m.put("reportName", d.getReportName());
             m.put("memberCount", d.getMemberCount());
             deptList.add(m);
         }
@@ -190,7 +191,7 @@ public class MasterApprovalSettingsAction extends MasterActionSupport {
                 Integer sortOrder = optionalInt(request, "sortOrder");
                 masterUseCase.saveDepartment(id, request.getParameter("name"), optionalInt(request, "parentId"),
                         optionalInt(request, "approverStaffId"), MasterDepartmentAction.intValues(request, "subApproverIds"),
-                        sortOrder != null ? sortOrder : 0);
+                        sortOrder != null ? sortOrder : 0, request.getParameter("reportName"));
                 return id == null ? "部署を追加しました。" : "部署を更新しました。";
             }
             case "levels": {

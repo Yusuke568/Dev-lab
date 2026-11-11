@@ -47,7 +47,7 @@ public class MasterDepartmentAction extends MasterActionSupport {
         Integer sortOrder = optionalInt(request, "sortOrder");
         masterUseCase.saveDepartment(id, request.getParameter("name"), optionalInt(request, "parentId"),
                 optionalInt(request, "approverStaffId"), intValues(request, "subApproverIds"),
-                sortOrder != null ? sortOrder : 0);
+                sortOrder != null ? sortOrder : 0, request.getParameter("reportName"));
         return id == null ? "部署を追加しました。" : "部署を更新しました。";
     }
 

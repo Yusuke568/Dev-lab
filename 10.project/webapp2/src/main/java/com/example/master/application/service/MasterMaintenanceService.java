@@ -125,8 +125,11 @@ public class MasterMaintenanceService implements MasterMaintenanceUseCase {
 
     @Override
     public void saveDepartment(Integer id, String name, Integer parentId, Integer approverStaffId,
-                               List<Integer> subApproverIds, int sortOrder) {
+                               List<Integer> subApproverIds, int sortOrder, String reportName) {
         String validName = requireName(name, "部署名");
+        if (reportName != null && reportName.strip().length() > 100) {
+            throw new IllegalArgumentException("所属名称は100文字以内で入れてください。");
+        }
         if (id != null && parentId != null) {
             Map<Integer, Department> byId = new HashMap<>();
             for (Department d : masterPort.findDepartments()) {
@@ -149,6 +152,9 @@ public class MasterMaintenanceService implements MasterMaintenanceUseCase {
             List<Integer> subs = new ArrayList<>(new LinkedHashSet<>(subApproverIds));
             subs.removeIf(s -> s == null || s.equals(approverStaffId));
             masterPort.replaceSubApprovers(savedId, subs);
+        }
+        if (reportName != null) {
+            masterPort.saveDepartmentReportName(savedId, reportName.isBlank() ? null : reportName.strip());
         }
     }
 

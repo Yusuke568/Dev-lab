@@ -36,7 +36,13 @@ public interface MasterMaintenanceUseCase {
     /** 部署を、親の直後に子が来るツリー順に並べて返す（depth 設定済み）。 */
     List<Department> getDepartmentTree();
     /** subApproverIds は副承認者（主承認者と同じ段で、どちらか1人が承認すればよい）。null なら変更しない */
-    void saveDepartment(Integer id, String name, Integer parentId, Integer approverStaffId, List<Integer> subApproverIds, int sortOrder);
+    default void saveDepartment(Integer id, String name, Integer parentId, Integer approverStaffId, List<Integer> subApproverIds, int sortOrder) {
+        saveDepartment(id, name, parentId, approverStaffId, subApproverIds, sortOrder, null);
+    }
+
+    /** @param reportName 所属名称（作業報告書の「所属：」欄）。null なら変えない。空なら部署名を使う */
+    void saveDepartment(Integer id, String name, Integer parentId, Integer approverStaffId, List<Integer> subApproverIds,
+                        int sortOrder, String reportName);
     List<StaffOption> getStaffOptions();
     void assignDepartment(int staffId, Integer departmentId);
     Integer getDepartmentIdOfStaff(int staffId);

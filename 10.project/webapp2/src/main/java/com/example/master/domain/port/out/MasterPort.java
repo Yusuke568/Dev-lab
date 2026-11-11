@@ -51,6 +51,10 @@ public interface MasterPort {
     List<Department> findDepartments();
     /** @return 保存した部署の ID */
     int saveDepartment(Integer id, String name, Integer parentId, Integer approverStaffId, int sortOrder);
+
+    /** 部署の所属名称（作業報告書の「所属：」欄）。null・空なら部署名を使う */
+    default void saveDepartmentReportName(int id, String reportName) {
+    }
     List<StaffOption> findStaffOptions();
     void assignDepartment(int staffId, Integer departmentId);
     Integer findDepartmentIdOfStaff(int staffId);

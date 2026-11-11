@@ -12,6 +12,9 @@ public class Department {
     private final Integer approverStaffId;
     private final int sortOrder;
 
+    /** 所属名称（作業報告書の「所属：」欄。空なら部署名） */
+    private String reportName;
+
     // 画面表示用（一覧の取得時だけ設定する）
     private String approverName;
     private int depth;
@@ -30,6 +33,9 @@ public class Department {
     public Integer getParentId() { return parentId; }
     public Integer getApproverStaffId() { return approverStaffId; }
     public int getSortOrder() { return sortOrder; }
+
+    public String getReportName() { return reportName; }
+    public void setReportName(String reportName) { this.reportName = reportName; }
 
     public String getApproverName() { return approverName; }
     public void setApproverName(String approverName) { this.approverName = approverName; }

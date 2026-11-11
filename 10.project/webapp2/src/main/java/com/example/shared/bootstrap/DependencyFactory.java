@@ -211,7 +211,8 @@ public class DependencyFactory {
                 this.getWeeklyWorkReportsUseCase,
                 this.workReportExportPort,
                 com.example.kintai.adapter.out.export.FileSystemWorkReportArchiveAdapter.fromSystemSettings()
-        ).withAttendanceCheck(this.attendancePersistenceAdapter);
+        ).withAttendanceCheck(this.attendancePersistenceAdapter)
+                .withDepartmentName(this.attendancePersistenceAdapter);
         this.updateAttendanceUseCase = new UpdateAttendanceService(
                 this.attendancePersistenceAdapter,
                 this.attendancePersistenceAdapter,

@@ -29,6 +29,7 @@
 			<tr>
 				<th>部署</th>
 				<th>部署名</th>
+				<th>所属名称<br><span style="font-weight: normal; font-size: 0.75rem;">作業報告書の「所属：」。空なら部署名</span></th>
 				<th>上位部署</th>
 				<th>承認者</th>
 				<th>副承認者<br><span style="font-weight: normal; font-size: 0.75rem;">Ctrl/⌘で複数選択</span></th>
@@ -42,6 +43,7 @@
 				<tr>
 					<td style="white-space: nowrap;"><c:out value="${d.indent}" /><c:out value="${d.name}" /></td>
 					<td><input type="text" name="name" form="d${d.id}" class="form-input" value="<c:out value='${d.name}'/>" required></td>
+					<td><input type="text" name="reportName" form="d${d.id}" class="form-input" maxlength="100" placeholder="<c:out value='${d.name}'/>" value="<c:out value='${d.reportName}'/>"></td>
 					<td>
 						<select name="parentId" form="d${d.id}" class="form-input">
 							<option value="">（なし：最上位）</option>
@@ -81,6 +83,7 @@
 			<tr>
 				<td>新規</td>
 				<td><input type="text" name="name" form="dNew" class="form-input" placeholder="例: 開発1課" required></td>
+				<td><input type="text" name="reportName" form="dNew" class="form-input" maxlength="100" placeholder="例: 第二システム部 第一開発課"></td>
 				<td>
 					<select name="parentId" form="dNew" class="form-input">
 						<option value="">（なし：最上位）</option>

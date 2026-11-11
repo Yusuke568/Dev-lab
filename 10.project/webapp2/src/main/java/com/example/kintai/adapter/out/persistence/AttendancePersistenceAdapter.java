@@ -30,7 +30,23 @@ import java.util.stream.Collectors;
 
 public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, SaveAttendanceRecordPort, LoadPendingApprovalsPort,
         com.example.kintai.domain.port.out.SubordinatePort, com.example.kintai.domain.port.out.LoadAttendancePeriodPort,
-        com.example.kintai.domain.port.out.CompanyHolidayPort {
+        com.example.kintai.domain.port.out.CompanyHolidayPort, com.example.kintai.domain.port.out.ReportDepartmentNamePort {
+
+    @Override
+    public String findReportDepartmentName(com.example.kintai.domain.model.employee.EmployeeId employeeId) {
+        String sql = "SELECT COALESCE(NULLIF(TRIM(d.report_name), ''), d.name) AS name "
+                + "FROM staff_table s JOIN department d ON d.id = s.department_id WHERE s.id = ?";
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, Integer.parseInt(employeeId.getValue()));
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getString("name") : null;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to find report department name.", e);
+        }
+    }
+
 
     private static final java.time.format.DateTimeFormatter TIME_FORMATTER = java.time.format.DateTimeFormatter.ofPattern("HH:mm");
 

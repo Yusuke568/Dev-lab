@@ -261,7 +261,7 @@ public class MasterPersistenceAdapter implements MasterPort, OrganizationPort {
 
     @Override
     public List<Department> findDepartments() {
-        String sql = "SELECT d.id, d.name, d.parent_id, d.approver_staff_id, d.sort_order, s.name AS approver_name, " +
+        String sql = "SELECT d.id, d.name, d.parent_id, d.approver_staff_id, d.sort_order, d.report_name, s.name AS approver_name, " +
                 "(SELECT COUNT(*) FROM staff_table m WHERE m.department_id = d.id) AS member_count " +
                 "FROM department d LEFT JOIN staff_table s ON d.approver_staff_id = s.id " +
                 "ORDER BY d.sort_order, d.id";
@@ -273,6 +273,7 @@ public class MasterPersistenceAdapter implements MasterPort, OrganizationPort {
                 Department d = new Department(rs.getInt("id"), rs.getString("name"),
                         nullableInt(rs, "parent_id"), nullableInt(rs, "approver_staff_id"), rs.getInt("sort_order"));
                 d.setApproverName(rs.getString("approver_name"));
+                d.setReportName(rs.getString("report_name"));
                 d.setMemberCount(rs.getInt("member_count"));
                 list.add(d);
             }
@@ -280,6 +281,18 @@ public class MasterPersistenceAdapter implements MasterPort, OrganizationPort {
             throw new RuntimeException("Failed to load departments.", e);
         }
         return list;
+    }
+
+    @Override
+    public void saveDepartmentReportName(int id, String reportName) {
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement("UPDATE department SET report_name = ? WHERE id = ?")) {
+            ps.setString(1, reportName);
+            ps.setInt(2, id);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to save report name of department.", e);
+        }
     }
 
     @Override

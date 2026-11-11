@@ -26,6 +26,14 @@ public class ExportWorkReportService implements ExportWorkReportUseCase {
     /** データのある月を調べる（読むだけ）。null なら表示中の月だけを出力する */
     private com.example.kintai.domain.port.out.LoadAttendanceRecordPort loadAttendanceRecordPort;
 
+    /** 「所属：」欄の所属名称を調べる。null なら様式のまま */
+    private com.example.kintai.domain.port.out.ReportDepartmentNamePort reportDepartmentNamePort;
+
+    public ExportWorkReportService withDepartmentName(com.example.kintai.domain.port.out.ReportDepartmentNamePort port) {
+        this.reportDepartmentNamePort = port;
+        return this;
+    }
+
     public ExportWorkReportService withAttendanceCheck(com.example.kintai.domain.port.out.LoadAttendanceRecordPort port) {
         this.loadAttendanceRecordPort = port;
         return this;
@@ -52,9 +60,12 @@ public class ExportWorkReportService implements ExportWorkReportUseCase {
 
         List<WeeklyWorkReport> weeklyWorkReports = getWeeklyWorkReportsUseCase.getWeeklyWorkReports(employeeId, yearMonth);
 
+        String departmentName = reportDepartmentNamePort == null ? null
+                : reportDepartmentNamePort.findReportDepartmentName(employeeId);
         byte[] content;
         if (loadAttendanceRecordPort == null) {
-            content = workReportExportPort.generate(monthlyData, monthlyData.getEmployeeName(), workTypes, weeklyWorkReports);
+            content = workReportExportPort.generate(monthlyData, monthlyData.getEmployeeName(), departmentName, workTypes,
+                    weeklyWorkReports);
         } else {
             // 前年12月〜当年12月のうち、勤怠のある月（と表示中の月）をまとめて1ファイルにする
             int year = yearMonth.getYear();
@@ -70,7 +81,7 @@ public class ExportWorkReportService implements ExportWorkReportUseCase {
                             getWeeklyWorkReportsUseCase.getWeeklyWorkReports(employeeId, ym)));
                 }
             }
-            content = workReportExportPort.generateYear(year, monthlyData.getEmployeeName(), workTypes, months);
+            content = workReportExportPort.generateYear(year, monthlyData.getEmployeeName(), departmentName, workTypes, months);
         }
 
         // サーバーの所定フォルダにも置く。置けなくてもダウンロードは止めない

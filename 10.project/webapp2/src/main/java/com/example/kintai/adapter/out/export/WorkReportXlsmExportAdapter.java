@@ -66,6 +66,12 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
     @Override
     public byte[] generate(MonthlyAttendanceDto monthlyData, String employeeName, List<WorkType> workTypes,
                             List<WeeklyWorkReport> weeklyWorkReports) {
+        return generate(monthlyData, employeeName, null, workTypes, weeklyWorkReports);
+    }
+
+    @Override
+    public byte[] generate(MonthlyAttendanceDto monthlyData, String employeeName, String departmentName,
+                           List<WorkType> workTypes, List<WeeklyWorkReport> weeklyWorkReports) {
         try (InputStream templateStream = getClass().getResourceAsStream(TEMPLATE_PATH)) {
             if (templateStream == null) {
                 throw new IllegalStateException("作業報告書テンプレートが見つかりません: " + TEMPLATE_PATH);
@@ -75,6 +81,7 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
                 Sheet sheet = sheetOf(workbook, yearMonth, yearMonth.getYear());
                 setNumericValue(sheet, "A1", yearMonth.getYear());
                 setStringValue(sheet, "AP2", employeeName);
+                setDepartment(sheet, departmentName);
                 writeMonth(sheet, monthlyData, weeklyWorkReports, workTypes);
 
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -88,6 +95,12 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
 
     @Override
     public byte[] generateYear(int year, String employeeName, List<WorkType> workTypes, List<MonthData> months) {
+        return generateYear(year, employeeName, null, workTypes, months);
+    }
+
+    @Override
+    public byte[] generateYear(int year, String employeeName, String departmentName, List<WorkType> workTypes,
+                               List<MonthData> months) {
         try (InputStream templateStream = getClass().getResourceAsStream(TEMPLATE_PATH)) {
             if (templateStream == null) {
                 throw new IllegalStateException("作業報告書テンプレートが見つかりません: " + TEMPLATE_PATH);
@@ -99,6 +112,7 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
                     Sheet sheet = sheetOf(workbook, ym, year);
                     setNumericValue(sheet, "A1", ym.getYear());
                     setStringValue(sheet, "AP2", employeeName);
+                    setDepartment(sheet, departmentName);
                 }
                 for (MonthData month : months) {
                     YearMonth ym = month.monthlyData().getYearMonth();
@@ -335,5 +349,12 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
             cell.setCellStyle(style);
         }
         return cell;
+    }
+
+    /** 「所属：」欄（D2）。null・空なら様式のまま */
+    private void setDepartment(Sheet sheet, String departmentName) {
+        if (departmentName != null && !departmentName.isBlank()) {
+            setStringValue(sheet, "D2", departmentName);
+        }
     }
 }

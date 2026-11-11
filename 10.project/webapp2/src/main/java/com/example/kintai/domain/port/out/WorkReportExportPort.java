@@ -21,6 +21,12 @@ public interface WorkReportExportPort {
     byte[] generate(MonthlyAttendanceDto monthlyData, String employeeName, List<WorkType> workTypes,
                      List<WeeklyWorkReport> weeklyWorkReports);
 
+    /** @param departmentName 所属名称（様式の D2 セル「所属：」）。null なら様式のまま */
+    default byte[] generate(MonthlyAttendanceDto monthlyData, String employeeName, String departmentName,
+                            List<WorkType> workTypes, List<WeeklyWorkReport> weeklyWorkReports) {
+        return generate(monthlyData, employeeName, workTypes, weeklyWorkReports);
+    }
+
     /** 1か月分（勤怠と週次作業報告） */
     record MonthData(MonthlyAttendanceDto monthlyData, List<WeeklyWorkReport> weeklyWorkReports) {
     }
@@ -32,5 +38,11 @@ public interface WorkReportExportPort {
      */
     default byte[] generateYear(int year, String employeeName, List<WorkType> workTypes, List<MonthData> months) {
         throw new UnsupportedOperationException("generateYear");
+    }
+
+    /** @param departmentName 所属名称（すべての月のシートの D2 セル「所属：」）。null なら様式のまま */
+    default byte[] generateYear(int year, String employeeName, String departmentName, List<WorkType> workTypes,
+                                List<MonthData> months) {
+        return generateYear(year, employeeName, workTypes, months);
     }
 }

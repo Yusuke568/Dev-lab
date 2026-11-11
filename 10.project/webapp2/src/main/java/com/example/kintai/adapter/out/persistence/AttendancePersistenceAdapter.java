@@ -406,6 +406,81 @@ public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, S
         return result;
     }
 
+    // ---- 部下のサマリー用（読むだけ） ----
+
+    @Override
+    public java.util.Map<String, List<com.example.kintai.domain.service.StaffWorkSummaryCalculator.DayRow>> findAttendanceRows(
+            List<String> staffIds, LocalDate from, LocalDate to) {
+        java.util.Map<String, List<com.example.kintai.domain.service.StaffWorkSummaryCalculator.DayRow>> result = new java.util.HashMap<>();
+        if (staffIds.isEmpty()) return result;
+        String sql = "SELECT staff_id, work_date, (job_from_time IS NOT NULL AND job_to_time IS NOT NULL) AS worked, "
+                + "COALESCE(total_work_time, 0) AS total_work_time, COALESCE(overtime, 0) AS overtime, abstract_id "
+                + "FROM work_month_table WHERE staff_id = ANY(?) AND work_date BETWEEN ? AND ?";
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setArray(1, con.createArrayOf("integer", staffIds.stream().map(Integer::valueOf).toArray()));
+            ps.setDate(2, java.sql.Date.valueOf(from));
+            ps.setDate(3, java.sql.Date.valueOf(to));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    int abstractId = rs.getInt("abstract_id");
+                    Integer abs = rs.wasNull() ? null : abstractId;
+                    result.computeIfAbsent(String.valueOf(rs.getInt("staff_id")), k -> new java.util.ArrayList<>())
+                            .add(new com.example.kintai.domain.service.StaffWorkSummaryCalculator.DayRow(
+                                    rs.getDate("work_date").toLocalDate(), rs.getBoolean("worked"),
+                                    rs.getInt("total_work_time"), rs.getInt("overtime"), abs));
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load attendance for summary.", e);
+        }
+        return result;
+    }
+
+    @Override
+    public java.util.Map<String, List<com.example.kintai.domain.service.StaffWorkSummaryCalculator.RequestRow>> findOvertimeRequestRows(
+            List<String> staffIds, LocalDate from, LocalDate to) {
+        java.util.Map<String, List<com.example.kintai.domain.service.StaffWorkSummaryCalculator.RequestRow>> result = new java.util.HashMap<>();
+        if (staffIds.isEmpty()) return result;
+        String sql = "SELECT staff_id, target_date, status FROM overtime_request WHERE staff_id = ANY(?) AND target_date BETWEEN ? AND ?";
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setArray(1, con.createArrayOf("integer", staffIds.stream().map(Integer::valueOf).toArray()));
+            ps.setDate(2, java.sql.Date.valueOf(from));
+            ps.setDate(3, java.sql.Date.valueOf(to));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    result.computeIfAbsent(String.valueOf(rs.getInt("staff_id")), k -> new java.util.ArrayList<>())
+                            .add(new com.example.kintai.domain.service.StaffWorkSummaryCalculator.RequestRow(
+                                    rs.getDate("target_date").toLocalDate(), rs.getString("status")));
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load overtime requests for summary.", e);
+        }
+        return result;
+    }
+
+    @Override
+    public java.util.Map<String, Double> findPaidLeaveRemaining(List<String> staffIds) {
+        java.util.Map<String, Double> result = new java.util.HashMap<>();
+        if (staffIds.isEmpty()) return result;
+        String sql = "SELECT id, paid_leave_days FROM staff_table WHERE id = ANY(?)";
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setArray(1, con.createArrayOf("integer", staffIds.stream().map(Integer::valueOf).toArray()));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    double days = rs.getDouble("paid_leave_days");
+                    if (!rs.wasNull()) result.put(String.valueOf(rs.getInt("id")), days);
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load paid leave for summary.", e);
+        }
+        return result;
+    }
+
     @Override
     public List<com.example.kintai.domain.model.attendance.Subordinate> findStaffInMyDepartments(String staffId) {
         List<com.example.kintai.domain.model.attendance.Subordinate> result = new java.util.ArrayList<>();

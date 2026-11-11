@@ -300,7 +300,9 @@ public class DependencyFactory {
                         this.attendancePersistenceAdapter, this.overtimeRequestPersistenceAdapter, this.approvalWorkflowService)));
         actionMap.put("ApprovalExecute", new ApprovalExecuteAction(this.approveAttendanceUseCase));
         actionMap.put("ApprovalHistory", new ApprovalHistoryAction(this.getApprovalHistoryUseCase));
-        actionMap.put("SubordinateAttendance", new com.example.kintai.adapter.in.web.SubordinateAttendanceAction(this.attendanceAccessUseCase));
+        actionMap.put("SubordinateAttendance", new com.example.kintai.adapter.in.web.SubordinateAttendanceAction(this.attendanceAccessUseCase)
+                .withSummary(new com.example.kintai.application.service.SubordinateSummaryService(
+                        this.attendancePersistenceAdapter, this.attendancePersistenceAdapter, this.workTypePort)));
         actionMap.put("NoticeManage", new com.example.notice.adapter.in.web.NoticeManageAction(this.noticeUseCase));
 
         // Correction Master Actions

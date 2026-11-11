@@ -21,4 +21,23 @@ public interface SubordinatePort {
     default List<Subordinate> findStaffInMyDepartments(String staffId) {
         return List.of();
     }
+
+    // ---- 部下のサマリー用（読むだけ。社員ID → 行） ----
+
+    /** 期間の勤怠（出勤・退勤・総勤務・時間外・勤務区分） */
+    default java.util.Map<String, List<com.example.kintai.domain.service.StaffWorkSummaryCalculator.DayRow>> findAttendanceRows(
+            List<String> staffIds, java.time.LocalDate from, java.time.LocalDate to) {
+        return java.util.Map.of();
+    }
+
+    /** 期間の残業事前申請（対象日・状態） */
+    default java.util.Map<String, List<com.example.kintai.domain.service.StaffWorkSummaryCalculator.RequestRow>> findOvertimeRequestRows(
+            List<String> staffIds, java.time.LocalDate from, java.time.LocalDate to) {
+        return java.util.Map.of();
+    }
+
+    /** 有給の残日数 */
+    default java.util.Map<String, Double> findPaidLeaveRemaining(List<String> staffIds) {
+        return java.util.Map.of();
+    }
 }

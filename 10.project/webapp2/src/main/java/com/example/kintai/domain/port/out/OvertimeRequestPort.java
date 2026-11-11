@@ -32,6 +32,14 @@ public interface OvertimeRequestPort {
     /** 次の段の承認待ちに進める。 */
     void advanceLevel(int requestId);
 
+    /**
+     * 申請中の申請を取り下げにする。
+     * @return 取り下げにできたら true（もう承認・却下されていたら false）
+     */
+    default boolean withdraw(int requestId) {
+        throw new UnsupportedOperationException("withdraw");
+    }
+
     /** どの部署の業務としての申請か（兼任者用。null なら主所属） */
     default void updateDepartment(int requestId, Integer departmentId) {
     }

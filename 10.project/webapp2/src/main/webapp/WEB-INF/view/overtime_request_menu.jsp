@@ -16,7 +16,7 @@
 <div class="card">
 	<div class="text-center page-title-container">
 		<h1>残業事前申請</h1>
-		<p>時間外労働を行う前に、この画面から申請してください。承認結果はこの画面で確認できます。却下された場合はこの画面から再申請できます。</p>
+		<p>時間外労働を行う前に、この画面から申請してください。承認結果はこの画面で確認できます。申請中の申請は、承認される前なら「取り下げる」で取り消せます。却下・取り下げた日は、この画面から再申請できます。</p>
 	</div>
 
 	<div class="page-header-actions">
@@ -26,7 +26,7 @@
 	<c:if test="${not empty errorMessage}">
 		<div class="status-banner status-danger" role="alert" style="margin: 1rem 0;">
 			<span class="icon">⚠️</span>
-			<span class="msg"><strong>申請できませんでした。</strong><c:out value="${errorMessage}" /></span>
+			<span class="msg"><strong>できませんでした。</strong><c:out value="${errorMessage}" /></span>
 		</div>
 	</c:if>
 	<c:if test="${not empty successMessage}">
@@ -70,8 +70,9 @@
 				</div>
 			</c:if>
 			<div class="form-group" style="flex: 1; min-width: 200px;">
-				<label class="form-label">申請理由</label>
-				<input type="text" name="reason" class="form-input" placeholder="例: 月末締め作業のため" style="width: 100%;"
+				<label class="form-label" for="ot-reason">申請理由 <span style="color: #c50000; font-size: 0.8rem;">（必須）</span></label>
+				<input type="text" id="ot-reason" name="reason" class="form-input" placeholder="例: 月末締め作業のため" style="width: 100%;"
+					required maxlength="255" aria-required="true" title="時間外が必要な理由を入れてください"
 					value="<c:out value='${form.reason}' />">
 			</div>
 			<button type="submit" class="btn btn-primary">申請</button>
@@ -113,6 +114,7 @@
 						<c:choose>
 							<c:when test="${req.status == 'APPROVED'}"><span style="color: green; font-weight: bold;">承認済み</span></c:when>
 							<c:when test="${req.status == 'REJECTED'}"><span style="color: red; font-weight: bold;">却下</span></c:when>
+							<c:when test="${req.status == 'WITHDRAWN'}"><span style="color: #718096; font-weight: bold;">取り下げ</span></c:when>
 							<c:otherwise><span style="color: orange; font-weight: bold;">申請中</span></c:otherwise>
 						</c:choose>
 					</td>
@@ -127,8 +129,16 @@
 						</c:choose>
 					</td>
 					<td class="text-center">
-						<c:if test="${req.status == 'REJECTED'}">
+						<c:if test="${req.status == 'REJECTED' or req.status == 'WITHDRAWN'}">
 							<button type="button" class="btn btn-secondary" onclick="prefillReapply('${req.targetDate}', '${req.plannedStartTime}', '${req.plannedEndTime}')">この日で再申請</button>
+						</c:if>
+						<c:if test="${req.status == 'PENDING'}">
+							<%-- 承認される前なら取り下げられる。取り下げた日はもう一度申請できる --%>
+							<form action="${pageContext.request.contextPath}/overtimeRequestWithdraw.do" method="post" style="display: inline;"
+								onsubmit="return confirm('${req.targetDate} の残業事前申請を取り下げますか？\n取り下げたあと、内容を直して申請し直せます。');">
+								<input type="hidden" name="requestId" value="${req.id}">
+								<button type="submit" class="btn btn-danger">取り下げる</button>
+							</form>
 						</c:if>
 					</td>
 				</tr>

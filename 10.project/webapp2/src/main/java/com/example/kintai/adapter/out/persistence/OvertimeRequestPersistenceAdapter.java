@@ -175,6 +175,20 @@ public class OvertimeRequestPersistenceAdapter implements OvertimeRequestPort {
     }
 
     @Override
+    public boolean withdraw(int requestId) {
+        // 申請中のときだけ取り下げにする（承認者が先に承認・却下していたら何もしない）
+        String sql = "UPDATE overtime_request SET status = 'WITHDRAWN', decided_by = NULL, decided_at = NOW() "
+                + "WHERE id = ? AND status = 'PENDING'";
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, requestId);
+            return ps.executeUpdate() == 1;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to withdraw overtime request.", e);
+        }
+    }
+
+    @Override
     public void decide(int requestId, boolean approve, String decidedBy) {
         String sql = readSqlFile("decide_overtime_request.sql");
         try (Connection con = ConnectionBase.getConnection();

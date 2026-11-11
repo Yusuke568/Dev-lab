@@ -20,6 +20,8 @@ public class OvertimeRequest {
     public static final String STATUS_PENDING = "PENDING";
     public static final String STATUS_APPROVED = "APPROVED";
     public static final String STATUS_REJECTED = "REJECTED";
+    /** 申請者が承認前に取り下げた。却下と同じく、同じ日にもう一度申請できる */
+    public static final String STATUS_WITHDRAWN = "WITHDRAWN";
 
     private static final LocalTime STANDARD_START = LocalTime.of(9, 0);
     private static final LocalTime STANDARD_END = LocalTime.of(18, 0);
@@ -80,11 +82,15 @@ public class OvertimeRequest {
     public boolean isPending() { return STATUS_PENDING.equals(status); }
     public boolean isApproved() { return STATUS_APPROVED.equals(status); }
     public boolean isRejected() { return STATUS_REJECTED.equals(status); }
+    public boolean isWithdrawn() { return STATUS_WITHDRAWN.equals(status); }
+    /** 同じ日にもう一度申請できる（却下・取り下げ） */
+    public boolean canReapply() { return isRejected() || isWithdrawn(); }
 
     /** 画面表示用の日本語ステータス。 */
     public String getStatusLabel() {
         if (isApproved()) return "承認済み";
         if (isRejected()) return "却下";
+        if (isWithdrawn()) return "取り下げ";
         return "申請中";
     }
 

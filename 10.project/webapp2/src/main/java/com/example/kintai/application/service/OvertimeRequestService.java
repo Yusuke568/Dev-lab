@@ -57,11 +57,19 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
         if (plannedOvertimeMinutes <= 0) {
             throw new IllegalArgumentException("時間外が発生していません。標準勤務時間（09:00〜18:00）より早い出勤時刻、または遅い退勤時刻を入力してください。");
         }
+        // 申請理由は必須（承認者が判断できるように）
+        if (reason == null || reason.isBlank()) {
+            throw new IllegalArgumentException("申請理由を入れてください。時間外が必要な理由（作業内容など）を書いてください。");
+        }
+        if (reason.strip().length() > 255) {
+            throw new IllegalArgumentException("申請理由は255文字以内で入れてください。");
+        }
+        reason = reason.strip();
         Optional<OvertimeRequest> existing = overtimeRequestPort.findByEmployeeAndDate(id, date);
 
-        if (existing.isPresent() && !existing.get().isRejected()) {
+        if (existing.isPresent() && !existing.get().canReapply()) {
             throw new IllegalStateException(
-                    date + " はすでに申請済みです（" + existing.get().getStatusLabel() + "）。却下された場合のみ再申請できます。");
+                    date + " はすでに申請済みです（" + existing.get().getStatusLabel() + "）。申請中の申請は、取り下げてから申請し直してください。");
         }
         // 承認ルートの条件つきの段（当月の時間外が○時間以上・深夜）を決めるための申請の中身
         RequestFacts facts = new RequestFacts(
@@ -117,6 +125,20 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
 
     private static final LocalTime NIGHT_START = LocalTime.of(22, 0);
     private static final LocalTime NIGHT_END = LocalTime.of(5, 0);
+
+    @Override
+    public OvertimeRequest withdraw(String employeeId, int requestId) {
+        OvertimeRequest request = overtimeRequestPort.findById(requestId)
+                .orElseThrow(() -> new IllegalArgumentException("取り下げる残業事前申請が見つかりません。画面を読み込み直してください。"));
+        if (employeeId == null || !employeeId.equals(request.getEmployeeId())) {
+            throw new IllegalArgumentException("自分の残業事前申請だけ取り下げられます。");
+        }
+        if (!request.isPending() || !overtimeRequestPort.withdraw(requestId)) {
+            throw new IllegalStateException(request.getTargetDate() + " の申請は、もう" + request.getStatusLabel()
+                    + "になっているため取り下げられません。");
+        }
+        return request;
+    }
 
     @Override
     public List<OvertimeRequest> getMyRequests(String employeeId) {

@@ -185,6 +185,16 @@ class OvertimeRequestSubmitTest {
     }
 
     @Test
+    void 申請理由がなければ申請できない() {
+        for (String reason : new String[] {null, "", "   ", "　"}) {
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                    () -> service.submit("126", DAY, "09:00", "20:00", reason));
+            assertTrue(e.getMessage().startsWith("申請理由を入れてください"));
+        }
+        assertTrue(inserted.isEmpty());
+    }
+
+    @Test
     void 時間外がない日は申請できない() {
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
                 () -> service.submit("126", DAY, "09:00", "17:45", ""));

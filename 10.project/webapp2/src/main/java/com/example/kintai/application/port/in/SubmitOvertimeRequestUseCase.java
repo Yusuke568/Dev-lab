@@ -1,5 +1,6 @@
 package com.example.kintai.application.port.in;
 
+import com.example.kintai.domain.model.attendance.OvertimeRequest;
 import java.time.LocalDate;
 
 /**
@@ -25,4 +26,14 @@ public interface SubmitOvertimeRequestUseCase {
      */
     boolean submit(String employeeId, LocalDate date, String plannedStartTime, String plannedEndTime, String reason,
                    Integer departmentId);
+
+    /**
+     * 自分の申請中の申請を取り下げる（承認・却下される前だけ）。取り下げた日は、もう一度申請できる。
+     * @return 取り下げた申請（画面のメッセージ用）
+     * @throws IllegalArgumentException 申請が見つからない・自分の申請でない
+     * @throws IllegalStateException    もう承認・却下・取り下げされている
+     */
+    default OvertimeRequest withdraw(String employeeId, int requestId) {
+        throw new UnsupportedOperationException("withdraw");
+    }
 }

@@ -316,6 +316,8 @@ public class DependencyFactory {
                 this.importWorkReportUseCase, this.attendanceAccessUseCase));
         actionMap.put("WeeklyWorkReportSave", new WeeklyWorkReportSaveAction(this.saveWeeklyWorkReportsUseCase, this.attendanceAccessUseCase));
         actionMap.put("OvertimeRequestSubmit", new OvertimeRequestSubmitAction(this.submitOvertimeRequestUseCase));
+        actionMap.put("OvertimeRequestWithdraw", new com.example.kintai.adapter.in.web.OvertimeRequestWithdrawAction(
+                this.submitOvertimeRequestUseCase));
         actionMap.put("OvertimeRequestExecute", new OvertimeRequestExecuteAction(this.decideOvertimeRequestUseCase));
 
         // API Actions
@@ -354,7 +356,7 @@ public class DependencyFactory {
     private void initializeFeatureMap() {
         requireFeature(Feature.ATTENDANCE, "KintaiDisplay", "KintaiUpdateApi", "WorkReportExport", "WorkReportImport",
                 "WeeklyWorkReportSave");
-        requireFeature(Feature.OVERTIME_REQUEST, "OvertimeRequestMenu", "OvertimeRequestSubmit");
+        requireFeature(Feature.OVERTIME_REQUEST, "OvertimeRequestMenu", "OvertimeRequestSubmit", "OvertimeRequestWithdraw");
         requireFeature(Feature.LEAVE_REQUEST, "LeaveRequestMenu", "LeaveRequestSubmit");
         requireFeature(Feature.APPROVAL, "ApprovalList", "ApprovalExecute", "ApprovalHistory", "OvertimeRequestExecute", "SubordinateAttendance", "NoticeManage",
                 "LeaveRequestExecute");

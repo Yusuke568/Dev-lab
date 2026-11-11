@@ -24,8 +24,17 @@ public interface SubmitOvertimeRequestUseCase {
      * @param departmentId どの部署の業務か（兼任している人が選ぶ）。null なら主所属
      * @return 自動承認された（申請者が最上位の承認者で、ほかに承認者がいない）なら true
      */
+    default boolean submit(String employeeId, LocalDate date, String plannedStartTime, String plannedEndTime, String reason,
+                           Integer departmentId) {
+        return submit(employeeId, date, plannedStartTime, plannedEndTime, reason, departmentId, null, null);
+    }
+
+    /**
+     * @param projectName PJ名（申請画面からは必須。null なら入れない）
+     * @param category    摘要（OvertimeRequest.CATEGORIES のどれか。null なら入れない）
+     */
     boolean submit(String employeeId, LocalDate date, String plannedStartTime, String plannedEndTime, String reason,
-                   Integer departmentId);
+                   Integer departmentId, String projectName, String category);
 
     /**
      * 自分の申請中の申請を取り下げる（承認・却下される前だけ）。取り下げた日は、もう一度申請できる。

@@ -59,7 +59,12 @@ class OvertimeRequestSubmitTest {
         @Override public void resubmit(int requestId, int plannedOvertimeMinutes, String start, String end, String reason) { }
         @Override public void decide(int requestId, boolean approve, String decidedBy) { decided.add(requestId + ":" + approve + ":" + decidedBy); }
         @Override public void advanceLevel(int requestId) { }
+        @Override public void updateDetails(int requestId, String projectName, String category) {
+            details.add(projectName + "/" + category);
+        }
     };
+    /** updateDetails で入れた「PJ名/摘要」 */
+    private final List<String> details = new ArrayList<>();
 
     /** 126 は開発1課（承認者 300） */
     private final OrganizationPort organization = new OrganizationPort() {
@@ -127,6 +132,26 @@ class OvertimeRequestSubmitTest {
     void 承認者がいる人の申請は承認待ちのまま() {
         assertFalse(service.submit("126", DAY, "09:00", "20:00", "障害対応"));
         assertTrue(decided.isEmpty());
+    }
+
+    // ---- PJ名・摘要（時間外申請書に出す） ----
+
+    @Test
+    void PJ名と摘要を保存する() {
+        service.submit("126", DAY, "09:00", "20:00", "障害対応", null, "  税保守 ", "④客先都合");
+
+        assertEquals(List.of("税保守/④客先都合"), details);
+    }
+
+    @Test
+    void 申請画面からはPJ名が必須で摘要は決まった選択肢だけ() {
+        IllegalArgumentException noProject = assertThrows(IllegalArgumentException.class,
+                () -> service.submit("126", DAY, "09:00", "20:00", "障害対応", null, " ", "⑤その他"));
+        assertTrue(noProject.getMessage().contains("PJ名"));
+        IllegalArgumentException badCategory = assertThrows(IllegalArgumentException.class,
+                () -> service.submit("126", DAY, "09:00", "20:00", "障害対応", null, "税保守", "⑥なし"));
+        assertTrue(badCategory.getMessage().contains("摘要"));
+        assertTrue(inserted.isEmpty());
     }
 
     // ---- 条件つきで足す段（当月の時間外・深夜） ----

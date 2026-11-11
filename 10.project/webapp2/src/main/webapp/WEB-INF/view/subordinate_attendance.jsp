@@ -142,6 +142,8 @@
 .req-chip.approved { background: #dff3ea; color: #146b4b; }
 .req-chip.unapplied { background: #fde2e2; color: #a12626; font-weight: 700; }
 .sum-table .btn { white-space: nowrap; margin: 0; }
+.sum-table .sum-open .btn { display: block; text-align: center; }
+.sum-table .sum-form-btn { margin-top: 6px; }
 @media (max-width: 800px) {
 	.sum-table thead { display: none; }
 	.sum-table, .sum-table tbody, .sum-table tr, .sum-table td { display: block; width: 100%; box-sizing: border-box; }
@@ -185,6 +187,11 @@
 	<div class="card">
 		<h1>部下の勤怠表</h1>
 		<p>組織図で自分が承認者になっている部署と、その下の部署に所属する社員の勤怠表を参照・編集できます。</p>
+
+		<c:if test="${not empty sessionScope.subordinateMessage}">
+			<div class="error-message" style="margin: 0 0 1rem;" role="alert">⚠ <c:out value="${sessionScope.subordinateMessage}" /></div>
+			<c:remove var="subordinateMessage" scope="session" />
+		</c:if>
 
 		<form class="subordinate-month" method="get" action="${pageContext.request.contextPath}/subordinateAttendance.do">
 			<div class="form-group">
@@ -283,6 +290,12 @@
 										<c:param name="month" value="${targetMonth}" />
 									</c:url>
 									<a href="${kintaiUrl}" class="btn btn-primary">勤怠表を開く</a>
+									<c:url value="/subordinateOvertimeForm.do" var="otFormUrl">
+										<c:param name="id" value="${v.staffId}" />
+										<c:param name="year" value="${targetYear}" />
+										<c:param name="month" value="${targetMonth}" />
+									</c:url>
+									<a href="${otFormUrl}" class="btn btn-secondary sum-form-btn" title="${targetMonth}月の個人別時間外勤務申請書（Excel）をダウンロード">時間外申請書</a>
 								</td>
 							</tr>
 						</c:forEach>

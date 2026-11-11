@@ -92,7 +92,7 @@
 					<td><c:out value="${not empty req.plannedStartTime ? req.plannedStartTime : '09:00'}" /></td>
 					<td><c:out value="${not empty req.plannedEndTime ? req.plannedEndTime : '18:00'}" /></td>
 					<td><c:out value="${req.plannedOvertimeBreakdown}" /></td>
-					<td><c:out value="${req.reason}" /></td>
+					<td><c:if test="${not empty req.projectName}"><span style="font-size: 0.85rem; color: #4a5568;">[<c:out value="${req.projectName}" /><c:if test="${not empty req.category}"> ・ <c:out value="${req.category}" /></c:if>]</span><br></c:if><c:out value="${req.reason}" /></td>
 					<td><c:out value="${req.createdAt}" /></td>
 					<td>
 						<c:forEach var="step" items="${overtimeRoutes[req.id]}" varStatus="st">

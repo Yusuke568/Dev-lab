@@ -23,6 +23,10 @@ public class OvertimeRequest {
     /** 申請者が承認前に取り下げた。却下と同じく、同じ日にもう一度申請できる */
     public static final String STATUS_WITHDRAWN = "WITHDRAWN";
 
+    /** 摘要の区分（時間外申請書の摘要欄の選択肢と同じ文字） */
+    public static final List<String> CATEGORIES = List.of("①自責", "②他責", "③緊急", "④客先都合", "⑤その他");
+    public static final String DEFAULT_CATEGORY = "⑤その他";
+
     private static final LocalTime STANDARD_START = LocalTime.of(9, 0);
     private static final LocalTime STANDARD_END = LocalTime.of(18, 0);
 
@@ -39,6 +43,8 @@ public class OvertimeRequest {
     private final String decidedAt; // "yyyy-MM-dd HH:mm" or null
     private final String createdAt; // "yyyy-MM-dd HH:mm"
     private final int currentLevel; // 承認ルートの何段目の承認待ちか（1始まり）
+    private String projectName; // PJ名（未入力の古い申請は null）
+    private String category;    // 摘要（CATEGORIES のどれか。未入力の古い申請は null）
 
     public OvertimeRequest(int id, String employeeId, String employeeName, LocalDate targetDate,
                             int plannedOvertimeMinutes, String plannedStartTime, String plannedEndTime, String reason,
@@ -78,6 +84,15 @@ public class OvertimeRequest {
     public String getDecidedAt() { return decidedAt; }
     public String getCreatedAt() { return createdAt; }
     public int getCurrentLevel() { return currentLevel; }
+    public String getProjectName() { return projectName; }
+    public String getCategory() { return category; }
+
+    /** DB から読んだ PJ名・摘要を足す */
+    public OvertimeRequest withDetails(String projectName, String category) {
+        this.projectName = projectName;
+        this.category = category;
+        return this;
+    }
 
     public boolean isPending() { return STATUS_PENDING.equals(status); }
     public boolean isApproved() { return STATUS_APPROVED.equals(status); }

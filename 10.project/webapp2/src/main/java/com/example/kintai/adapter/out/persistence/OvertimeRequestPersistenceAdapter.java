@@ -69,7 +69,7 @@ public class OvertimeRequestPersistenceAdapter implements OvertimeRequestPort {
     @Override
     public Optional<OvertimeRequest> findById(int requestId) {
         String sql = "SELECT id, staff_id, target_date, planned_overtime_minutes, planned_start_time, planned_end_time, reason, " +
-                "status, decided_by, decided_at, created_at, current_level FROM overtime_request WHERE id = ?";
+                "status, decided_by, decided_at, created_at, current_level, project_name, category FROM overtime_request WHERE id = ?";
         try (Connection con = ConnectionBase.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, requestId);
@@ -147,6 +147,58 @@ public class OvertimeRequestPersistenceAdapter implements OvertimeRequestPort {
             ps.executeUpdate();
         } catch (Exception e) {
             throw new RuntimeException("Failed to set department of overtime request.", e);
+        }
+    }
+
+    @Override
+    public List<FormRequest> findForForm(String staffId, LocalDate from, LocalDate to) {
+        String sql = readSqlFile("find_overtime_requests_for_form.sql");
+        java.util.Map<Integer, OvertimeRequest> requests = new java.util.LinkedHashMap<>();
+        java.util.Map<Integer, List<com.example.kintai.domain.service.OvertimeFormCalculator.Step>> steps = new java.util.HashMap<>();
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, Integer.parseInt(staffId));
+            ps.setDate(2, java.sql.Date.valueOf(from));
+            ps.setDate(3, java.sql.Date.valueOf(to));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    int id = rs.getInt("id");
+                    if (!requests.containsKey(id)) {
+                        requests.put(id, mapRow(rs));
+                        steps.put(id, new java.util.ArrayList<>());
+                    }
+                    int level = rs.getInt("step_level");
+                    if (!rs.wasNull()) {
+                        Timestamp decidedAt = rs.getTimestamp("step_decided_at");
+                        steps.get(id).add(new com.example.kintai.domain.service.OvertimeFormCalculator.Step(level,
+                                rs.getString("approver_name"),
+                                "APPROVED".equals(rs.getString("step_decision")),
+                                decidedAt == null ? null : decidedAt.toLocalDateTime().toLocalDate()));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to find overtime requests for the form.", e);
+        }
+        List<FormRequest> result = new java.util.ArrayList<>();
+        requests.forEach((id, r) -> result.add(new FormRequest(r, steps.get(id))));
+        return result;
+    }
+
+    @Override
+    public void updateDetails(int requestId, String projectName, String category) {
+        if (projectName == null && category == null) {
+            return; // 古い呼び出し（PJ名・摘要を入れない）は、入っている値を消さない
+        }
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "UPDATE overtime_request SET project_name = ?, category = ? WHERE id = ?")) {
+            setNullableString(ps, 1, projectName);
+            setNullableString(ps, 2, category);
+            ps.setInt(3, requestId);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to set project name and category of overtime request.", e);
         }
     }
 
@@ -229,7 +281,17 @@ public class OvertimeRequestPersistenceAdapter implements OvertimeRequestPort {
 
         return new OvertimeRequest(id, employeeId, employeeName, targetDate, plannedOvertimeMinutes,
                 plannedStartTime, plannedEndTime, reason, status, decidedBy, decidedAt, createdAt,
-                currentLevel > 0 ? currentLevel : 1);
+                currentLevel > 0 ? currentLevel : 1)
+                .withDetails(optionalString(rs, "project_name"), optionalString(rs, "category"));
+    }
+
+    /** SELECT に列がなければ null（PJ名・摘要を読まない古いクエリ用） */
+    private static String optionalString(ResultSet rs, String column) {
+        try {
+            return rs.getString(column);
+        } catch (java.sql.SQLException e) {
+            return null;
+        }
     }
 
     private String readSqlFile(String fileName) {

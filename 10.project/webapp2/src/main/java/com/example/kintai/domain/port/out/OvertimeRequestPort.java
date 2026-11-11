@@ -41,6 +41,20 @@ public interface OvertimeRequestPort {
     }
 
     /** どの部署の業務としての申請か（兼任者用。null なら主所属） */
+    /** 申請と、その承認ルートの段（時間外申請書の出力用） */
+    record FormRequest(OvertimeRequest request,
+                       List<com.example.kintai.domain.service.OvertimeFormCalculator.Step> steps) {
+    }
+
+    /** 社員の期間の、申請中・承認済みの申請（対象日の順）と承認ルートの段 */
+    default List<FormRequest> findForForm(String staffId, LocalDate from, LocalDate to) {
+        return List.of();
+    }
+
+    /** PJ名と摘要を入れる（時間外申請書の出力用） */
+    default void updateDetails(int requestId, String projectName, String category) {
+    }
+
     default void updateDepartment(int requestId, Integer departmentId) {
     }
 }

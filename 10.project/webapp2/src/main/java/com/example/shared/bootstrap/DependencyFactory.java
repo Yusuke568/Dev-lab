@@ -303,6 +303,10 @@ public class DependencyFactory {
         actionMap.put("SubordinateAttendance", new com.example.kintai.adapter.in.web.SubordinateAttendanceAction(this.attendanceAccessUseCase)
                 .withSummary(new com.example.kintai.application.service.SubordinateSummaryService(
                         this.attendancePersistenceAdapter, this.attendancePersistenceAdapter, this.workTypePort)));
+        actionMap.put("SubordinateOvertimeForm", new com.example.kintai.adapter.in.web.SubordinateOvertimeFormAction(
+                this.attendanceAccessUseCase, new com.example.kintai.application.service.OvertimeFormExportService(
+                        this.overtimeRequestPersistenceAdapter, this.attendancePersistenceAdapter, this.attendancePersistenceAdapter,
+                        new com.example.kintai.adapter.out.export.OvertimeFormXlsxExportAdapter())));
         actionMap.put("NoticeManage", new com.example.notice.adapter.in.web.NoticeManageAction(this.noticeUseCase));
 
         // Correction Master Actions
@@ -360,7 +364,7 @@ public class DependencyFactory {
                 "WeeklyWorkReportSave");
         requireFeature(Feature.OVERTIME_REQUEST, "OvertimeRequestMenu", "OvertimeRequestSubmit", "OvertimeRequestWithdraw");
         requireFeature(Feature.LEAVE_REQUEST, "LeaveRequestMenu", "LeaveRequestSubmit");
-        requireFeature(Feature.APPROVAL, "ApprovalList", "ApprovalExecute", "ApprovalHistory", "OvertimeRequestExecute", "SubordinateAttendance", "NoticeManage",
+        requireFeature(Feature.APPROVAL, "ApprovalList", "ApprovalExecute", "ApprovalHistory", "OvertimeRequestExecute", "SubordinateAttendance", "SubordinateOvertimeForm", "NoticeManage",
                 "LeaveRequestExecute");
         requireFeature(Feature.SHAIN_ADMIN, "ShainList", "ShainUpdateForm", "ShainUpdateExecute", "ShainInsertForm",
                 "ShainInsertExecute", "ShainDeleteForm", "ShainDeleteExecute", "SearchShainApi", "ShainIdCheckApi",

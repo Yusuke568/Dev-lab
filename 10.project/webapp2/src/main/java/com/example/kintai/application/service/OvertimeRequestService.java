@@ -47,7 +47,7 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
 
     @Override
     public boolean submit(String employeeId, LocalDate date, String plannedStartTime, String plannedEndTime, String reason,
-                          Integer departmentId) {
+                          Integer departmentId, String projectName, String category) {
         EmployeeId id = new EmployeeId(employeeId);
         int plannedOvertimeMinutes = OvertimeRequest.calculatePlannedOvertimeMinutes(plannedStartTime, plannedEndTime);
         // 時間外には補正・間接の時間も含めるので、出退勤が 9:00〜18:00 の中でも時間外になる日がある。
@@ -65,6 +65,19 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
             throw new IllegalArgumentException("申請理由は255文字以内で入れてください。");
         }
         reason = reason.strip();
+        // PJ名・摘要（時間外申請書に出す）。申請画面からは両方入ってくる。null は古い呼び出し（入れない）
+        if (projectName != null) {
+            projectName = projectName.strip();
+            if (projectName.isEmpty()) {
+                throw new IllegalArgumentException("PJ名を入れてください。");
+            }
+            if (projectName.length() > 100) {
+                throw new IllegalArgumentException("PJ名は100文字以内で入れてください。");
+            }
+        }
+        if (category != null && !OvertimeRequest.CATEGORIES.contains(category)) {
+            throw new IllegalArgumentException("摘要を選んでください（①自責〜⑤その他）。");
+        }
         Optional<OvertimeRequest> existing = overtimeRequestPort.findByEmployeeAndDate(id, date);
 
         if (existing.isPresent() && !existing.get().canReapply()) {
@@ -86,6 +99,7 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
             requestId = overtimeRequestPort.insert(id, date, plannedOvertimeMinutes, plannedStartTime, plannedEndTime, reason);
         }
         overtimeRequestPort.updateDepartment(requestId, departmentId);
+        overtimeRequestPort.updateDetails(requestId, projectName, category);
         boolean autoApproved = approvalWorkflowService.startRoute(RequestType.OVERTIME, requestId, employeeId, departmentId, facts);
         if (autoApproved) {
             overtimeRequestPort.decide(requestId, true, employeeId);

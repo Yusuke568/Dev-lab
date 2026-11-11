@@ -374,4 +374,9 @@ CREATE INDEX IF NOT EXISTS idx_approval_route_assignment_target ON approval_rout
 
 -- 申請がどの部署の業務か（兼任している人が選ぶ。NULL なら主所属）
 ALTER TABLE overtime_request ADD COLUMN IF NOT EXISTS department_id integer;
+-- PJ名と摘要（時間外申請書の Excel 出力用。migrations/20261117_overtime_request_detail.sql と同じ）
+ALTER TABLE overtime_request ADD COLUMN IF NOT EXISTS project_name varchar(100);
+ALTER TABLE overtime_request ADD COLUMN IF NOT EXISTS category varchar(10);
+COMMENT ON COLUMN overtime_request.project_name IS 'PJ名（時間外申請書の PJ名欄）';
+COMMENT ON COLUMN overtime_request.category IS '摘要（①自責 / ②他責 / ③緊急 / ④客先都合 / ⑤その他）';
 ALTER TABLE leave_request ADD COLUMN IF NOT EXISTS department_id integer;

@@ -69,6 +69,20 @@
 					</select>
 				</div>
 			</c:if>
+			<div class="form-group" style="min-width: 160px;">
+				<label class="form-label" for="ot-project">PJ名 <span style="color: #c50000; font-size: 0.8rem;">（必須）</span></label>
+				<input type="text" id="ot-project" name="projectName" class="form-input" placeholder="例: 税保守"
+					required maxlength="100" aria-required="true" title="時間外申請書の PJ名欄に出ます"
+					value="<c:out value='${form.projectName}' />">
+			</div>
+			<div class="form-group">
+				<label class="form-label" for="ot-category">摘要</label>
+				<select id="ot-category" name="category" class="form-input" title="時間外申請書の摘要欄に出ます">
+					<c:forEach var="cat" items="${['①自責', '②他責', '③緊急', '④客先都合', '⑤その他']}">
+						<option value="${cat}" <c:if test="${(not empty form.category and form.category == cat) or (empty form.category and cat == '⑤その他')}">selected</c:if>>${cat}</option>
+					</c:forEach>
+				</select>
+			</div>
 			<div class="form-group" style="flex: 1; min-width: 200px;">
 				<label class="form-label" for="ot-reason">申請理由 <span style="color: #c50000; font-size: 0.8rem;">（必須）</span></label>
 				<input type="text" id="ot-reason" name="reason" class="form-input" placeholder="例: 月末締め作業のため" style="width: 100%;"
@@ -93,6 +107,7 @@
 				<th>予定出勤時刻</th>
 				<th>予定退勤時刻</th>
 				<th>時間外内訳</th>
+				<th>PJ名・摘要</th>
 				<th>申請理由</th>
 				<th>ステータス</th>
 				<th>申請日時</th>
@@ -109,6 +124,7 @@
 					<td><c:out value="${not empty req.plannedStartTime ? req.plannedStartTime : '09:00'}" /></td>
 					<td><c:out value="${not empty req.plannedEndTime ? req.plannedEndTime : '18:00'}" /></td>
 					<td><c:out value="${req.plannedOvertimeBreakdown}" /></td>
+					<td><c:out value="${req.projectName}" /><c:if test="${not empty req.category}"><br><span style="font-size: 0.85rem; color: #4a5568;"><c:out value="${req.category}" /></span></c:if></td>
 					<td><c:out value="${req.reason}" /></td>
 					<td>
 						<c:choose>
@@ -130,7 +146,7 @@
 					</td>
 					<td class="text-center">
 						<c:if test="${req.status == 'REJECTED' or req.status == 'WITHDRAWN'}">
-							<button type="button" class="btn btn-secondary" onclick="prefillReapply('${req.targetDate}', '${req.plannedStartTime}', '${req.plannedEndTime}')">この日で再申請</button>
+							<button type="button" class="btn btn-secondary" onclick="prefillReapply('${req.targetDate}', '${req.plannedStartTime}', '${req.plannedEndTime}', '${fn:escapeXml(req.projectName)}', '${req.category}')">この日で再申請</button>
 						</c:if>
 						<c:if test="${req.status == 'PENDING'}">
 							<%-- 承認される前なら取り下げられる。取り下げた日はもう一度申請できる --%>
@@ -145,7 +161,7 @@
 			</c:forEach>
 			<c:if test="${empty myRequests}">
 				<tr>
-					<td colspan="10" class="text-center">申請履歴はまだありません。</td>
+					<td colspan="11" class="text-center">申請履歴はまだありません。</td>
 				</tr>
 			</c:if>
 		</tbody>
@@ -153,8 +169,10 @@
 </div>
 
 <script>
-function prefillReapply(targetDate, plannedStartTime, plannedEndTime) {
+function prefillReapply(targetDate, plannedStartTime, plannedEndTime, projectName, category) {
 	document.getElementById('targetDate').value = targetDate;
+	if (projectName) document.getElementById('ot-project').value = projectName;
+	if (category) document.getElementById('ot-category').value = category;
 	document.getElementById('plannedStartTime').value = plannedStartTime || '';
 	document.getElementById('plannedEndTime').value = plannedEndTime || '';
 	document.getElementById('targetDate').scrollIntoView({ behavior: 'smooth', block: 'center' });

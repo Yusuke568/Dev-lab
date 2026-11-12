@@ -458,7 +458,8 @@ public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, S
             List<String> staffIds, LocalDate from, LocalDate to) {
         java.util.Map<String, List<com.example.kintai.domain.service.StaffWorkSummaryCalculator.RequestRow>> result = new java.util.HashMap<>();
         if (staffIds.isEmpty()) return result;
-        String sql = "SELECT staff_id, target_date, status FROM overtime_request WHERE staff_id = ANY(?) AND target_date BETWEEN ? AND ?";
+        String sql = "SELECT staff_id, target_date, status, planned_overtime_minutes FROM overtime_request "
+                + "WHERE staff_id = ANY(?) AND target_date BETWEEN ? AND ?";
         try (Connection con = ConnectionBase.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setArray(1, con.createArrayOf("integer", staffIds.stream().map(Integer::valueOf).toArray()));
@@ -468,7 +469,8 @@ public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, S
                 while (rs.next()) {
                     result.computeIfAbsent(String.valueOf(rs.getInt("staff_id")), k -> new java.util.ArrayList<>())
                             .add(new com.example.kintai.domain.service.StaffWorkSummaryCalculator.RequestRow(
-                                    rs.getDate("target_date").toLocalDate(), rs.getString("status")));
+                                    rs.getDate("target_date").toLocalDate(), rs.getString("status"),
+                                    rs.getInt("planned_overtime_minutes")));
                 }
             }
         } catch (Exception e) {

@@ -88,6 +88,16 @@
 }
 .meter.warn span { background: #e8a33d; }
 .meter.over span { background: #d64545; }
+/* 当月：実績・承認済みの予定・申請中の予定を積み上げる */
+.meter.stack { display: flex; }
+.meter.stack span { border-radius: 0; }
+.meter.stack span:first-child { border-radius: 4px 0 0 4px; }
+.meter.stack .plan-approved { background: #8fb8ea !important; }
+.meter.stack .plan-pending {
+	background: repeating-linear-gradient(135deg, #8fb8ea 0 3px, #ffffff 3px 6px) !important;
+}
+.sum-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 0.8rem; color: #4a5568; margin: 0 0 0.75rem; }
+.sum-legend i { display: inline-block; width: 14px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
 .badge-lv {
 	display: inline-block;
 	font-size: 0.72rem;
@@ -210,12 +220,18 @@
 					当月は ${targetYear}年${targetMonth}月、年間は ${targetYear}年1月〜${targetMonth}月の累計です。
 					時間外は、月 ${monthLimitHours}時間・年 ${yearLimitHours}時間（36協定の上限）と比べ、80%以上で「注意」、上限以上で「超過」と出します。
 				</p>
+				<div class="sum-legend" aria-hidden="true">
+					<span><i style="background: #2a78d6;"></i>時間外の実績</span>
+					<span><i style="background: #8fb8ea;"></i>承認済みの予定</span>
+					<span><i style="background: repeating-linear-gradient(135deg, #8fb8ea 0 3px, #ffffff 3px 6px); border: 1px solid #8fb8ea;"></i>申請中の予定</span>
+					<span>（予定は、まだ時間外の実績がない日の残業事前申請の時間）</span>
+				</div>
 				<div class="sum-wrap">
 				<table class="sum-table">
 					<thead>
 						<tr>
 							<th>社員</th>
-							<th>当月の時間外</th>
+							<th>当月の時間外<br>実績＋予定</th>
 							<th>年間の時間外</th>
 							<th>月ごとの時間外</th>
 							<th>総勤務時間<br>当月 / 年間</th>
@@ -235,8 +251,11 @@
 								<td data-label="当月の時間外">
 									<div class="cell">
 										<div class="sum-num"><b>${v.monthOvertime}</b> / ${monthLimitHours}:00<c:if test="${v.monthLevel == 'warn'}"><span class="badge-lv warn">⚠ 注意</span></c:if><c:if test="${v.monthLevel == 'over'}"><span class="badge-lv over">⛔ 超過</span></c:if></div>
-										<div class="meter ${v.monthLevel}" role="img" aria-label="上限の${v.monthOvertimePercent}%"><span style="width: ${v.monthBarPercent}%"></span></div>
+										<div class="meter stack ${v.monthLevel}" role="img" aria-label="実績${v.monthActual}、承認済みの予定${v.monthPlannedApproved}、申請中の予定${v.monthPlannedPending}。上限の${v.monthOvertimePercent}%"><span style="width: ${v.monthActualBar}%"></span><span class="plan-approved" style="width: ${v.monthApprovedBar}%"></span><span class="plan-pending" style="width: ${v.monthPendingBar}%"></span></div>
 										<div class="sum-sub">上限の ${v.monthOvertimePercent}%</div>
+											<c:if test="${v.hasMonthPlan}">
+												<div class="sum-sub">実績 ${v.monthActual} ＋ 予定 ${v.monthPlannedApproved}<c:if test="${v.monthPlannedPending != '0:00'}">（申請中 ${v.monthPlannedPending}）</c:if></div>
+											</c:if>
 									</div>
 								</td>
 								<td data-label="年間の時間外">

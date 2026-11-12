@@ -26,8 +26,11 @@ public final class StaffWorkSummaryCalculator {
     public record DayRow(LocalDate date, boolean worked, int totalMinutes, int overtimeMinutes, Integer abstractId) {
     }
 
-    /** 残業事前申請1件（status は PENDING / APPROVED / REJECTED / WITHDRAWN） */
-    public record RequestRow(LocalDate date, String status) {
+    /** 残業事前申請1件（status は PENDING / APPROVED / REJECTED / WITHDRAWN、plannedMinutes は申請した時間外） */
+    public record RequestRow(LocalDate date, String status, int plannedMinutes) {
+        public RequestRow(LocalDate date, String status) {
+            this(date, status, 0);
+        }
     }
 
     /** 期間の集計 */
@@ -40,13 +43,21 @@ public final class StaffWorkSummaryCalculator {
      * @param pendingRequests 当月の申請中の残業事前申請の件数
      * @param approvedRequests 当月の承認済みの残業事前申請の件数
      * @param unappliedDays 当月の、時間外があるのに申請中・承認済みの事前申請がない日数
+     * @param plannedApprovedMinutes 当月の、承認済みの事前申請の予定の時間外（まだ時間外の実績がない日の分）
+     * @param plannedPendingMinutes  当月の、申請中の事前申請の予定の時間外（まだ時間外の実績がない日の分）
      */
     public record Summary(Totals month, Totals year, int[] overtimeByMonth, Double paidLeaveRemaining,
-                          int pendingRequests, int approvedRequests, int unappliedDays) {
+                          int pendingRequests, int approvedRequests, int unappliedDays,
+                          int plannedApprovedMinutes, int plannedPendingMinutes) {
 
-        /** 当月の時間外の、上限（45時間）に対する割合（%） */
+        /** 当月の時間外の見込み（実績＋承認済み・申請中の予定） */
+        public int monthOutlookMinutes() {
+            return month.overtimeMinutes() + plannedApprovedMinutes + plannedPendingMinutes;
+        }
+
+        /** 当月の時間外の見込み（実績＋予定）の、上限（45時間）に対する割合（%） */
         public int monthOvertimePercent() {
-            return percent(month.overtimeMinutes(), MONTHLY_LIMIT_MINUTES);
+            return percent(monthOutlookMinutes(), MONTHLY_LIMIT_MINUTES);
         }
 
         /** 年間の時間外の、上限（540時間）に対する割合（%） */
@@ -92,21 +103,28 @@ public final class StaffWorkSummaryCalculator {
         }
         int pending = 0;
         int approved = 0;
+        int plannedApproved = 0;
+        int plannedPending = 0;
         Set<LocalDate> covered = new HashSet<>();
         for (RequestRow r : requests) {
             if (!YearMonth.from(r.date()).equals(month)) {
                 continue;
             }
+            // 時間外の実績がある日は実績で数える（予定は足さない）
+            int plan = overtimeDays.contains(r.date()) ? 0 : Math.max(0, r.plannedMinutes());
             if ("PENDING".equals(r.status())) {
                 pending++;
+                plannedPending += plan;
                 covered.add(r.date());
             } else if ("APPROVED".equals(r.status())) {
                 approved++;
+                plannedApproved += plan;
                 covered.add(r.date());
             }
         }
         overtimeDays.removeAll(covered);
-        return new Summary(m.totals(), y.totals(), byMonth, paidLeaveRemaining, pending, approved, overtimeDays.size());
+        return new Summary(m.totals(), y.totals(), byMonth, paidLeaveRemaining, pending, approved, overtimeDays.size(),
+                plannedApproved, plannedPending);
     }
 
     /** 土日か（祝日・会社休日は呼び出し側で足す） */

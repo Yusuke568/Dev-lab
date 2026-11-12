@@ -48,7 +48,20 @@ public class SubordinateSummaryView {
     public String getDepartmentName() { return staff.getDepartmentName(); }
 
     // ---- 時間外 ----
-    public String getMonthOvertime() { return hm(s.month().overtimeMinutes()); }
+    /** 当月の時間外の見込み（実績＋予定） */
+    public String getMonthOvertime() { return hm(s.monthOutlookMinutes()); }
+    /** 当月の時間外の実績 */
+    public String getMonthActual() { return hm(s.month().overtimeMinutes()); }
+    /** 当月の予定（承認済み・申請中。まだ実績がない日の分） */
+    public String getMonthPlannedApproved() { return hm(s.plannedApprovedMinutes()); }
+    public String getMonthPlannedPending() { return hm(s.plannedPendingMinutes()); }
+    public boolean isHasMonthPlan() { return s.plannedApprovedMinutes() + s.plannedPendingMinutes() > 0; }
+    /** 積み上げの棒の長さ（実績・承認済みの予定・申請中の予定。合わせて100%まで） */
+    public int getMonthActualBar() { return bar(s.month().overtimeMinutes(), 0); }
+    public int getMonthApprovedBar() { return bar(s.plannedApprovedMinutes(), s.month().overtimeMinutes()); }
+    public int getMonthPendingBar() {
+        return bar(s.plannedPendingMinutes(), s.month().overtimeMinutes() + s.plannedApprovedMinutes());
+    }
     public String getYearOvertime() { return hm(s.year().overtimeMinutes()); }
     public int getMonthOvertimePercent() { return s.monthOvertimePercent(); }
     public int getYearOvertimePercent() { return s.yearOvertimePercent(); }
@@ -96,6 +109,14 @@ public class SubordinateSummaryView {
     public int getPendingRequests() { return s.pendingRequests(); }
     public int getApprovedRequests() { return s.approvedRequests(); }
     public int getUnappliedDays() { return s.unappliedDays(); }
+
+    /** 上限に対する棒の長さ（%）。前の分（before）と合わせて100%を超えない */
+    private static int bar(int minutes, int before) {
+        int limit = StaffWorkSummaryCalculator.MONTHLY_LIMIT_MINUTES;
+        int start = (int) Math.min(100, Math.round(before * 100.0 / limit));
+        int end = (int) Math.min(100, Math.round((before + minutes) * 100.0 / limit));
+        return Math.max(0, end - start);
+    }
 
     static String hm(int minutes) {
         int m = Math.max(0, minutes);

@@ -96,6 +96,22 @@ class StaffWorkSummaryCalculatorTest {
     }
 
     @Test
+    void 当月の時間外は実績に_まだ実績がない日の事前申請の予定を足して見込みにする() {
+        Summary s = summarize(List.of(work("2026-11-02", 10, 2)),
+                List.of(
+                        new RequestRow(LocalDate.parse("2026-11-02"), "APPROVED", 180), // 実績がある日は実績で数える
+                        new RequestRow(LocalDate.parse("2026-11-20"), "APPROVED", 120),
+                        new RequestRow(LocalDate.parse("2026-11-21"), "PENDING", 60),
+                        new RequestRow(LocalDate.parse("2026-11-24"), "WITHDRAWN", 300),
+                        new RequestRow(LocalDate.parse("2026-11-25"), "REJECTED", 300)));
+        assertEquals(120, s.month().overtimeMinutes());
+        assertEquals(120, s.plannedApprovedMinutes());
+        assertEquals(60, s.plannedPendingMinutes());
+        assertEquals(300, s.monthOutlookMinutes());
+        assertEquals(11, s.monthOvertimePercent()); // 5時間 ÷ 45時間
+    }
+
+    @Test
     void 上限との割合() {
         Summary s = summarize(List.of(work("2026-11-02", 44, 36)), List.of());
         assertEquals(80, s.monthOvertimePercent());

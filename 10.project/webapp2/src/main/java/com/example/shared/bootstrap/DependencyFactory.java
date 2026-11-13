@@ -91,6 +91,8 @@ public class DependencyFactory {
     private final ApprovalHistoryPersistenceAdapter approvalHistoryPersistenceAdapter;
     private final CorrectionMasterPersistenceAdapter correctionMasterPersistenceAdapter;
     private final OvertimeRequestPersistenceAdapter overtimeRequestPersistenceAdapter;
+    private com.example.kintai.domain.port.out.OvertimeActualCheckPort overtimeActualCheckPort;
+    private com.example.kintai.application.service.OvertimeActualCheckService overtimeActualCheckService;
     private final WorkReportExportPort workReportExportPort;
     private final com.example.kintai.domain.port.out.WorkReportImportPort workReportImportPort;
     private final WeeklyWorkReportPort weeklyWorkReportPort;
@@ -159,9 +161,12 @@ public class DependencyFactory {
                 new com.example.master.adapter.out.persistence.MasterPersistenceAdapter();
 
         // --- 権限・組織図・承認ルート ---
+        com.example.approval.adapter.out.persistence.ApprovalStepPersistenceAdapter approvalStepAdapter =
+                new com.example.approval.adapter.out.persistence.ApprovalStepPersistenceAdapter();
         this.approvalWorkflowService = new com.example.approval.application.service.ApprovalWorkflowService(
-                new com.example.approval.adapter.out.persistence.ApprovalStepPersistenceAdapter(),
-                masterPersistenceAdapter);
+                approvalStepAdapter, masterPersistenceAdapter);
+        // 残業の実績確認
+        this.overtimeActualCheckPort = new com.example.kintai.adapter.out.persistence.OvertimeActualCheckPersistenceAdapter();
         this.masterMaintenanceUseCase = new com.example.master.application.service.MasterMaintenanceService(masterPersistenceAdapter);
         this.getUserFeaturesUseCase = new com.example.permission.application.service.GetUserFeaturesService(
                 new com.example.permission.adapter.out.persistence.PermissionPersistenceAdapter());
@@ -213,6 +218,9 @@ public class DependencyFactory {
                 com.example.kintai.adapter.out.export.FileSystemWorkReportArchiveAdapter.fromSystemSettings()
         ).withAttendanceCheck(this.attendancePersistenceAdapter)
                 .withDepartmentName(this.attendancePersistenceAdapter);
+        this.overtimeActualCheckService = new com.example.kintai.application.service.OvertimeActualCheckService(
+                this.overtimeRequestPersistenceAdapter, approvalStepAdapter, this.overtimeActualCheckPort,
+                this.attendancePersistenceAdapter);
         this.updateAttendanceUseCase = new UpdateAttendanceService(
                 this.attendancePersistenceAdapter,
                 this.attendancePersistenceAdapter,
@@ -221,7 +229,7 @@ public class DependencyFactory {
                 this.workTypePort,
                 this.overtimeRequestPersistenceAdapter,
                 this.weeklyOvertimeService
-        );
+        ).withActualCheck(this.overtimeActualCheckService);
         this.importWorkReportUseCase = new com.example.kintai.application.service.ImportWorkReportService(
                 this.workReportImportPort,
                 this.updateAttendanceUseCase,
@@ -245,7 +253,8 @@ public class DependencyFactory {
         this.registerCorrectionMasterUseCase = correctionMasterService;
 
         OvertimeRequestService overtimeRequestService = new OvertimeRequestService(this.overtimeRequestPersistenceAdapter, this.approvalWorkflowService,
-                this.attendancePersistenceAdapter).withCompanyHolidays(this.attendancePersistenceAdapter);
+                this.attendancePersistenceAdapter).withCompanyHolidays(this.attendancePersistenceAdapter)
+                .withActualCheck(this.overtimeActualCheckService);
         this.submitOvertimeRequestUseCase = overtimeRequestService;
         this.getMyOvertimeRequestsUseCase = overtimeRequestService;
         this.getPendingOvertimeRequestsUseCase = overtimeRequestService;
@@ -298,7 +307,10 @@ public class DependencyFactory {
         actionMap.put("ApprovalList", new ApprovalListAction(this.getPendingApprovalsUseCase, this.getPendingOvertimeRequestsUseCase,
                 this.leaveRequestUseCase, this.approvalWorkflowService).withOvertimeStatus(
                 new com.example.kintai.application.service.OvertimeStatusService(
-                        this.attendancePersistenceAdapter, this.overtimeRequestPersistenceAdapter, this.approvalWorkflowService)));
+                        this.attendancePersistenceAdapter, this.overtimeRequestPersistenceAdapter, this.approvalWorkflowService))
+                .withActualCheck(this.overtimeActualCheckService));
+        actionMap.put("OvertimeActualConfirm", new com.example.kintai.adapter.in.web.OvertimeActualConfirmAction(
+                this.overtimeActualCheckService));
         actionMap.put("ApprovalExecute", new ApprovalExecuteAction(this.approveAttendanceUseCase));
         actionMap.put("ApprovalHistory", new ApprovalHistoryAction(this.getApprovalHistoryUseCase));
         actionMap.put("SubordinateAttendance", new com.example.kintai.adapter.in.web.SubordinateAttendanceAction(this.attendanceAccessUseCase)
@@ -307,7 +319,8 @@ public class DependencyFactory {
         actionMap.put("SubordinateOvertimeForm", new com.example.kintai.adapter.in.web.SubordinateOvertimeFormAction(
                 this.attendanceAccessUseCase, new com.example.kintai.application.service.OvertimeFormExportService(
                         this.overtimeRequestPersistenceAdapter, this.attendancePersistenceAdapter, this.attendancePersistenceAdapter,
-                        new com.example.kintai.adapter.out.export.OvertimeFormXlsxExportAdapter())));
+                        new com.example.kintai.adapter.out.export.OvertimeFormXlsxExportAdapter())
+                        .withActualCheck(this.overtimeActualCheckPort)));
         actionMap.put("NoticeManage", new com.example.notice.adapter.in.web.NoticeManageAction(this.noticeUseCase));
 
         // Correction Master Actions
@@ -365,7 +378,7 @@ public class DependencyFactory {
                 "WeeklyWorkReportSave");
         requireFeature(Feature.OVERTIME_REQUEST, "OvertimeRequestMenu", "OvertimeRequestSubmit", "OvertimeRequestWithdraw");
         requireFeature(Feature.LEAVE_REQUEST, "LeaveRequestMenu", "LeaveRequestSubmit");
-        requireFeature(Feature.APPROVAL, "ApprovalList", "ApprovalExecute", "ApprovalHistory", "OvertimeRequestExecute", "SubordinateAttendance", "SubordinateOvertimeForm", "NoticeManage",
+        requireFeature(Feature.APPROVAL, "ApprovalList", "ApprovalExecute", "ApprovalHistory", "OvertimeRequestExecute", "OvertimeActualConfirm", "SubordinateAttendance", "SubordinateOvertimeForm", "NoticeManage",
                 "LeaveRequestExecute");
         requireFeature(Feature.SHAIN_ADMIN, "ShainList", "ShainUpdateForm", "ShainUpdateExecute", "ShainInsertForm",
                 "ShainInsertExecute", "ShainDeleteForm", "ShainDeleteExecute", "SearchShainApi", "ShainIdCheckApi",

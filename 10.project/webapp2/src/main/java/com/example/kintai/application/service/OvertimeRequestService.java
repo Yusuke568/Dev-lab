@@ -36,6 +36,14 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
     /** 会社休日（休日出勤の申請かを決める）。null なら土日・祝日だけで決める */
     private com.example.kintai.domain.port.out.CompanyHolidayPort companyHolidayPort;
 
+    /** 残業の実績確認。null なら扱わない */
+    private OvertimeActualCheckService actualCheck;
+
+    public OvertimeRequestService withActualCheck(OvertimeActualCheckService service) {
+        this.actualCheck = service;
+        return this;
+    }
+
     public OvertimeRequestService withCompanyHolidays(com.example.kintai.domain.port.out.CompanyHolidayPort port) {
         this.companyHolidayPort = port;
         return this;
@@ -133,6 +141,8 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
         if (autoApproved) {
             overtimeRequestPort.decide(requestId, true, employeeId);
         }
+        // 申請し直したら実績確認をやり直す（自動承認で実績も合っていれば、確認を始める）
+        if (actualCheck != null) actualCheck.sync(requestId);
         return autoApproved;
     }
 
@@ -211,6 +221,8 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
                 break;
             case APPROVED:
                 overtimeRequestPort.decide(requestId, true, decidedBy);
+                // 実績がもう申請と合っていれば、実績確認を始める
+                if (actualCheck != null) actualCheck.sync(requestId);
                 break;
             case REJECTED:
                 overtimeRequestPort.decide(requestId, false, decidedBy);

@@ -393,4 +393,18 @@ ALTER TABLE overtime_request ADD COLUMN IF NOT EXISTS actual_confirmed_on date;
 ALTER TABLE overtime_request ADD COLUMN IF NOT EXISTS base_levels integer;
 COMMENT ON COLUMN overtime_request.actual_confirmed_on IS '実績の確認日（勤怠の時間外が申請と合った・時間外がなかった日）';
 COMMENT ON COLUMN overtime_request.base_levels IS '承認ルートのうち条件つきの段を除いた段数';
+-- 残業の実績確認（migrations/20261121_overtime_actual_check.sql と同じ）
+CREATE TABLE IF NOT EXISTS overtime_actual_step (
+    id                 integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    request_id         integer NOT NULL,
+    level              integer NOT NULL,
+    approver_staff_id  integer NOT NULL,
+    checked_at         timestamp,
+    CONSTRAINT uq_overtime_actual_step UNIQUE (request_id, level, approver_staff_id)
+);
+CREATE INDEX IF NOT EXISTS idx_overtime_actual_step_approver ON overtime_actual_step (approver_staff_id, checked_at);
+ALTER TABLE overtime_request ADD COLUMN IF NOT EXISTS actual_status varchar(10);
+ALTER TABLE overtime_request ADD COLUMN IF NOT EXISTS actual_level integer;
+COMMENT ON COLUMN overtime_request.actual_status IS '実績確認の状態（NULL / PENDING / CONFIRMED）';
+COMMENT ON COLUMN overtime_request.actual_level IS '実績確認の確認待ちの段';
 ALTER TABLE leave_request ADD COLUMN IF NOT EXISTS department_id integer;

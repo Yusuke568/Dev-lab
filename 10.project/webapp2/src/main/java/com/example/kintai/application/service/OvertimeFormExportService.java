@@ -37,6 +37,14 @@ public class OvertimeFormExportService {
     private final CompanyHolidayPort companyHolidayPort;
     private final OvertimeFormExportPort exportPort;
 
+    /** 残業の実績確認（実績報告の承認欄の日付）。null なら勤怠の確認日などから決める */
+    private com.example.kintai.domain.port.out.OvertimeActualCheckPort actualCheckPort;
+
+    public OvertimeFormExportService withActualCheck(com.example.kintai.domain.port.out.OvertimeActualCheckPort port) {
+        this.actualCheckPort = port;
+        return this;
+    }
+
     public OvertimeFormExportService(OvertimeRequestPort overtimeRequestPort, LoadAttendanceRecordPort loadAttendanceRecordPort,
                                      CompanyHolidayPort companyHolidayPort, OvertimeFormExportPort exportPort) {
         this.overtimeRequestPort = overtimeRequestPort;
@@ -72,6 +80,8 @@ public class OvertimeFormExportService {
         Map<LocalDate, String> companyHolidays = companyHolidayPort == null ? Map.of()
                 : companyHolidayPort.findCompanyHolidays(from, to);
 
+        java.util.Map<Integer, List<Step>> actualSteps = actualCheckPort == null ? java.util.Map.of()
+                : actualCheckPort.findSteps(requests.stream().map(r -> r.request().getId()).toList());
         List<FormRow> rows = new ArrayList<>();
         String chief = null;
         String head = null;
@@ -91,7 +101,13 @@ public class OvertimeFormExportService {
                     ? LocalDate.parse(req.getDecidedAt().substring(0, 10)) : null;
             // 実績報告の承認欄：勤怠がまだなければ空欄。実績が申請と合っていて承認済みなら、段ごとの承認日も使える
             List<com.example.kintai.domain.service.OvertimeFormCalculator.ApprovalMark> actualApprovals;
-            if (record == null || record.getWorkTime() == null) {
+            if (actualCheckPort != null) {
+                // 実績確認：段ごとの確認日（まだ確認していない段は空欄、ルートにない段は「－」）
+                List<Step> checks = actualSteps.getOrDefault(req.getId(), List.of());
+                actualApprovals = checks.isEmpty()
+                        ? OvertimeFormCalculator.actualApprovals(steps, req.getBaseLevels(), null, false, autoApproved)
+                        : OvertimeFormCalculator.approvals(checks, null);
+            } else if (record == null || record.getWorkTime() == null) {
                 actualApprovals = OvertimeFormCalculator.actualApprovals(steps, req.getBaseLevels(), null, false, autoApproved);
             } else {
                 boolean matches = req.isApproved() && OvertimeFormCalculator.actualConfirmedOn(req.getPlannedOvertimeMinutes(),

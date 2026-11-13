@@ -66,6 +66,9 @@
 	<c:if test="${not empty errorMessage}">
 		<div class="error-message" style="margin: 1rem 0;"><c:out value="${errorMessage}" /></div>
 	</c:if>
+	<c:if test="${not empty successMessage}">
+		<div class="status-banner status-success" role="status" style="margin: 1rem 0; background-color: #e8f8e8; color: #1a7f1a;">✔️ <c:out value="${successMessage}" /></div>
+	</c:if>
 
 	<h2 class="table-title">残業事前申請（承認待ち）</h2>
 	<table class="table">
@@ -127,6 +130,83 @@
 			</c:if>
 		</tbody>
 	</table>
+
+	<%--
+		残業の実績確認：事前申請が承認済みで、勤怠の時間外の実績が申請と合った（残業しなかった）申請を、
+		事前申請と同じ承認ルートの順に確認する。確認した日が時間外申請書の実績報告の承認欄に入る。
+	--%>
+	<h2 class="table-title">残業の実績確認（確認待ち）</h2>
+	<form action="${pageContext.request.contextPath}/overtimeActualConfirm.do" method="post" id="actual-check-form">
+	<c:if test="${not empty pendingActualChecks}">
+		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
+			<label style="display: inline-flex; gap: 4px; align-items: center;"><input type="checkbox" id="actual-check-all"> すべて選ぶ</label>
+			<button type="submit" class="btn btn-primary" id="actual-check-submit">選んだ実績を確認</button>
+			<span style="font-size: 0.85rem; color: #4a5568;">実績が事前申請どおり（または残業なし）の日です。確認した日が時間外申請書の実績報告の承認欄に入ります。</span>
+		</div>
+	</c:if>
+	<table class="table">
+		<thead>
+			<tr>
+				<th style="width: 2.5rem;"></th>
+				<th>社員ID</th>
+				<th>氏名</th>
+				<th>対象日</th>
+				<th>申請（予定）</th>
+				<th>実績</th>
+				<th>PJ名・摘要</th>
+				<th>確認の進み</th>
+				<th class="text-center">操作</th>
+			</tr>
+		</thead>
+		<tbody>
+			<c:forEach var="ac" items="${pendingActualChecks}">
+				<c:set var="ar" value="${ac.request}" />
+				<tr>
+					<td><input type="checkbox" name="requestId" value="${ar.id}" class="actual-check-row" data-employee="${ar.employeeId}"
+						aria-label="<c:out value='${ac.employeeName}' /> ${ar.targetDate} の実績を選ぶ"></td>
+					<td><c:out value="${ar.employeeId}" /></td>
+					<td><c:out value="${ac.employeeName}" />
+						<button type="button" class="btn btn-secondary actual-check-person" data-employee="${ar.employeeId}"
+							style="padding: 0 6px; font-size: 0.75rem; margin-left: 4px;" title="この人の確認待ちをすべて選ぶ">この人を全部選ぶ</button></td>
+					<td><c:out value="${ar.targetDate}" /></td>
+					<td><c:out value="${not empty ar.plannedStartTime ? ar.plannedStartTime : '09:00'}" />〜<c:out value="${not empty ar.plannedEndTime ? ar.plannedEndTime : '18:00'}" /><br>
+						<span style="font-size: 0.85rem;"><c:out value="${ar.plannedOvertimeBreakdown}" /></span></td>
+					<td><c:out value="${ac.actualStart}" />〜<c:out value="${ac.actualEnd}" /><br>
+						<span style="font-size: 0.85rem;">時間外 <c:out value="${ac.actualOvertime}" /></span></td>
+					<td><c:out value="${ar.projectName}" /><c:if test="${not empty ar.category}"><br><span style="font-size: 0.85rem; color: #4a5568;"><c:out value="${ar.category}" /></span></c:if></td>
+					<td style="font-size: 0.85rem;"><c:out value="${ac.route}" /></td>
+					<td class="text-center">
+						<button type="submit" class="btn btn-primary" name="requestId" value="${ar.id}" formnovalidate
+							onclick="document.querySelectorAll('.actual-check-row').forEach(c => c.checked = false);">確認</button>
+					</td>
+				</tr>
+			</c:forEach>
+			<c:if test="${empty pendingActualChecks}">
+				<tr>
+					<td colspan="9" class="text-center">確認待ちの残業の実績はありません。</td>
+				</tr>
+			</c:if>
+		</tbody>
+	</table>
+	</form>
+	<script>
+	(function () {
+		const all = document.getElementById("actual-check-all");
+		const rows = () => Array.from(document.querySelectorAll(".actual-check-row"));
+		if (all) all.addEventListener("change", () => rows().forEach((c) => { c.checked = all.checked; }));
+		document.querySelectorAll(".actual-check-person").forEach((btn) => btn.addEventListener("click", () => {
+			rows().forEach((c) => { if (c.dataset.employee === btn.dataset.employee) c.checked = true; });
+		}));
+		const form = document.getElementById("actual-check-form");
+		const submit = document.getElementById("actual-check-submit");
+		if (form && submit) form.addEventListener("submit", (e) => {
+			if (e.submitter === submit && !rows().some((c) => c.checked)) {
+				e.preventDefault();
+				alert("確認する実績を選んでください。");
+			}
+		});
+	})();
+	</script>
 
 	<h2 class="table-title">休暇申請（承認待ち）</h2>
 	<table class="table">

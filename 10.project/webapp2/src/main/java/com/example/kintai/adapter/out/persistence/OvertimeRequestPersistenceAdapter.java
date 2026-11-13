@@ -69,7 +69,7 @@ public class OvertimeRequestPersistenceAdapter implements OvertimeRequestPort {
     @Override
     public Optional<OvertimeRequest> findById(int requestId) {
         String sql = "SELECT id, staff_id, target_date, planned_overtime_minutes, planned_start_time, planned_end_time, reason, " +
-                "status, decided_by, decided_at, created_at, current_level, project_name, category, correction_minutes, correction_mid_minutes FROM overtime_request WHERE id = ?";
+                "status, decided_by, decided_at, created_at, current_level, project_name, category, correction_minutes, correction_mid_minutes, actual_confirmed_on, base_levels FROM overtime_request WHERE id = ?";
         try (Connection con = ConnectionBase.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, requestId);

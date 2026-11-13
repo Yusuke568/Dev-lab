@@ -32,6 +32,13 @@ public class ApprovalListAction implements Action {
     private final ApprovalWorkflowService approvalWorkflowService;
     /** 残業事前申請ごとの、申請者のその月の時間外の状況（グラフ用）。null なら出さない */
     private com.example.kintai.application.service.OvertimeStatusService overtimeStatusService;
+    /** 残業の実績確認（確認待ちを出す）。null なら出さない */
+    private com.example.kintai.application.service.OvertimeActualCheckService actualCheckService;
+
+    public ApprovalListAction withActualCheck(com.example.kintai.application.service.OvertimeActualCheckService service) {
+        this.actualCheckService = service;
+        return this;
+    }
 
     public ApprovalListAction withOvertimeStatus(com.example.kintai.application.service.OvertimeStatusService service) {
         this.overtimeStatusService = service;
@@ -66,6 +73,13 @@ public class ApprovalListAction implements Action {
         request.setAttribute("pendingItems", pendingItems);
         request.setAttribute("pendingOvertimeRequests", pendingOvertimeRequests);
         request.setAttribute("pendingLeaveRequests", pendingLeaveRequests);
+        if (actualCheckService != null) {
+            try {
+                request.setAttribute("pendingActualChecks", actualCheckService.pendingFor(approverId));
+            } catch (RuntimeException e) {
+                e.printStackTrace(); // 実績確認が出せなくても承認はできるようにする
+            }
+        }
         request.setAttribute("overtimeRoutes", approvalWorkflowService.getRoutes(RequestType.OVERTIME,
                 pendingOvertimeRequests.stream().map(OvertimeRequest::getId).collect(Collectors.toList())));
         request.setAttribute("overtimeStatusJson", overtimeStatusJson(pendingOvertimeRequests));
@@ -75,6 +89,10 @@ public class ApprovalListAction implements Action {
         if (session.getAttribute("approvalErrorMessage") != null) {
             request.setAttribute("errorMessage", session.getAttribute("approvalErrorMessage"));
             session.removeAttribute("approvalErrorMessage");
+        }
+        if (session.getAttribute("approvalSuccessMessage") != null) {
+            request.setAttribute("successMessage", session.getAttribute("approvalSuccessMessage"));
+            session.removeAttribute("approvalSuccessMessage");
         }
 
         return new View("/WEB-INF/view/approval.jsp");

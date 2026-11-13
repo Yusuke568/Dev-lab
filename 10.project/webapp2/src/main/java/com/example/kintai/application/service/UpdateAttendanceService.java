@@ -38,6 +38,14 @@ public class UpdateAttendanceService implements UpdateAttendanceUseCase {
     private final TransactionManager transactionManager;
     private final WorkTypePort workTypePort;
     private final OvertimeRequestPort overtimeRequestPort;
+    /** 残業の実績確認。null なら扱わない */
+    private OvertimeActualCheckService actualCheck;
+
+    public UpdateAttendanceService withActualCheck(OvertimeActualCheckService service) {
+        this.actualCheck = service;
+        return this;
+    }
+
     /** 週40時間の時間外（休日出勤の日の分）を計算し直す。null なら日ごとの計算だけ */
     private final WeeklyOvertimeService weeklyOvertimeService;
 
@@ -228,6 +236,8 @@ public class UpdateAttendanceService implements UpdateAttendanceUseCase {
         if (!java.util.Objects.equals(confirmed, req.getActualConfirmedOn())) {
             overtimeRequestPort.updateActualConfirmedOn(req.getId(), confirmed);
         }
+        // 実績が合えば実績確認を始め、合わなくなればやめる
+        if (actualCheck != null) actualCheck.sync(req.getId());
     }
 
     /**

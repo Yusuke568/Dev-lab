@@ -121,6 +121,16 @@ class OvertimeRequestSubmitTest {
     }
 
     @Test
+    void 予定出勤が18時より遅いときは予定出勤から数える() {
+        // 20:00〜22:00 は 2:00（18:00 から数えて 4:00 にしない）
+        assertEquals(120, OvertimeRequest.calculatePlannedOvertimeMinutes("20:00", "22:00"));
+        // 19:00〜翌1:00 は 6:00
+        assertEquals(360, OvertimeRequest.calculatePlannedOvertimeMinutes("19:00", "01:00"));
+        // 予定出勤が空なら 18:00 から
+        assertEquals(240, OvertimeRequest.calculatePlannedOvertimeMinutes("", "22:00"));
+    }
+
+    @Test
     void 補正や間接だけで時間外になった日は勤怠の時間外で申請できる() {
         // 9:00〜17:45、補正0:15、間接2:00 → 総勤務10:00、時間外2:00（予定時刻だけでは時間外0）
         recorded = new AttendanceRecord(new EmployeeId("126"), DAY, new WorkTime(LocalTime.of(9, 0), LocalTime.of(17, 45)));

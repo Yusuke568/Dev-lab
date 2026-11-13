@@ -200,15 +200,21 @@ public class OvertimeRequest {
         return t.isBefore(STANDARD_START) ? (int) Duration.between(t, STANDARD_START).toMinutes() : 0;
     }
 
+    /**
+     * 残業：18:00（予定出勤が18:00より遅ければ予定出勤）から予定退勤まで。
+     * 例：9:00〜22:00 → 4:00、20:00〜22:00 → 2:00、13:00〜翌1:30 → 7:30
+     */
     private static int calculateLateMinutes(String startTime, String endTime) {
         if (endTime == null || endTime.isBlank()) return 0;
-        LocalTime t = LocalTime.parse(endTime);
+        int end = LocalTime.parse(endTime).toSecondOfDay() / 60;
         if (isPlannedEndNextDay(startTime, endTime)) {
-            // 18:00〜24:00 の6時間 ＋ 翌日0:00から退勤までの時間
-            int untilMidnight = 24 * 60 - STANDARD_END.toSecondOfDay() / 60;
-            return untilMidnight + t.toSecondOfDay() / 60;
+            end += 24 * 60; // 翌日の退勤
         }
-        return t.isAfter(STANDARD_END) ? (int) Duration.between(STANDARD_END, t).toMinutes() : 0;
+        int from = STANDARD_END.toSecondOfDay() / 60;
+        if (startTime != null && !startTime.isBlank()) {
+            from = Math.max(from, LocalTime.parse(startTime).toSecondOfDay() / 60);
+        }
+        return Math.max(0, end - from);
     }
 
     private static String formatMinutes(int totalMinutes) {

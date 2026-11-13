@@ -78,6 +78,7 @@ public class OvertimeRequestMenuAction implements Action {
         }
 
         request.setAttribute("myRequests", myRequests);
+        setPreviousDetails(request, myRequests);
         request.setAttribute("myDepartments", approvalWorkflowService.getDepartmentsOfStaff(Integer.parseInt(employeeId)));
         request.setAttribute("attendanceByDate", attendanceByDate);
 
@@ -132,5 +133,46 @@ public class OvertimeRequestMenuAction implements Action {
             return "";
         }
         return String.format("%02d:%02d", minutes / 60, minutes % 60);
+    }
+
+    /**
+     * 前回の申請の内容を引き継ぐ（PJ名・摘要・理由を最初から入れておく）。
+     * あわせて、過去に使った PJ名・理由の候補と、申請中・承認済みの日（まとめて申請のカレンダーで選べなくする）を渡す。
+     */
+    private static void setPreviousDetails(HttpServletRequest request, List<OvertimeRequest> myRequests) {
+        OvertimeRequest last = null;
+        for (OvertimeRequest r : myRequests) {
+            if (r.getCreatedAt() != null && (last == null || r.getCreatedAt().compareTo(last.getCreatedAt()) > 0)) {
+                last = r;
+            }
+        }
+        if (last != null) {
+            request.setAttribute("lastProjectName", last.getProjectName());
+            request.setAttribute("lastCategory", last.getCategory());
+            request.setAttribute("lastReason", last.getReason());
+        }
+        java.util.List<OvertimeRequest> recent = new java.util.ArrayList<>(myRequests);
+        recent.sort((a, b) -> String.valueOf(b.getCreatedAt()).compareTo(String.valueOf(a.getCreatedAt())));
+        java.util.Set<String> projects = new java.util.LinkedHashSet<>();
+        java.util.Set<String> reasons = new java.util.LinkedHashSet<>();
+        for (OvertimeRequest r : recent) {
+            if (r.getProjectName() != null && !r.getProjectName().isBlank() && projects.size() < 15) projects.add(r.getProjectName());
+            if (r.getReason() != null && !r.getReason().isBlank() && reasons.size() < 15) reasons.add(r.getReason());
+        }
+        request.setAttribute("recentProjectNames", projects);
+        request.setAttribute("recentReasons", reasons);
+
+        java.util.Map<String, String> applied = new java.util.TreeMap<>();
+        for (OvertimeRequest r : myRequests) {
+            if (r.isPending() || r.isApproved()) {
+                applied.put(r.getTargetDate().toString(), r.getStatusLabel());
+            }
+        }
+        try {
+            request.setAttribute("appliedDatesJson", new com.fasterxml.jackson.databind.ObjectMapper()
+                    .writeValueAsString(applied).replace("</", "<\\/"));
+        } catch (Exception e) {
+            request.setAttribute("appliedDatesJson", "{}");
+        }
     }
 }

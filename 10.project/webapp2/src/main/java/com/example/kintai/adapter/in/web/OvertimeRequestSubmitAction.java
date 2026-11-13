@@ -12,7 +12,9 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -45,33 +47,63 @@ public class OvertimeRequestSubmitAction implements Action {
         String correctionTime = request.getParameter("correctionTime");
         String correctionMidTime = request.getParameter("correctionMidTime");
 
+        // 複数日をまとめて申請するときは targetDates（"2026-11-20,2026-11-21"）。なければ targetDate の1日
+        String targetDates = request.getParameter("targetDates");
+        List<String> failedDates = new ArrayList<>();
         try {
             if (employeeId == null) {
                 throw new IllegalStateException("ログインしてください。");
             }
-            LocalDate date;
-            try {
-                date = LocalDate.parse(targetDate, DateTimeFormatter.ISO_LOCAL_DATE);
-            } catch (DateTimeParseException | NullPointerException e) {
-                throw new IllegalArgumentException("対象日を入力してください。");
-            }
+            List<LocalDate> dates = parseDates(targetDates, targetDate);
             String departmentParam = request.getParameter("departmentId");
             Integer departmentId = departmentParam == null || departmentParam.isBlank() ? null : Integer.valueOf(departmentParam);
-            boolean autoApproved = submitOvertimeRequestUseCase.submit(employeeId, date, plannedStartTime, plannedEndTime,
-                    reason, departmentId, projectName == null ? "" : projectName,
-                    category == null || category.isBlank() ? null : category,
-                    minutesOf(correctionTime, "補正（通常）"), minutesOf(correctionMidTime, "補正（深夜）"));
-            if (session != null) {
-                session.setAttribute("overtimeRequestSuccessMessage", autoApproved
-                        ? date + " の残業事前申請を出しました。組織図で上位の承認者がいないため、自動で承認しました。"
-                        : date + " の残業事前申請を出しました。承認されるまでお待ちください。");
+            Integer correction = minutesOf(correctionTime, "補正（通常）");
+            Integer correctionMid = minutesOf(correctionMidTime, "補正（深夜）");
+
+            // 日ごとに申請する。申請できなかった日は理由を集め、ほかの日は続ける
+            List<LocalDate> submitted = new ArrayList<>();
+            int autoApproved = 0;
+            List<String> failures = new ArrayList<>();
+            for (LocalDate date : dates) {
+                try {
+                    if (submitOvertimeRequestUseCase.submit(employeeId, date, plannedStartTime, plannedEndTime,
+                            reason, departmentId, projectName == null ? "" : projectName,
+                            category == null || category.isBlank() ? null : category, correction, correctionMid)) {
+                        autoApproved++;
+                    }
+                    submitted.add(date);
+                } catch (RuntimeException e) {
+                    if (dates.size() == 1) {
+                        throw e;
+                    }
+                    LOG.log(Level.INFO, "残業事前申請を受け付けられませんでした（社員ID " + employeeId + "、対象日 " + date + "）: " + e.getMessage());
+                    failures.add(date.format(SHORT_DATE) + "：" + messageOf(e));
+                    failedDates.add(date.toString());
+                }
+            }
+            if (session != null && !submitted.isEmpty()) {
+                String days = submitted.size() == 1 ? submitted.get(0) + " の"
+                        : submitted.stream().map(d -> d.format(SHORT_DATE)).collect(java.util.stream.Collectors.joining("・"))
+                          + " の" + submitted.size() + "件の";
+                session.setAttribute("overtimeRequestSuccessMessage", days + "残業事前申請を出しました。"
+                        + (autoApproved == submitted.size() ? "組織図で上位の承認者がいないため、自動で承認しました。"
+                           : "承認されるまでお待ちください。"));
+            }
+            if (!failures.isEmpty()) {
+                throw new IllegalArgumentException(failures.size() + "日分は申請できませんでした。" + String.join(" ／ ", failures));
             }
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "残業事前申請を受け付けられませんでした（社員ID " + employeeId + "、対象日 " + targetDate + "）", e);
+            if (failedDates.isEmpty()) {
+                LOG.log(Level.WARNING, "残業事前申請を受け付けられませんでした（社員ID " + employeeId + "、対象日 "
+                        + (targetDates != null && !targetDates.isBlank() ? targetDates : targetDate) + "）", e);
+            }
             if (session != null) {
-                session.setAttribute("overtimeRequestErrorMessage", messageOf(e));
+                session.setAttribute("overtimeRequestErrorMessage", e.getMessage() != null && !failedDates.isEmpty()
+                        ? e.getMessage() : messageOf(e));
                 Map<String, String> form = new LinkedHashMap<>();
                 form.put("targetDate", targetDate);
+                // まとめて申請で申請できなかった日だけを、選んだままにして戻す
+                form.put("targetDates", !failedDates.isEmpty() ? String.join(",", failedDates) : targetDates);
                 form.put("plannedStartTime", plannedStartTime);
                 form.put("plannedEndTime", plannedEndTime);
                 form.put("reason", reason);
@@ -85,6 +117,33 @@ public class OvertimeRequestSubmitAction implements Action {
         }
 
         return new View("/overtimeRequestMenu.do", true);
+    }
+
+    private static final DateTimeFormatter SHORT_DATE = DateTimeFormatter.ofPattern("M/d");
+    /** まとめて申請できる日数 */
+    static final int MAX_DATES = 31;
+
+    /** 申請する日（targetDates があればそれ、なければ targetDate の1日）。日付の順・重なりなし */
+    static List<LocalDate> parseDates(String targetDates, String targetDate) {
+        java.util.TreeSet<LocalDate> dates = new java.util.TreeSet<>();
+        String source = targetDates != null && !targetDates.isBlank() ? targetDates : targetDate;
+        if (source != null) {
+            for (String part : source.split(",")) {
+                if (part.isBlank()) continue;
+                try {
+                    dates.add(LocalDate.parse(part.strip(), DateTimeFormatter.ISO_LOCAL_DATE));
+                } catch (DateTimeParseException e) {
+                    throw new IllegalArgumentException("対象日が正しくありません: " + part.strip());
+                }
+            }
+        }
+        if (dates.isEmpty()) {
+            throw new IllegalArgumentException("対象日を入力してください。");
+        }
+        if (dates.size() > MAX_DATES) {
+            throw new IllegalArgumentException("まとめて申請できるのは " + MAX_DATES + " 日までです。");
+        }
+        return new ArrayList<>(dates);
     }
 
     /** 「H:mm」「HH:mm」を分に。空なら null（その日の勤怠の補正を使う） */

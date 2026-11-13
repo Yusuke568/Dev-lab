@@ -8,7 +8,7 @@
  * 「決定」で行の入力欄に書き戻して input / change イベントを送る。これで未保存の印・時間の再計算・
  * 有給残日数・保存（kintai.js）は表で入力したときと同じように動く。
  */
-import { calculateTotalWorkMinutes, calculateOvertime, isNextDayEnd, getMinutes, localDateString, holidayOvertimeByDate, overtimeRequestOf, shortHm } from "./utils.js?v=20261113d";
+import { calculateTotalWorkMinutes, calculateOvertime, isNextDayEnd, getMinutes, localDateString, holidayOvertimeByDate, overtimeRequestOf, shortHm } from "./utils.js?v=20261113e";
 
 const VIEW_KEY = "kintaiView";
 const WEEK_LABELS = ["日", "月", "火", "水", "木", "金", "土"];

@@ -232,7 +232,7 @@ const OT_REQUEST_KIND = {
  * その日の残業事前申請（行の data-ot-status / data-ot-planned / data-ot-title）。申請がなければ null。
  * 承認済み・申請中の申請で、時間外の実績が予定と違う日は申請し直す（訂正する）運用なので、その差を返す。
  *   over  … 実績が予定より多い分（分）
- *   under … 実績が予定より少ない分（分）。出勤・退勤を入力済みの日だけ。休日（土日・祝日）は数えない
+ *   under … 実績が予定より少ない分（分）。出勤・退勤を入力済みで、時間外の実績が0より多い日だけ。休日（土日・祝日）は数えない
  *           （休日の申請は勤務時間を全部見込みにしていて、週40時間の決まりで実績が少なくなるのは正常なため）
  * @param {HTMLTableRowElement} row 勤怠表の行
  * @param {number} actualMinutes その日の時間外（今の入力から計算した値）
@@ -245,7 +245,8 @@ export function overtimeRequestOf(row, actualMinutes, hasActual) {
   const active = row.dataset.otStatus !== "REJECTED";
   const holiday = row.classList.contains("saturday") || row.classList.contains("sunday") || row.classList.contains("holiday");
   const over = active && actualMinutes > planned ? actualMinutes - planned : 0;
-  const under = active && hasActual && !holiday && actualMinutes < planned ? planned - actualMinutes : 0;
+  // 時間外の実績が0の日（申請したが残業しなかった日）は出さない
+  const under = active && hasActual && !holiday && actualMinutes > 0 && actualMinutes < planned ? planned - actualMinutes : 0;
   return Object.assign({ planned, over, under, title: row.dataset.otTitle || "" }, kind);
 }
 

@@ -48,7 +48,7 @@ class OvertimeRequestSubmitTest {
     private List<List<Integer>> savedLevels;
 
     private final OvertimeRequestPort requestPort = new OvertimeRequestPort() {
-        @Override public Optional<OvertimeRequest> findByEmployeeAndDate(EmployeeId employeeId, LocalDate date) { return Optional.empty(); }
+        @Override public Optional<OvertimeRequest> findByEmployeeAndDate(EmployeeId employeeId, LocalDate date) { return Optional.ofNullable(existing); }
         @Override public List<OvertimeRequest> findByEmployee(EmployeeId employeeId) { return List.of(); }
         @Override public Optional<OvertimeRequest> findById(int requestId) { return Optional.empty(); }
         @Override public List<OvertimeRequest> findPendingForApprover(String approverId) { return List.of(); }
@@ -56,7 +56,9 @@ class OvertimeRequestSubmitTest {
             inserted.add(plannedOvertimeMinutes);
             return inserted.size();
         }
-        @Override public void resubmit(int requestId, int plannedOvertimeMinutes, String start, String end, String reason) { }
+        @Override public void resubmit(int requestId, int plannedOvertimeMinutes, String start, String end, String reason) {
+            resubmitted.add(requestId + ":" + plannedOvertimeMinutes);
+        }
         @Override public void decide(int requestId, boolean approve, String decidedBy) { decided.add(requestId + ":" + approve + ":" + decidedBy); }
         @Override public void advanceLevel(int requestId) { }
         @Override public void updateCorrection(int requestId, int correctionMinutes, int correctionMidMinutes) {
@@ -66,6 +68,10 @@ class OvertimeRequestSubmitTest {
             details.add(projectName + "/" + category);
         }
     };
+    /** 同じ日のすでにある申請（null ならなし） */
+    private OvertimeRequest existing;
+    /** resubmit された申請（"ID:予定時間外"） */
+    private final List<String> resubmitted = new ArrayList<>();
     /** updateCorrection で入れた「補正（通常）/補正（深夜）」 */
     private final List<String> corrections = new ArrayList<>();
     /** updateDetails で入れた「PJ名/摘要」 */
@@ -137,6 +143,30 @@ class OvertimeRequestSubmitTest {
     void 承認者がいる人の申請は承認待ちのまま() {
         assertFalse(service.submit("126", DAY, "09:00", "20:00", "障害対応"));
         assertTrue(decided.isEmpty());
+    }
+
+    // ---- 申請し直し ----
+
+    @Test
+    void 承認済みの申請も申請し直せて_承認待ちに戻る() {
+        existing = new OvertimeRequest(77, "126", null, DAY, 60, null, "19:00", "間違えた時間",
+                OvertimeRequest.STATUS_APPROVED, "300", "2026-11-04 10:00", "2026-11-04 09:00");
+
+        assertFalse(service.submit("126", DAY, "09:00", "21:00", "訂正", null, "税保守", "⑤その他", null, null));
+
+        assertEquals(List.of("77:180"), resubmitted);
+        assertTrue(inserted.isEmpty());
+        assertEquals(List.of(List.of(300)), savedLevels); // 承認ルートを最初からやり直す
+    }
+
+    @Test
+    void 申請中の申請も取り下げずに申請し直せる() {
+        existing = new OvertimeRequest(78, "126", null, DAY, 60, null, "19:00", "間違えた時間",
+                OvertimeRequest.STATUS_PENDING, null, null, "2026-11-04 09:00");
+
+        service.submit("126", DAY, "09:00", "20:00", "訂正", null, "税保守", "⑤その他", null, null);
+
+        assertEquals(List.of("78:120"), resubmitted);
     }
 
     // ---- 休日出勤 ----

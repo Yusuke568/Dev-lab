@@ -110,7 +110,7 @@ public class OvertimeRequest {
     public boolean isApproved() { return STATUS_APPROVED.equals(status); }
     public boolean isRejected() { return STATUS_REJECTED.equals(status); }
     public boolean isWithdrawn() { return STATUS_WITHDRAWN.equals(status); }
-    /** 同じ日にもう一度申請できる（却下・取り下げ） */
+    /** 却下・取り下げで終わった申請か（申請中・承認済みの申請も、申請し直すと承認待ちに戻る） */
     public boolean canReapply() { return isRejected() || isWithdrawn(); }
 
     /** 画面表示用の日本語ステータス。 */

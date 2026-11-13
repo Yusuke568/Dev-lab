@@ -110,11 +110,10 @@ class OvertimeRequestWithdrawTest {
     }
 
     @Test
-    void 申請中のままでは同じ日に重ねて申請できない() {
+    void 申請中のまま同じ日に申請すると_同じ申請を申請し直す() {
         store.put(1, request(1, "126", OvertimeRequest.STATUS_PENDING));
-        IllegalStateException e = assertThrows(IllegalStateException.class,
-                () -> service.submit("126", DAY, "09:00", "19:00", "重ねて"));
-        assertTrue(e.getMessage().contains("取り下げてから"));
-        assertFalse(store.get(1).isWithdrawn());
+        service.submit("126", DAY, "09:00", "19:00", "訂正");
+        assertEquals(List.of(1), resubmitted, "新しい申請は作らず、同じ申請を書き換える");
+        assertTrue(store.get(1).isPending());
     }
 }

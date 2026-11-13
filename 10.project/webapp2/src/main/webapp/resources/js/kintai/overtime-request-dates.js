@@ -2,7 +2,7 @@
  * 残業事前申請：複数日をまとめて申請するカレンダー。
  *   「複数日をまとめて申請」を押すとカレンダーを開き、日をクリックして選ぶ（もう一度押すと外す）。
  *   選んだ日は hidden の targetDates（"2026-11-20,2026-11-21"）に入れる。開いている間は1日の「対象日」は使わない。
- *   申請中・承認済みの日（#ot-applied-dates）は選べない。
+ *   申請中・承認済みの日（#ot-applied-dates）も選べる（申請し直しになる。申請するときに確かめる）。
  */
 (function () {
   "use strict";
@@ -80,11 +80,11 @@
       num.textContent = d;
       btn.appendChild(num);
       if (applied[dateText]) {
-        btn.disabled = true;
+        btn.classList.add("is-applied");
         const note = document.createElement("small");
         note.textContent = applied[dateText];
         btn.appendChild(note);
-        btn.title = dateText + " は" + applied[dateText] + "です";
+        btn.title = dateText + " は" + applied[dateText] + "です。選ぶと申請し直しになります";
       }
       btn.addEventListener("click", () => {
         if (selected.has(dateText)) {
@@ -107,7 +107,7 @@
     toggle.setAttribute("aria-expanded", "true");
     toggle.textContent = "1日だけ申請する";
     // 1日の対象日を選んでいれば、それもまとめて申請の日に入れる
-    if (single.value && !applied[single.value]) selected.add(single.value);
+    if (single.value) selected.add(single.value);
     single.required = false;
     single.disabled = true;
     if (singleGroup) singleGroup.hidden = true;
@@ -136,11 +136,20 @@
     view = view.m === 12 ? { y: view.y + 1, m: 1 } : { y: view.y, m: view.m + 1 };
     render();
   });
-  // 何も選ばずに申請しようとしたら止める
+  // 何も選ばずに申請しようとしたら止める。申請中・承認済みの日があれば、申請し直してよいか確かめる
   panel.closest("form").addEventListener("submit", (e) => {
     if (!panel.hidden && selected.size === 0) {
       e.preventDefault();
       alert("申請する日をカレンダーで選んでください。");
+      return;
+    }
+    const dates = panel.hidden ? (single.value ? [single.value] : []) : [...selected].sort();
+    const again = dates.filter((d) => applied[d]);
+    if (again.length > 0) {
+      const list = again.map((d) => label(d) + "（" + applied[d] + "）").join("、");
+      if (!confirm(list + " は申請済みです。\n申請し直すと内容を書き換えて承認待ちに戻り、もう一度承認を受けます。申請しますか？")) {
+        e.preventDefault();
+      }
     }
   });
 

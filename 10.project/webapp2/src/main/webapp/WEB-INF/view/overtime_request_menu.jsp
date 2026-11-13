@@ -28,7 +28,7 @@
 .ot-cal .day small { font-size: 0.65rem; color: #718096; line-height: 1.1; }
 .ot-cal .day.is-selected { background: #2a78d6; border-color: #2a78d6; color: #fff; font-weight: 700; }
 .ot-cal .day.is-selected small { color: #e6f0fb; }
-.ot-cal .day:disabled { background: #f1f3f5; color: #a0aec0; cursor: not-allowed; }
+.ot-cal .day.is-applied:not(.is-selected) { background: #f1f3f5; color: #718096; border-style: dashed; }
 .ot-cal .day.is-today { outline: 2px solid #1baf7a; outline-offset: -2px; }
 .ot-multi-selected { font-size: 0.85rem; color: #2d3748; margin-top: 6px; }
 .ot-prev-note { flex: 1 1 100%; font-size: 0.82rem; color: #4a5568; margin: -0.25rem 0 0; }
@@ -156,8 +156,9 @@
 			※ 補正（通常・深夜）は、予定の出退勤から出した時間に足して申請します。勤怠を入力済みの日は、空欄なら勤怠の補正を自動で使います。<br>
 			※ 補正（深夜）を入れた申請は、深夜残業として承認ルートが決まります。<br>
 			※ 間接の時間で時間外になった日は、勤怠に入力済みの時間外で申請できます（出退勤が 9:00〜18:00 の中でも申請できます）。<br>
-			※ 却下された対象日については、同じ対象日を指定して再度申請するとその申請が更新され、再度承認待ちになります。<br>
-			※「複数日をまとめて申請」では、カレンダーで選んだ日ごとに、同じ予定時刻・補正・PJ名・摘要・理由で申請します（最大31日）。申請中・承認済みの日は選べません。
+			※ 却下・取り下げた対象日も、同じ対象日を指定して再度申請するとその申請が更新され、再度承認待ちになります。<br>
+			※「複数日をまとめて申請」では、カレンダーで選んだ日ごとに、同じ予定時刻・補正・PJ名・摘要・理由で申請します（最大31日）。<br>
+			※ 申請中・承認済みの日も申請し直せます（間違えた時間の訂正など）。申請し直すと内容を書き換えて承認待ちに戻り、もう一度承認を受けます。
 		</p>
 	</div>
 
@@ -210,6 +211,10 @@
 						<c:if test="${req.status == 'REJECTED' or req.status == 'WITHDRAWN'}">
 							<button type="button" class="btn btn-secondary" onclick="prefillReapply('${req.targetDate}', '${req.plannedStartTime}', '${req.plannedEndTime}', '${fn:escapeXml(req.projectName)}', '${req.category}')">この日で再申請</button>
 						</c:if>
+						<c:if test="${req.status == 'PENDING' or req.status == 'APPROVED'}">
+							<%-- 間違えた時間で申請・承認された申請の訂正：内容を直して申請し直す（承認待ちに戻り、もう一度承認を受ける） --%>
+							<button type="button" class="btn btn-secondary" onclick="prefillReapply('${req.targetDate}', '${req.plannedStartTime}', '${req.plannedEndTime}', '${fn:escapeXml(req.projectName)}', '${req.category}')">訂正して申請し直す</button>
+						</c:if>
 						<c:if test="${req.status == 'PENDING'}">
 							<%-- 承認される前なら取り下げられる。取り下げた日はもう一度申請できる --%>
 							<form action="${pageContext.request.contextPath}/overtimeRequestWithdraw.do" method="post" style="display: inline;"
@@ -231,7 +236,7 @@
 </div>
 
 <script type="application/json" id="ot-applied-dates">${appliedDatesJson}</script>
-<script src="${pageContext.request.contextPath}/resources/js/kintai/overtime-request-dates.js?v=20261113"></script>
+<script src="${pageContext.request.contextPath}/resources/js/kintai/overtime-request-dates.js?v=20261113b"></script>
 <script>
 function prefillReapply(targetDate, plannedStartTime, plannedEndTime, projectName, category) {
 	if (window.otMultiDates) window.otMultiDates.close();

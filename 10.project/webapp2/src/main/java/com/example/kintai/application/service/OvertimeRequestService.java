@@ -106,12 +106,9 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
         if (category != null && !OvertimeRequest.CATEGORIES.contains(category)) {
             throw new IllegalArgumentException("摘要を選んでください（①自責〜⑤その他）。");
         }
+        // 同じ日の申請があれば、状態（申請中・承認済み・却下・取り下げ）に関係なく申請し直す。
+        // 内容を書き換えて承認待ちに戻し、承認ルートの最初からもう一度承認を受ける（間違えた時間で承認された申請の訂正など）
         Optional<OvertimeRequest> existing = overtimeRequestPort.findByEmployeeAndDate(id, date);
-
-        if (existing.isPresent() && !existing.get().canReapply()) {
-            throw new IllegalStateException(
-                    date + " はすでに申請済みです（" + existing.get().getStatusLabel() + "）。申請中の申請は、取り下げてから申請し直してください。");
-        }
         // 承認ルートの条件つきの段（当月の時間外が○時間以上・深夜）を決めるための申請の中身
         RequestFacts facts = new RequestFacts(
                 monthlyOvertimeMinutesExcept(id, date) + plannedOvertimeMinutes,

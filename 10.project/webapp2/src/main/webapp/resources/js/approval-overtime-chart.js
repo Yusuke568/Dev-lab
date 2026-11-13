@@ -1,5 +1,6 @@
 /*
- * 勤怠承認画面：残業事前申請ごとに、申請者のその月の時間外の累計を折れ線グラフで示す。
+ * 勤怠承認画面：申請者ごと（同じ月の承認待ちの残業事前申請をまとめて）に、その月の時間外の累計を折れ線グラフで示す。
+ * 同じ社員・同じ月の申請が複数あれば、その最後の行の下に1つだけ出し、承認待ちの申請をすべて「承認待ち」として足す。
  *   実績   … 勤怠に保存されている時間外の累計（実線。今日まで、過去の月は月末まで）
  *   見込み … 実績に、承認済の予定・ほかの申請中・この申請を、その日に足した累計（点線。月末の値が見込みの合計）
  *   予定の日には点を打つ（承認済の予定・ほかの申請中・この申請で色を分ける）
@@ -21,6 +22,32 @@
     PENDING: { label: "ほかの申請中", cls: "k-pending" },
     THIS: { label: "この申請", cls: "k-this" }
   };
+
+  /**
+   * 同じ社員・同じ月の申請の状況を1つにまとめる。
+   * 1件目の状況をもとに、まとめる申請の日は実績を外して「承認待ち（THIS）」の予定に置き換える。
+   */
+  function merge(list) {
+    if (list.length === 1) return Object.assign({ count: 1 }, list[0]);
+    const base = list[0];
+    const thisByDay = new Map();
+    list.forEach((s) => s.planned.filter((p) => p.kind === "THIS").forEach((p) => {
+      thisByDay.set(p.day, (thisByDay.get(p.day) || 0) + p.minutes);
+    }));
+    const actualByDay = base.actualByDay.map((v, i) => (thisByDay.has(i + 1) ? 0 : v));
+    const planned = base.planned.filter((p) => !thisByDay.has(p.day));
+    thisByDay.forEach((minutes, day) => planned.push({ day, minutes, kind: "THIS" }));
+    const sum = (kind) => planned.filter((p) => p.kind === kind).reduce((a, p) => a + p.minutes, 0);
+    return Object.assign({}, base, {
+      count: list.length,
+      actualByDay,
+      planned,
+      actual: actualByDay.reduce((a, v) => a + v, 0),
+      approved: sum("APPROVED"),
+      pending: sum("PENDING"),
+      thisRequest: sum("THIS")
+    });
+  }
 
   function hm(minutes) {
     const m = Math.max(0, Math.round(minutes));
@@ -71,6 +98,8 @@
   }
 
   function render(container, s) {
+    const many = (s.count || 1) > 1;
+    const thisLabel = many ? "承認待ちの申請（" + s.count + "件）" : "この申請";
     const days = s.actualByDay.length;
     const plannedByDay = new Array(days).fill(0);
     s.planned.forEach((p) => { plannedByDay[p.day - 1] += p.minutes; });
@@ -89,7 +118,8 @@
 
     // 見出し：見込みの合計と、いちばん近い基準まで
     const head = el("div", "otc-head");
-    head.appendChild(el("strong", "", s.month + "の時間外の見込み（この申請を含む）：" + hm(total)));
+    head.appendChild(el("strong", "", (s.name ? s.name + "さん " : "") + s.month + "の時間外の見込み（"
+      + (many ? "承認待ちの申請 " + s.count + "件" : "この申請") + "を含む）：" + hm(total)));
     const next = s.thresholds.find((t) => total < t.minutes);
     const crossed = s.thresholds.filter((t) => total >= t.minutes);
     if (crossed.length) {
@@ -140,7 +170,7 @@
       chart.appendChild(svg("circle", { cx: x(p.day), cy: y(projectedCum[p.day]), r: p.kind === "THIS" ? 6 : 4.5, class: "otc-dot " + k.cls }));
       if (p.kind === "THIS") {
         chart.appendChild(svg("text", { x: x(p.day), y: y(projectedCum[p.day]) - 10, class: "otc-this-label", "text-anchor": "middle" },
-          "この申請 +" + hm(p.minutes)));
+          (many ? "" : "この申請 ") + "+" + hm(p.minutes)));
       }
     });
     // 見込みの終わりの値
@@ -160,7 +190,8 @@
       const lines = [s.monthValue + "/" + d];
       if (d <= lastDay) lines.push("実績の累計 " + hm(actualCum[d]) + (s.actualByDay[d - 1] ? "（この日 +" + hm(s.actualByDay[d - 1]) + "）" : ""));
       lines.push("見込みの累計 " + hm(projectedCum[d]));
-      s.planned.filter((p) => p.day === d).forEach((p) => lines.push((KIND[p.kind] || KIND.PENDING).label + " +" + hm(p.minutes)));
+      s.planned.filter((p) => p.day === d).forEach((p) => lines.push(
+        (p.kind === "THIS" ? (many ? "承認待ちの申請" : "この申請") : (KIND[p.kind] || KIND.PENDING).label) + " +" + hm(p.minutes)));
       showTip(e.clientX, e.clientY, lines);
     });
     hit.addEventListener("mouseleave", () => { cross.setAttribute("visibility", "hidden"); hideTip(); });
@@ -179,14 +210,27 @@
     item("line-proj", "見込み " + hm(total));
     item("k-approved", "承認済の予定 " + hm(s.approved));
     item("k-pending", "ほかの申請中 " + hm(s.pending));
-    item("k-this", "この申請 " + hm(s.thisRequest));
+    item("k-this", thisLabel + " " + hm(s.thisRequest));
     root.appendChild(legend);
     container.appendChild(root);
   }
 
+  // 同じ社員・同じ月の申請をまとめ、その最後の行の下にだけグラフを出す（ほかのグラフの行は消す）
+  const groups = new Map();
   document.querySelectorAll(".ot-chart[data-request-id]").forEach((container) => {
     const s = data[container.dataset.requestId];
-    if (s && Array.isArray(s.actualByDay)) render(container, s);
-    else container.closest("tr")?.remove();
+    if (!s || !Array.isArray(s.actualByDay)) {
+      container.closest("tr")?.remove();
+      return;
+    }
+    const key = container.dataset.group || container.dataset.requestId;
+    if (!groups.has(key)) groups.set(key, { containers: [], list: [] });
+    groups.get(key).containers.push(container);
+    groups.get(key).list.push(s);
+  });
+  groups.forEach((g) => {
+    const last = g.containers[g.containers.length - 1];
+    g.containers.slice(0, -1).forEach((c) => c.closest("tr")?.remove());
+    render(last, merge(g.list));
   });
 })();

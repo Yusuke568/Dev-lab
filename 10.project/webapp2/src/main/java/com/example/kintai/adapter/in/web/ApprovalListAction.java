@@ -55,7 +55,12 @@ public class ApprovalListAction implements Action {
         String approverId = (String) session.getAttribute("loginUser");
 
         List<PendingApprovalItem> pendingItems = getPendingApprovalsUseCase.getPendingApprovals(approverId);
-        List<OvertimeRequest> pendingOvertimeRequests = getPendingOvertimeRequestsUseCase.getPending(approverId);
+        // 社員ごと（社員IDの順）→ 対象日の順に並べる。グラフは社員・月ごとに1つにまとめて出す
+        List<OvertimeRequest> pendingOvertimeRequests = new java.util.ArrayList<>(getPendingOvertimeRequestsUseCase.getPending(approverId));
+        pendingOvertimeRequests.sort(java.util.Comparator
+                .comparing((OvertimeRequest r) -> staffOrder(r.getEmployeeId()))
+                .thenComparing(OvertimeRequest::getEmployeeId)
+                .thenComparing(OvertimeRequest::getTargetDate));
         List<LeaveRequest> pendingLeaveRequests = leaveRequestUseCase.getPending(approverId);
 
         request.setAttribute("pendingItems", pendingItems);
@@ -76,6 +81,15 @@ public class ApprovalListAction implements Action {
     }
 
     /** 申請ID → 時間外の状況。グラフを描く JavaScript に渡す（文字は script を閉じないよう escape する） */
+    /** 社員IDを数の順に並べるためのキー（数でなければ後ろ） */
+    private static long staffOrder(String employeeId) {
+        try {
+            return Long.parseLong(employeeId);
+        } catch (NumberFormatException e) {
+            return Long.MAX_VALUE;
+        }
+    }
+
     private String overtimeStatusJson(List<OvertimeRequest> requests) {
         java.util.Map<String, Object> byId = new java.util.LinkedHashMap<>();
         if (overtimeStatusService != null) {

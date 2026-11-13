@@ -114,9 +114,10 @@
 						</div>
 					</td>
 				</tr>
-				<%-- 申請者のその月の時間外（グラフは approval-overtime-chart.js が描く） --%>
+				<%-- 申請者のその月の時間外（グラフは approval-overtime-chart.js が描く。同じ社員・同じ月の申請は最後の行の下に1つにまとめる） --%>
 				<tr class="ot-chart-row">
-					<td colspan="10"><div class="ot-chart" data-request-id="${req.id}"></div></td>
+					<td colspan="10"><div class="ot-chart" data-request-id="${req.id}"
+						data-group="<c:out value='${req.employeeId}' />/${req.targetDate.year}-${req.targetDate.monthValue}"></div></td>
 				</tr>
 			</c:forEach>
 			<c:if test="${empty pendingOvertimeRequests}">
@@ -261,7 +262,7 @@
 </div>
 
 <script type="application/json" id="overtime-status">${overtimeStatusJson}</script>
-<script src="${pageContext.request.contextPath}/resources/js/approval-overtime-chart.js?v=20261112"></script>
+<script src="${pageContext.request.contextPath}/resources/js/approval-overtime-chart.js?v=20261113"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 	const employeeIdInput = document.getElementById('filterEmployeeId');

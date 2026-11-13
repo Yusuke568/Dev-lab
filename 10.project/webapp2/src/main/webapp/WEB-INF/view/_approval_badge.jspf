@@ -1,0 +1,5 @@
+<%-- 承認者の「承認・確認待ち」バッジ（画面右上）。件数があるときだけ出す。approvalBadge は ApprovalBadgeService.Counts --%>
+<c:if test="${sessionScope.can.APPROVAL and not empty approvalBadge and approvalBadge.total > 0}">
+		<a href="${pageContext.request.contextPath}/approvalList.do" class="approval-badge-link"
+			title="<c:out value='${approvalBadge.summary}' />">🔔 承認待ち <b>${approvalBadge.total}</b>件</a>
+</c:if>

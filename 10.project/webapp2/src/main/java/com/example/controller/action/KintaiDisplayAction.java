@@ -49,6 +49,24 @@ public class KintaiDisplayAction implements Action {
     /** いつもの補正CD。null なら出さない */
     private com.example.kintai.domain.port.out.DefaultCorrectionPort defaultCorrectionPort;
 
+    /** 承認者の「承認・確認待ち」の件数（画面右上のバッジ）。null なら出さない */
+    private com.example.kintai.application.service.ApprovalBadgeService approvalBadgeService;
+
+    public KintaiDisplayAction withApprovalBadge(com.example.kintai.application.service.ApprovalBadgeService service) {
+        this.approvalBadgeService = service;
+        return this;
+    }
+
+    /** 承認の権限がある人だけ、承認・確認待ちの件数を画面に渡す */
+    private void setApprovalBadge(HttpServletRequest request, String loginUser) {
+        if (approvalBadgeService == null || loginUser == null) return;
+        javax.servlet.http.HttpSession session = request.getSession(false);
+        Object features = session == null ? null : session.getAttribute("features");
+        if (features instanceof java.util.Set && ((java.util.Set<?>) features).contains("APPROVAL")) {
+            request.setAttribute("approvalBadge", approvalBadgeService.countFor(loginUser));
+        }
+    }
+
     public KintaiDisplayAction withDefaultCorrection(com.example.kintai.domain.port.out.DefaultCorrectionPort port) {
         this.defaultCorrectionPort = port;
         return this;
@@ -158,6 +176,7 @@ public class KintaiDisplayAction implements Action {
             request.setAttribute("pendingRequestCount", pendingRequestCount);
             request.setAttribute("rejectedRequestCount", rejectedRequestCount);
             request.setAttribute("staffId", idParam);
+            setApprovalBadge(request, loginUser);
             // いつもの補正CD（表示している社員の。未設定の日に入力を始めたときの初期値）
             if (defaultCorrectionPort != null) {
                 try {

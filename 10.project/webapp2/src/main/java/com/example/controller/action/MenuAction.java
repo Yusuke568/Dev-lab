@@ -31,6 +31,24 @@ public class MenuAction implements Action {
 
     private final GetMonthlyAttendanceUseCase getMonthlyAttendanceUseCase;
 
+    /** 承認者の「承認・確認待ち」の件数（画面右上のバッジ）。null なら出さない */
+    private com.example.kintai.application.service.ApprovalBadgeService approvalBadgeService;
+
+    public MenuAction withApprovalBadge(com.example.kintai.application.service.ApprovalBadgeService service) {
+        this.approvalBadgeService = service;
+        return this;
+    }
+
+    /** 承認の権限がある人だけ、承認・確認待ちの件数を画面に渡す */
+    private void setApprovalBadge(HttpServletRequest request, String loginUser) {
+        if (approvalBadgeService == null || loginUser == null) return;
+        javax.servlet.http.HttpSession session = request.getSession(false);
+        Object features = session == null ? null : session.getAttribute("features");
+        if (features instanceof java.util.Set && ((java.util.Set<?>) features).contains("APPROVAL")) {
+            request.setAttribute("approvalBadge", approvalBadgeService.countFor(loginUser));
+        }
+    }
+
     public MenuAction(GetMonthlyAttendanceUseCase getMonthlyAttendanceUseCase) {
         this.getMonthlyAttendanceUseCase = getMonthlyAttendanceUseCase;
     }
@@ -42,6 +60,7 @@ public class MenuAction implements Action {
         HttpSession session = request.getSession(false);
         if (session != null && session.getAttribute("loginUser") != null) {
             String loginUser = (String) session.getAttribute("loginUser");
+            setApprovalBadge(request, loginUser);
             EmployeeId employeeId = new EmployeeId(loginUser);
             YearMonth currentMonth = YearMonth.now();
             

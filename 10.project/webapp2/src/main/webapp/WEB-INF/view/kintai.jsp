@@ -1417,6 +1417,23 @@ body.kintai-calendar-view .table-responsive {
 	text-decoration: none;
 	white-space: nowrap;
 }
+
+/* 承認者の「承認・確認待ち」バッジ（画面右上）とメニューカードの件数 */
+.account-bar a.approval-badge-link {
+    border-color: #f59e0b;
+    background: #fffbeb;
+    color: #92400e;
+    font-weight: 700;
+}
+.account-bar a.approval-badge-link b {
+    display: inline-block;
+    min-width: 1.4em;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #dc2626;
+    color: #fff;
+    text-align: center;
+}
 .account-bar a:hover {
 	border-color: #90cdf4;
 	color: #1a3d6d;
@@ -1428,6 +1445,7 @@ body.kintai-calendar-view .table-responsive {
 
 	<%-- 画面右上のアカウント操作（パスワード変更・ログアウト）。メニュー画面と同じ小さいボタン --%>
 	<div class="account-bar">
+		<%@ include file="_approval_badge.jspf" %>
 		<a href="${pageContext.request.contextPath}/passwordChange.do" title="ログインに使うパスワードを変更します">🔑 パスワード変更</a>
 		<a href="${pageContext.request.contextPath}/logout.do" title="ログアウトしてログイン画面に戻ります">↩️ ログアウト</a>
 	</div>

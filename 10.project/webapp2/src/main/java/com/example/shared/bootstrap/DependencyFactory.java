@@ -275,11 +275,16 @@ public class DependencyFactory {
         actionMap.put("PasswordResetExecute", new com.example.auth.adapter.in.web.PasswordResetExecuteAction(this.resetPasswordUseCase, this.getShainByIdUseCase));
 
         // KintaiDisplayAction
+        // 承認者の「承認・確認待ち」の件数（メニュー・勤怠画面のバッジ）
+        com.example.kintai.application.service.ApprovalBadgeService approvalBadgeService =
+                new com.example.kintai.application.service.ApprovalBadgeService(this.getPendingOvertimeRequestsUseCase,
+                        this.getPendingApprovalsUseCase, this.leaveRequestUseCase, this.overtimeActualCheckPort);
         actionMap.put("KintaiDisplay", new KintaiDisplayAction(this.getMonthlyAttendanceUseCase, this.getWorkTypesUseCase, this.getCorrectionMastersUseCase, this.getMyOvertimeRequestsUseCase, this.getWeeklyWorkReportsUseCase, this.attendanceAccessUseCase,
                 new com.example.kintai.application.service.WeeklyWorkSummaryService(this.attendancePersistenceAdapter),
                 new com.example.kintai.application.service.HolidayService(this.attendancePersistenceAdapter),
                 this.noticeUseCase).withWeeklyOvertime(this.weeklyOvertimeService)
-                .withDefaultCorrection(this.attendancePersistenceAdapter));
+                .withDefaultCorrection(this.attendancePersistenceAdapter)
+                .withApprovalBadge(approvalBadgeService));
         actionMap.put("DefaultCorrectionSave", new com.example.kintai.adapter.in.web.DefaultCorrectionSaveAction(
                 this.attendancePersistenceAdapter));
 
@@ -298,7 +303,7 @@ public class DependencyFactory {
         actionMap.put("ShainDeleteExecute", new com.example.shain.adapter.in.web.ShainDeleteExecuteAction(this.deleteShainUseCase));
 
         // Menu Action
-        actionMap.put("Menu", new MenuAction(this.getMonthlyAttendanceUseCase));
+        actionMap.put("Menu", new MenuAction(this.getMonthlyAttendanceUseCase).withApprovalBadge(approvalBadgeService));
 
         // Paid Leave Admin Actions
         actionMap.put("PaidLeaveAdmin", new com.example.shain.adapter.in.web.PaidLeaveAdminAction(this.getShainListUseCase, this.grantLeaveByYearsOfServiceUseCase));

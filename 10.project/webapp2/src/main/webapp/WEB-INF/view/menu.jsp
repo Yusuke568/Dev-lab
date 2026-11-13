@@ -86,6 +86,42 @@
 	white-space: nowrap;
 }
 
+
+/* 承認者の「承認・確認待ち」バッジ（画面右上）とメニューカードの件数 */
+.account-bar a.approval-badge-link {
+	border-color: #f59e0b;
+	background: #fffbeb;
+	color: #92400e;
+	font-weight: 700;
+}
+.account-bar a.approval-badge-link b {
+	display: inline-block;
+	min-width: 1.4em;
+	padding: 0 6px;
+	border-radius: 999px;
+	background: #dc2626;
+	color: #fff;
+	text-align: center;
+}
+.menu-card .menu-badge {
+	position: absolute;
+	top: 10px;
+	right: 12px;
+	min-width: 1.8em;
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: #dc2626;
+	color: #fff;
+	font-weight: 700;
+	font-size: 0.9rem;
+	text-align: center;
+}
+.menu-card .menu-badge-detail {
+	margin-top: 6px;
+	font-size: 0.85rem;
+	font-weight: 700;
+	color: #b45309;
+}
 .account-bar a:hover {
 	border-color: #90cdf4;
 	color: #1a3d6d;
@@ -96,6 +132,7 @@
 <body>
 <div class="card">
 	<div class="account-bar">
+		<%@ include file="_approval_badge.jspf" %>
 		<a href="${pageContext.request.contextPath}/passwordChange.do" title="ログインに使うパスワードを変更します">🔑 パスワード変更</a>
 		<a href="${pageContext.request.contextPath}/logout.do" title="ログアウトしてログイン画面に戻ります">↩️ ログアウト</a>
 	</div>
@@ -196,10 +233,16 @@
 		<c:if test="${sessionScope.can.APPROVAL}">
 			<!-- 勤怠承認カード -->
 			<div class="menu-card-wrapper">
-				<div class="menu-card" style="cursor: pointer; height: 100%;" onclick="location.href='${pageContext.request.contextPath}/approvalList.do'">
+				<div class="menu-card" style="cursor: pointer; height: 100%; position: relative;" onclick="location.href='${pageContext.request.contextPath}/approvalList.do'">
+					<c:if test="${not empty approvalBadge and approvalBadge.total > 0}">
+						<span class="menu-badge" aria-label="承認待ち ${approvalBadge.total}件">${approvalBadge.total}</span>
+					</c:if>
 					<div class="icon">✅</div>
 					<h3>勤怠承認</h3>
 					<p>自分宛ての残業・休暇申請と、部下の勤怠を承認・却下します。</p>
+					<c:if test="${not empty approvalBadge and approvalBadge.total > 0}">
+						<p class="menu-badge-detail">🔔 <c:out value="${approvalBadge.summary}" /></p>
+					</c:if>
 				</div>
 			</div>
 

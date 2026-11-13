@@ -139,6 +139,33 @@ class OvertimeRequestSubmitTest {
         assertTrue(decided.isEmpty());
     }
 
+    // ---- 休日出勤 ----
+
+    @Test
+    void 休日の申請は予定の勤務時間を全部時間外の見込みにする() {
+        LocalDate saturday = LocalDate.of(2026, 11, 7);
+        service.submit("126", saturday, "09:00", "12:00", "休日対応", null, "税保守", "⑤その他", null, null);
+        // 10:00〜15:00 は休憩 12:00〜13:00 を除いて 4:00（祝日の 11/3 も休日）
+        service.submit("126", LocalDate.of(2026, 11, 3), "10:00", "15:00", "休日対応", null, "税保守", "⑤その他", null, null);
+
+        assertEquals(List.of(180, 240), inserted);
+    }
+
+    @Test
+    void 休日の申請で予定時刻がなければ申請できない() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> service.submit("126", LocalDate.of(2026, 11, 8), "", "", "休日対応", null, "税保守", "⑤その他", null, null));
+        assertTrue(e.getMessage().contains("休日出勤"));
+        assertTrue(inserted.isEmpty());
+    }
+
+    @Test
+    void 休日の内訳は休出と表示する() {
+        OvertimeRequest r = new OvertimeRequest(1, "126", null, LocalDate.of(2026, 11, 7), 180, "09:00", "12:00",
+                "休日対応", OvertimeRequest.STATUS_PENDING, null, null, null);
+        assertEquals("休出03:00", r.getPlannedOvertimeBreakdown());
+    }
+
     // ---- 補正 ----
 
     @Test

@@ -78,12 +78,13 @@ public class OvertimeFormExportService {
         for (FormRequest fr : requests) {
             OvertimeRequest req = fr.request();
             List<Step> steps = fr.steps();
-            TimeCells planned = OvertimeFormCalculator.planned(minutes(req.getPlannedStartTime()),
-                    plannedEnd(req.getPlannedStartTime(), req.getPlannedEndTime()), req.getPlannedOvertimeMinutes(),
-                    req.getCorrectionMinutes(), req.getCorrectionMidMinutes());
+
             LocalDate date = req.getTargetDate();
             boolean holiday = StaffWorkSummaryCalculator.isWeekend(date) || JapaneseHolidayCalendar.isHoliday(date)
                     || companyHolidays.containsKey(date);
+            TimeCells planned = OvertimeFormCalculator.planned(minutes(req.getPlannedStartTime()),
+                    plannedEnd(req.getPlannedStartTime(), req.getPlannedEndTime()), req.getPlannedOvertimeMinutes(),
+                    req.getCorrectionMinutes(), req.getCorrectionMidMinutes(), holiday);
             TimeCells actual = actual(attendance.get(date), holiday);
             LocalDate autoApproved = req.isApproved() && req.getDecidedAt() != null
                     ? LocalDate.parse(req.getDecidedAt().substring(0, 10)) : null;

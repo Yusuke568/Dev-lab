@@ -46,6 +46,14 @@ class OvertimeFormCalculatorTest {
     }
 
     @Test
+    void 休日の申請は予定出勤から予定退勤までを区間にする() {
+        TimeCells cells = OvertimeFormCalculator.planned(t(9, 0), t(12, 0), t(3, 0), 0, 0, true);
+        assertEquals(new Span(t(9, 0), t(12, 0)), cells.span());
+        assertEquals(0, cells.adjustMinutes());
+        assertEquals(t(3, 0), OvertimeFormCalculator.plannedFormMinutes(cells.span()));
+    }
+
+    @Test
     void 申請の補正は通常と深夜の調整に分けて入れる() {
         // 18:00〜22:00（様式 3:30）＋ 補正 0:30 ＋ 補正（深夜）0:15
         TimeCells cells = OvertimeFormCalculator.planned(null, t(22, 0), t(4, 45), 30, 15);

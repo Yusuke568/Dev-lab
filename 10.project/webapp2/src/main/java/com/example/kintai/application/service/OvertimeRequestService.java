@@ -33,6 +33,13 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
     private final ApprovalWorkflowService approvalWorkflowService;
     /** 勤怠に入力済みの時間外（補正・間接の分を含む）を見るため。null なら見ない */
     private final LoadAttendanceRecordPort loadAttendanceRecordPort;
+    /** 会社休日（休日出勤の申請かを決める）。null なら土日・祝日だけで決める */
+    private com.example.kintai.domain.port.out.CompanyHolidayPort companyHolidayPort;
+
+    public OvertimeRequestService withCompanyHolidays(com.example.kintai.domain.port.out.CompanyHolidayPort port) {
+        this.companyHolidayPort = port;
+        return this;
+    }
 
     public OvertimeRequestService(OvertimeRequestPort overtimeRequestPort, ApprovalWorkflowService approvalWorkflowService) {
         this(overtimeRequestPort, approvalWorkflowService, null);
@@ -60,8 +67,16 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
         if (correction < 0 || correctionMid < 0 || correction + correctionMid > 24 * 60) {
             throw new IllegalArgumentException("補正の時間が正しくありません。");
         }
-        // 予定の出退勤から出した時間に、補正を足す
-        int plannedOvertimeMinutes = OvertimeRequest.calculatePlannedOvertimeMinutes(plannedStartTime, plannedEndTime)
+        // 予定の出退勤から出した時間に、補正を足す。
+        // 休日（土日・祝日・会社休日）は、予定の勤務時間（休憩を除く）を全部時間外の見込みにする
+        boolean holiday = isHoliday(date);
+        if (holiday && (plannedStartTime == null || plannedStartTime.isBlank()
+                || plannedEndTime == null || plannedEndTime.isBlank()) && record.isEmpty()) {
+            throw new IllegalArgumentException("休日出勤の申請は、予定出勤時刻と予定退勤時刻を入れてください。");
+        }
+        int plannedOvertimeMinutes = (holiday
+                ? OvertimeRequest.calculateHolidayWorkMinutes(plannedStartTime, plannedEndTime)
+                : OvertimeRequest.calculatePlannedOvertimeMinutes(plannedStartTime, plannedEndTime))
                 + correction + correctionMid;
         // 時間外には間接の時間も含めるので、出退勤が 9:00〜18:00 の中でも時間外になる日がある。
         // その日の勤怠に時間外が入っていれば、その時間で申請できるようにする
@@ -131,6 +146,16 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
     }
 
     /** 予定が深夜（22:00〜翌5:00）にかかるか：5時より前の出勤、22時より後の退勤、日をまたぐ退勤 */
+    /** 休日（土日・祝日・会社休日）か */
+    private boolean isHoliday(LocalDate date) {
+        java.time.DayOfWeek d = date.getDayOfWeek();
+        if (d == java.time.DayOfWeek.SATURDAY || d == java.time.DayOfWeek.SUNDAY
+                || com.example.kintai.domain.service.JapaneseHolidayCalendar.isHoliday(date)) {
+            return true;
+        }
+        return companyHolidayPort != null && companyHolidayPort.findCompanyHolidays(date, date).containsKey(date);
+    }
+
     static boolean isNight(String plannedStartTime, String plannedEndTime) {
         if (plannedStartTime != null && !plannedStartTime.isBlank()
                 && LocalTime.parse(plannedStartTime).isBefore(NIGHT_END)) {

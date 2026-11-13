@@ -76,6 +76,15 @@ public final class OvertimeFormCalculator {
      */
     public static TimeCells planned(Integer plannedStart, Integer plannedEnd, int plannedMinutes,
                                     int correction, int correctionMid) {
+        return planned(plannedStart, plannedEnd, plannedMinutes, correction, correctionMid, false);
+    }
+
+    /** @param holiday 休日出勤の申請か。休日は予定出勤〜予定退勤を区間にする（勤務時間を全部時間外の見込みにしている） */
+    public static TimeCells planned(Integer plannedStart, Integer plannedEnd, int plannedMinutes,
+                                    int correction, int correctionMid, boolean holiday) {
+        if (holiday && plannedStart != null && plannedEnd != null) {
+            return new TimeCells(new Span(plannedStart, plannedEnd), correction, correctionMid);
+        }
         int start = plannedStart == null ? STANDARD_START : plannedStart;
         int end = plannedEnd == null ? STANDARD_END : plannedEnd;
         Span early = start < STANDARD_START ? new Span(start, STANDARD_START) : null;

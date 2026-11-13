@@ -245,7 +245,7 @@ public class DependencyFactory {
         this.registerCorrectionMasterUseCase = correctionMasterService;
 
         OvertimeRequestService overtimeRequestService = new OvertimeRequestService(this.overtimeRequestPersistenceAdapter, this.approvalWorkflowService,
-                this.attendancePersistenceAdapter);
+                this.attendancePersistenceAdapter).withCompanyHolidays(this.attendancePersistenceAdapter);
         this.submitOvertimeRequestUseCase = overtimeRequestService;
         this.getMyOvertimeRequestsUseCase = overtimeRequestService;
         this.getPendingOvertimeRequestsUseCase = overtimeRequestService;

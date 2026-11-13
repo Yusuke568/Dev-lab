@@ -138,16 +138,48 @@ public class OvertimeRequest {
     public String getPlannedEarlyMinutesFormatted() { return formatMinutes(getPlannedEarlyMinutes()); }
     public String getPlannedLateMinutesFormatted() { return formatMinutes(getPlannedLateMinutes()); }
 
-    /** 早出・残業を「早出00:30 / 残業02:00」のように内訳表示するための文字列。 */
+    /** 早出・残業を「早出00:30 / 残業02:00」のように内訳表示するための文字列。休日は「休出03:00」 */
     public String getPlannedOvertimeBreakdown() {
         int early = getPlannedEarlyMinutes();
         int late = getPlannedLateMinutes();
         List<String> parts = new ArrayList<>();
-        if (early > 0) parts.add("早出" + formatMinutes(early));
-        if (late > 0) parts.add("残業" + formatMinutes(late));
+        if (isWeekendOrNationalHoliday(targetDate)) {
+            // 休日は、予定の勤務時間（休憩を除く）を全部時間外の見込みにしている
+            early = 0;
+            late = plannedOvertimeMinutes - correctionMinutes - correctionMidMinutes;
+            if (late > 0) parts.add("休出" + formatMinutes(late));
+        } else {
+            if (early > 0) parts.add("早出" + formatMinutes(early));
+            if (late > 0) parts.add("残業" + formatMinutes(late));
+        }
         if (correctionMinutes > 0) parts.add("補正" + formatMinutes(correctionMinutes));
         if (correctionMidMinutes > 0) parts.add("補正(深夜)" + formatMinutes(correctionMidMinutes));
         return parts.isEmpty() ? formatMinutes(plannedOvertimeMinutes) : String.join(" / ", parts);
+    }
+
+    /**
+     * 休日出勤の予定の勤務時間（分）：予定出勤〜予定退勤から休憩（BreakSchedule）を除いた時間。
+     * 休日（土日・祝日・会社休日）の申請は、この時間を全部時間外の見込みにする（実績は週40時間の決まりで計算する）。
+     * どちらかの時刻が空なら 0。
+     */
+    public static int calculateHolidayWorkMinutes(String plannedStartTime, String plannedEndTime) {
+        if (plannedStartTime == null || plannedStartTime.isBlank() || plannedEndTime == null || plannedEndTime.isBlank()) {
+            return 0;
+        }
+        int start = LocalTime.parse(plannedStartTime).toSecondOfDay() / 60;
+        int end = LocalTime.parse(plannedEndTime).toSecondOfDay() / 60;
+        if (end < start) {
+            end += 24 * 60; // 翌日の退勤
+        }
+        return Math.max(0, end - start - BreakSchedule.overlapMinutes(start, end));
+    }
+
+    /** 土日・祝日か（会社休日は見ない。画面の内訳の表示用） */
+    private static boolean isWeekendOrNationalHoliday(LocalDate date) {
+        if (date == null) return false;
+        java.time.DayOfWeek d = date.getDayOfWeek();
+        return d == java.time.DayOfWeek.SATURDAY || d == java.time.DayOfWeek.SUNDAY
+                || com.example.kintai.domain.service.JapaneseHolidayCalendar.isHoliday(date);
     }
 
     /** 予定出勤・退勤時刻（"HH:mm"、未入力可）から、早出+残業の合計時間外分数を計算する。 */

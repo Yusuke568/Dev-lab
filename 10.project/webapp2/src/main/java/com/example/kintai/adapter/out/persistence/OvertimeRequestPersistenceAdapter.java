@@ -186,6 +186,34 @@ public class OvertimeRequestPersistenceAdapter implements OvertimeRequestPort {
     }
 
     @Override
+    public void updateBaseLevels(int requestId, int baseLevels) {
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement("UPDATE overtime_request SET base_levels = ? WHERE id = ?")) {
+            ps.setInt(1, baseLevels);
+            ps.setInt(2, requestId);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to set base levels of overtime request.", e);
+        }
+    }
+
+    @Override
+    public void updateActualConfirmedOn(int requestId, LocalDate date) {
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement("UPDATE overtime_request SET actual_confirmed_on = ? WHERE id = ?")) {
+            if (date == null) {
+                ps.setNull(1, Types.DATE);
+            } else {
+                ps.setDate(1, java.sql.Date.valueOf(date));
+            }
+            ps.setInt(2, requestId);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to set actual confirmed date of overtime request.", e);
+        }
+    }
+
+    @Override
     public void updateCorrection(int requestId, int correctionMinutes, int correctionMidMinutes) {
         try (Connection con = ConnectionBase.getConnection();
              PreparedStatement ps = con.prepareStatement(
@@ -297,7 +325,18 @@ public class OvertimeRequestPersistenceAdapter implements OvertimeRequestPort {
                 plannedStartTime, plannedEndTime, reason, status, decidedBy, decidedAt, createdAt,
                 currentLevel > 0 ? currentLevel : 1)
                 .withDetails(optionalString(rs, "project_name"), optionalString(rs, "category"))
-                .withCorrection(optionalInt(rs, "correction_minutes"), optionalInt(rs, "correction_mid_minutes"));
+                .withCorrection(optionalInt(rs, "correction_minutes"), optionalInt(rs, "correction_mid_minutes"))
+                .withActual(optionalDate(rs, "actual_confirmed_on"), optionalInt(rs, "base_levels"));
+    }
+
+    /** SELECT に列がない・NULL なら null */
+    private static LocalDate optionalDate(ResultSet rs, String column) {
+        try {
+            java.sql.Date d = rs.getDate(column);
+            return d == null ? null : d.toLocalDate();
+        } catch (java.sql.SQLException e) {
+            return null;
+        }
     }
 
     /** SELECT に列がない・NULL なら null */

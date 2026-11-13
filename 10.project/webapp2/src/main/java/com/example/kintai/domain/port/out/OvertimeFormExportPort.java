@@ -19,10 +19,15 @@ public interface OvertimeFormExportPort {
 
     /**
      * 申請1件分の行。
-     * @param approvals 申請時・実績報告の承認欄（課長／所属長／社長の3つ）
+     * @param approvals       申請時の承認欄（課長／所属長／社長の3つ）
+     * @param actualApprovals 実績報告の承認欄（同じく3つ）。null なら申請時と同じ
      */
     record FormRow(LocalDate date, String projectName, TimeCells planned, String category,
-                   List<ApprovalMark> approvals, TimeCells actual, String remarks) {
+                   List<ApprovalMark> approvals, TimeCells actual, String remarks, List<ApprovalMark> actualApprovals) {
+        public FormRow(LocalDate date, String projectName, TimeCells planned, String category,
+                       List<ApprovalMark> approvals, TimeCells actual, String remarks) {
+            this(date, projectName, planned, category, approvals, actual, remarks, null);
+        }
     }
 
     /** 様式に入りきる行数（10行目〜40行目） */

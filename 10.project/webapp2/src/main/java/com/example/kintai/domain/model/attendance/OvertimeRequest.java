@@ -47,6 +47,8 @@ public class OvertimeRequest {
     private String category;    // 摘要（CATEGORIES のどれか。未入力の古い申請は null）
     private int correctionMinutes;    // 補正（通常）の分。申請の時間外に含まれている
     private int correctionMidMinutes; // 補正（深夜）の分。申請の時間外に含まれている
+    private LocalDate actualConfirmedOn; // 実績の確認日（勤怠の時間外が申請と合った・時間外がなかった日）。null なら未確認
+    private Integer baseLevels;          // 承認ルートのうち条件つきの段を除いた段数。null なら不明（全部ふだんの段とみなす）
 
     public OvertimeRequest(int id, String employeeId, String employeeName, LocalDate targetDate,
                             int plannedOvertimeMinutes, String plannedStartTime, String plannedEndTime, String reason,
@@ -88,6 +90,16 @@ public class OvertimeRequest {
     public int getCurrentLevel() { return currentLevel; }
     public String getProjectName() { return projectName; }
     public String getCategory() { return category; }
+
+    public LocalDate getActualConfirmedOn() { return actualConfirmedOn; }
+    public Integer getBaseLevels() { return baseLevels; }
+
+    /** DB から読んだ実績の確認日と、条件つきの段を除いた段数を足す */
+    public OvertimeRequest withActual(LocalDate actualConfirmedOn, Integer baseLevels) {
+        this.actualConfirmedOn = actualConfirmedOn;
+        this.baseLevels = baseLevels;
+        return this;
+    }
 
     public int getCorrectionMinutes() { return correctionMinutes; }
     public int getCorrectionMidMinutes() { return correctionMidMinutes; }

@@ -51,6 +51,14 @@ public interface OvertimeRequestPort {
         return List.of();
     }
 
+    /** 承認ルートのうち条件つきの段を除いた段数を入れる（申請したとき） */
+    default void updateBaseLevels(int requestId, int baseLevels) {
+    }
+
+    /** 実績の確認日を入れる（null で消す） */
+    default void updateActualConfirmedOn(int requestId, LocalDate date) {
+    }
+
     /** 補正（通常・深夜）を入れる */
     default void updateCorrection(int requestId, int correctionMinutes, int correctionMidMinutes) {
     }

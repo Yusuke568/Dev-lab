@@ -61,8 +61,10 @@ public class OvertimeFormXlsxExportAdapter implements OvertimeFormExportPort {
         setText(sh, "O" + r, row.category());
         writeApprovals(sh, r, row.approvals(), PLANNED_APPROVAL_COLUMNS);
         writeTimes(sh, r, row.actual(), "S", "T", "U", "V", "X", "Y");
-        if (!row.actual().isEmpty()) {
-            // 実績報告の承認も、事前申請の承認日を入れる
+        if (row.actualApprovals() != null) {
+            // 実績報告の承認：実績の確認日（勤怠の入力日）か、申請し直して承認された日
+            writeApprovals(sh, r, row.actualApprovals(), ACTUAL_APPROVAL_COLUMNS);
+        } else if (!row.actual().isEmpty()) {
             writeApprovals(sh, r, row.approvals(), ACTUAL_APPROVAL_COLUMNS);
         }
         setText(sh, "AG" + r, row.remarks());

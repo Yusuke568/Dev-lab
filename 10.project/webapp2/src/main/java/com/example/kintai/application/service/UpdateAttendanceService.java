@@ -4,6 +4,7 @@ import com.example.application.port.out.WorkTypePort;
 import com.example.entity.WorkType;
 import com.example.kintai.application.port.in.UpdateAttendanceUseCase;
 import com.example.kintai.domain.model.attendance.AttendanceRecord;
+import com.example.kintai.domain.model.attendance.OvertimeRequest;
 import com.example.kintai.domain.model.attendance.WorkTime;
 import com.example.kintai.domain.model.employee.EmployeeId;
 import com.example.kintai.domain.port.out.LoadAttendanceRecordPort;
@@ -176,6 +177,10 @@ public class UpdateAttendanceService implements UpdateAttendanceUseCase {
             }
 
             // 週40時間：保存した日を含む週（日曜〜土曜）の、休日出勤の日の時間外を計算し直す
+            java.util.Set<String> touched = new java.util.LinkedHashSet<>();
+            for (AttendanceUpdateCommand cmd : commands) {
+                touched.add(cmd.getEmployeeId() + "/" + cmd.getDate());
+            }
             if (weeklyOvertimeService != null) {
                 java.util.Set<String> weeks = new java.util.LinkedHashSet<>();
                 for (AttendanceUpdateCommand cmd : commands) {
@@ -183,10 +188,46 @@ public class UpdateAttendanceService implements UpdateAttendanceUseCase {
                 }
                 for (String key : weeks) {
                     String[] parts = key.split("/");
-                    recalculateHolidayOvertime(new EmployeeId(parts[0]), LocalDate.parse(parts[1]), paidLeaveUse);
+                    LocalDate weekStart = LocalDate.parse(parts[1]);
+                    recalculateHolidayOvertime(new EmployeeId(parts[0]), weekStart, paidLeaveUse);
+                    // 週の休日出勤の日は時間外が変わることがあるので、実績の確認もし直す
+                    for (int i = 0; i < 7; i++) {
+                        LocalDate d = weekStart.plusDays(i);
+                        if (weeklyOvertimeService.isHoliday(d, weeklyOvertimeService.companyHolidays(d, d))) {
+                            touched.add(parts[0] + "/" + d);
+                        }
+                    }
                 }
             }
+            // 時間外申請書の実績の承認欄：残業事前申請と実績を比べて、実績の確認日を入れる・消す
+            for (String key : touched) {
+                String[] parts = key.split("/");
+                confirmActual(new EmployeeId(parts[0]), LocalDate.parse(parts[1]));
+            }
         });
+    }
+
+    /**
+     * その日の残業事前申請（申請中・承認済み）と、勤怠の時間外の実績を比べる。
+     *   合っている（休日は予定以下）・時間外がない → 実績の確認日を今日にする（すでに入っていればそのまま）
+     *   合わない → 消す（申請し直して承認された日を使う）
+     */
+    private void confirmActual(EmployeeId employeeId, LocalDate date) {
+        if (overtimeRequestPort == null) return;
+        Optional<OvertimeRequest> found = overtimeRequestPort.findByEmployeeAndDate(employeeId, date);
+        if (found.isEmpty() || !(found.get().isPending() || found.get().isApproved())) return;
+        Optional<AttendanceRecord> record = loadAttendanceRecordPort.loadByEmployeeAndDate(employeeId, date);
+        if (record.isEmpty() || record.get().getWorkTime() == null) return; // まだ実績がない
+        OvertimeRequest req = found.get();
+        boolean holiday = weeklyOvertimeService != null
+                ? weeklyOvertimeService.isHoliday(date, weeklyOvertimeService.companyHolidays(date, date))
+                : date.getDayOfWeek().getValue() >= 6;
+        LocalDate confirmed = com.example.kintai.domain.service.OvertimeFormCalculator.actualConfirmedOn(
+                req.getPlannedOvertimeMinutes(), record.get().getOvertimeMinutes(), holiday,
+                req.getActualConfirmedOn(), LocalDate.now());
+        if (!java.util.Objects.equals(confirmed, req.getActualConfirmedOn())) {
+            overtimeRequestPort.updateActualConfirmedOn(req.getId(), confirmed);
+        }
     }
 
     /**

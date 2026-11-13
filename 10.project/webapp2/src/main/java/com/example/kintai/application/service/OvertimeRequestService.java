@@ -127,6 +127,9 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
         overtimeRequestPort.updateDetails(requestId, projectName, category);
         overtimeRequestPort.updateCorrection(requestId, correction, correctionMid);
         boolean autoApproved = approvalWorkflowService.startRoute(RequestType.OVERTIME, requestId, employeeId, departmentId, facts);
+        // 時間外申請書の実績の承認欄で、条件つきの段を見分けるため
+        overtimeRequestPort.updateBaseLevels(requestId,
+                approvalWorkflowService.baseLevelCount(RequestType.OVERTIME, employeeId, departmentId));
         if (autoApproved) {
             overtimeRequestPort.decide(requestId, true, employeeId);
         }

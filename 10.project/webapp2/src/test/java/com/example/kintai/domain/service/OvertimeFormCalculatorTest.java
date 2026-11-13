@@ -123,6 +123,60 @@ class OvertimeFormCalculatorTest {
         assertEquals(List.of(new ApprovalMark(d1, false), ApprovalMark.SKIPPED, ApprovalMark.SKIPPED), auto);
     }
 
+    // ---- 実績報告の承認欄 ----
+
+    private static final LocalDate INPUT = LocalDate.of(2026, 11, 26);
+
+    @Test
+    void 実績の確認日は_申請と合う日か時間外がない日に勤怠を入れた日() {
+        assertEquals(INPUT, OvertimeFormCalculator.actualConfirmedOn(120, 120, false, null, INPUT));
+        assertEquals(INPUT, OvertimeFormCalculator.actualConfirmedOn(120, 0, false, null, INPUT)); // 残業しなかった
+        assertEquals(null, OvertimeFormCalculator.actualConfirmedOn(120, 90, false, null, INPUT)); // 少ない → 申請し直し
+        assertEquals(null, OvertimeFormCalculator.actualConfirmedOn(120, 150, false, null, INPUT)); // 多い → 申請し直し
+        assertEquals(INPUT, OvertimeFormCalculator.actualConfirmedOn(180, 60, true, null, INPUT)); // 休日は予定以下でよい
+        LocalDate first = LocalDate.of(2026, 11, 25);
+        assertEquals(first, OvertimeFormCalculator.actualConfirmedOn(120, 120, false, first, INPUT)); // 最初の日のまま
+    }
+
+    @Test
+    void 確認日があれば_ふだんの段は全部確認日で_条件つきの段は承認されるまで空欄() {
+        LocalDate ap = LocalDate.of(2026, 11, 20);
+        List<Step> steps = List.of(new Step(1, "課長", true, ap), new Step(2, "所属長", true, ap), new Step(3, "社長", false, null));
+        // ふだんの段は2段（3段目は当月○時間以上で足した段）
+        assertEquals(List.of(new ApprovalMark(INPUT, false), new ApprovalMark(INPUT, false), ApprovalMark.BLANK),
+                OvertimeFormCalculator.actualApprovals(steps, 2, INPUT, true, null));
+        List<Step> approved = List.of(new Step(1, "課長", true, ap), new Step(2, "所属長", true, ap), new Step(3, "社長", true, ap));
+        assertEquals(new ApprovalMark(INPUT, false), OvertimeFormCalculator.actualApprovals(approved, 2, INPUT, true, null).get(2));
+        // 1段だけのルートは、ほかの段が「－」
+        assertEquals(List.of(new ApprovalMark(INPUT, false), ApprovalMark.SKIPPED, ApprovalMark.SKIPPED),
+                OvertimeFormCalculator.actualApprovals(List.of(new Step(1, "課長", true, ap)), 1, INPUT, true, null));
+    }
+
+    @Test
+    void 確認日がなく_申請し直して承認された実績なら段ごとの承認日_合わなければ空欄() {
+        LocalDate d1 = LocalDate.of(2026, 11, 27);
+        LocalDate d2 = LocalDate.of(2026, 11, 28);
+        List<Step> steps = List.of(new Step(1, "課長", true, d1), new Step(2, "所属長", true, d2));
+        assertEquals(List.of(new ApprovalMark(d1, false), new ApprovalMark(d2, false), ApprovalMark.SKIPPED),
+                OvertimeFormCalculator.actualApprovals(steps, 2, null, true, null));
+        assertEquals(List.of(ApprovalMark.BLANK, ApprovalMark.BLANK, ApprovalMark.SKIPPED),
+                OvertimeFormCalculator.actualApprovals(steps, 2, null, false, null));
+    }
+
+    @Test
+    void 所属長と社長の欄は_承認ルートで条件つきの段が足された申請だけ日付() {
+        LocalDate d = LocalDate.of(2026, 11, 20);
+        // 当月18.5時間未満：課長の段だけ → 所属長・社長は「－」
+        assertEquals(List.of(new ApprovalMark(d, false), ApprovalMark.SKIPPED, ApprovalMark.SKIPPED),
+                OvertimeFormCalculator.approvals(List.of(new Step(1, "課長", true, d)), null));
+        // 18.5時間以上で追加1段目（所属長）が足された
+        assertEquals(List.of(new ApprovalMark(d, false), new ApprovalMark(d, false), ApprovalMark.SKIPPED),
+                OvertimeFormCalculator.approvals(List.of(new Step(1, "課長", true, d), new Step(2, "所属長", true, d)), null));
+        // 45時間以上で追加2段目（社長）も足された
+        assertEquals(new ApprovalMark(d, false), OvertimeFormCalculator.approvals(List.of(new Step(1, "課長", true, d),
+                new Step(2, "所属長", true, d), new Step(3, "社長", true, d)), null).get(2));
+    }
+
     @Test
     void 課長名は判定した人_まだなら最初の候補者() {
         List<Step> steps = List.of(new Step(1, "主", false, null), new Step(1, "副", true, LocalDate.of(2026, 10, 1)),

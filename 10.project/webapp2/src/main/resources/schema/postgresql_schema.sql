@@ -388,4 +388,9 @@ ALTER TABLE overtime_request ADD COLUMN IF NOT EXISTS correction_minutes integer
 ALTER TABLE overtime_request ADD COLUMN IF NOT EXISTS correction_mid_minutes integer;
 COMMENT ON COLUMN overtime_request.correction_minutes IS '補正（通常）の分。申請の時間外に含める';
 COMMENT ON COLUMN overtime_request.correction_mid_minutes IS '補正（深夜）の分。申請の時間外に含める';
+-- 実績の確認日と、条件つきの段を除いた段数（時間外申請書の実績の承認欄。migrations/20261120_overtime_actual_confirmed.sql と同じ）
+ALTER TABLE overtime_request ADD COLUMN IF NOT EXISTS actual_confirmed_on date;
+ALTER TABLE overtime_request ADD COLUMN IF NOT EXISTS base_levels integer;
+COMMENT ON COLUMN overtime_request.actual_confirmed_on IS '実績の確認日（勤怠の時間外が申請と合った・時間外がなかった日）';
+COMMENT ON COLUMN overtime_request.base_levels IS '承認ルートのうち条件つきの段を除いた段数';
 ALTER TABLE leave_request ADD COLUMN IF NOT EXISTS department_id integer;

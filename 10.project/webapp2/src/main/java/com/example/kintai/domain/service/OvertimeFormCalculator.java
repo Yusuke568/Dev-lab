@@ -161,6 +161,8 @@ public final class OvertimeFormCalculator {
     /**
      * 承認欄（課長／所属長／社長）。1段目→課長、2段目→所属長、3段目以降（最後の段）→社長。
      * ルートにない段は「－」、まだ判定していない段は空欄。
+     * 承認ルートの「条件つきで足す段」（当月の時間外が○時間以上・深夜）は、条件に当たった申請にだけ足されるので、
+     * 当たらなかった申請はその欄が「－」になる（所属長・社長の欄を何時間から出すかは、承認ルートの設定で決まる）。
      * @param autoApprovedOn 承認ルートの段がなく自動承認された日（段があるときは使わない）
      */
     public static List<ApprovalMark> approvals(List<Step> steps, LocalDate autoApprovedOn) {
@@ -184,6 +186,54 @@ public final class OvertimeFormCalculator {
                 }
             }
             marks.set(column, approvedOn != null ? new ApprovalMark(approvedOn, false) : ApprovalMark.BLANK);
+        }
+        return marks;
+    }
+
+    /**
+     * 勤怠を保存したときの、実績の確認日。
+     *   時間外がない・申請の時間と合う（休日は申請の時間以下）→ 確認日（すでにあればそのまま、なければ today）
+     *   合わない → null（申請し直して承認された日を使う）
+     */
+    public static LocalDate actualConfirmedOn(int plannedMinutes, int actualMinutes, boolean holiday,
+                                              LocalDate current, LocalDate today) {
+        boolean ok = actualMinutes <= 0 || actualMinutes == plannedMinutes || (holiday && actualMinutes <= plannedMinutes);
+        if (!ok) return null;
+        return current != null ? current : today;
+    }
+
+    /**
+     * 実績報告の承認欄（課長／所属長／社長）。
+     *   確認日がある … ふだんの段は確認日。条件つきの段（baseLevels より後）は、その段が承認していれば確認日、まだなら空欄
+     *   確認日がない … 実績が申請の時間と合っていれば（申請し直して承認された）、段ごとの承認日。合っていなければ空欄
+     * ルートにない段は「－」。
+     * @param baseLevels 条件つきの段を除いた段数（null なら全部ふだんの段）
+     * @param matches    実績が申請の時間と合っているか（確認日がないときに使う）
+     */
+    public static List<ApprovalMark> actualApprovals(List<Step> steps, Integer baseLevels, LocalDate confirmedOn,
+                                                     boolean matches, LocalDate autoApprovedOn) {
+        if (confirmedOn == null) {
+            if (matches) return approvals(steps, autoApprovedOn);
+            List<ApprovalMark> blank = new ArrayList<>(approvals(steps, autoApprovedOn));
+            for (int i = 0; i < blank.size(); i++) {
+                if (!blank.get(i).skipped()) blank.set(i, ApprovalMark.BLANK);
+            }
+            return blank;
+        }
+        List<ApprovalMark> marks = new ArrayList<>(List.of(ApprovalMark.SKIPPED, ApprovalMark.SKIPPED, ApprovalMark.SKIPPED));
+        if (steps.isEmpty()) {
+            marks.set(0, new ApprovalMark(confirmedOn, false)); // 自動承認
+            return marks;
+        }
+        int maxLevel = steps.stream().mapToInt(Step::level).max().orElse(1);
+        int base = baseLevels == null ? maxLevel : baseLevels;
+        for (int level = 1; level <= maxLevel; level++) {
+            int column = Math.min(level, 3) - 1;
+            if (level >= 3 && level != maxLevel) continue; // 3段目以降は最後の段を「社長」欄に
+            final int lv = level;
+            boolean approved = steps.stream().anyMatch(st -> st.level() == lv && st.approved());
+            boolean conditional = level > base;
+            marks.set(column, !conditional || approved ? new ApprovalMark(confirmedOn, false) : ApprovalMark.BLANK);
         }
         return marks;
     }

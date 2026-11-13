@@ -73,6 +73,19 @@ public class ApprovalWorkflowService {
         return false;
     }
 
+    /**
+     * 承認ルートのうち、条件つきで足す段（当月○時間以上・深夜）を除いた段数。
+     * 条件つきの段はふだんの段のあとに足すので、これより後の段が条件つきの段になる。組めなければ 0。
+     */
+    public int baseLevelCount(RequestType requestType, String applicantStaffId, Integer departmentId) {
+        try {
+            ResolvedRoute route = resolve(requestType, Integer.parseInt(applicantStaffId), departmentId, null);
+            return route.isAutoApproved() ? 0 : route.getLevels().size();
+        } catch (RuntimeException e) {
+            return 0;
+        }
+    }
+
     /** 申請を保存する前に、承認ルートが組めるか確かめる（組めなければ例外）。 */
     public void checkRouteAvailable(RequestType requestType, String applicantStaffId) {
         checkRouteAvailable(requestType, applicantStaffId, null);

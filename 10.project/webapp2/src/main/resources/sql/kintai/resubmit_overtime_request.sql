@@ -7,5 +7,6 @@ SET planned_overtime_minutes = ?,
     current_level = 1,
     decided_by = NULL,
     decided_at = NULL,
+    actual_confirmed_on = NULL,
     created_at = NOW()
 WHERE id = ?;

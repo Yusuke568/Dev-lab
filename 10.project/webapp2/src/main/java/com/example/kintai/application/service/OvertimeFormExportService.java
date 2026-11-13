@@ -85,12 +85,23 @@ public class OvertimeFormExportService {
             TimeCells planned = OvertimeFormCalculator.planned(minutes(req.getPlannedStartTime()),
                     plannedEnd(req.getPlannedStartTime(), req.getPlannedEndTime()), req.getPlannedOvertimeMinutes(),
                     req.getCorrectionMinutes(), req.getCorrectionMidMinutes(), holiday);
-            TimeCells actual = actual(attendance.get(date), holiday);
+            AttendanceRecord record = attendance.get(date);
+            TimeCells actual = actual(record, holiday);
             LocalDate autoApproved = req.isApproved() && req.getDecidedAt() != null
                     ? LocalDate.parse(req.getDecidedAt().substring(0, 10)) : null;
+            // 実績報告の承認欄：勤怠がまだなければ空欄。実績が申請と合っていて承認済みなら、段ごとの承認日も使える
+            List<com.example.kintai.domain.service.OvertimeFormCalculator.ApprovalMark> actualApprovals;
+            if (record == null || record.getWorkTime() == null) {
+                actualApprovals = OvertimeFormCalculator.actualApprovals(steps, req.getBaseLevels(), null, false, autoApproved);
+            } else {
+                boolean matches = req.isApproved() && OvertimeFormCalculator.actualConfirmedOn(req.getPlannedOvertimeMinutes(),
+                        record.getOvertimeMinutes(), holiday, null, date) != null;
+                actualApprovals = OvertimeFormCalculator.actualApprovals(steps, req.getBaseLevels(),
+                        req.getActualConfirmedOn(), matches, autoApproved);
+            }
             rows.add(new FormRow(date, req.getProjectName(), planned,
                     req.getCategory() != null ? req.getCategory() : OvertimeRequest.DEFAULT_CATEGORY,
-                    OvertimeFormCalculator.approvals(steps, autoApproved), actual, req.getReason()));
+                    OvertimeFormCalculator.approvals(steps, autoApproved), actual, req.getReason(), actualApprovals));
             // 課長名・所属長名は、いちばん新しい申請のルートの1段目・2段目の承認者
             String c = OvertimeFormCalculator.approverName(steps, 1);
             String h = OvertimeFormCalculator.approverName(steps, 2);

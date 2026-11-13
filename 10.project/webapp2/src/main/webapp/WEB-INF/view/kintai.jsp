@@ -2091,7 +2091,37 @@ body.kintai-calendar-view .table-responsive {
 	    renderWeeklyReportCard();
 	}
 
-	document.addEventListener("DOMContentLoaded", renderWeeklyReportCard);
+	/**
+	 * 最初に出す週（木〜翌水）の番号。
+	 *   ふだんは今日を含む週。木曜・金曜は、終わったばかりの先週（前の水曜までの週）を出す（先週の報告を書くため）。
+	 *   表示中の月にその週がなければ今日を含む週、それもなければ 0（最初の週）。
+	 */
+	function weeklyReportIndexOfToday() {
+	    const now = new Date();
+	    const pad = (n) => String(n).padStart(2, "0");
+	    const text = (date) => date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate());
+	    const blocks = Array.from(document.querySelectorAll(".weekly-report-block"));
+	    const indexOf = (dateText) => blocks.findIndex((block) => {
+	        const end = block.dataset.weekEnd;
+	        if (!end) return false;
+	        const [y, m, d] = end.split("-").map(Number);
+	        return text(new Date(y, m - 1, d - 6)) <= dateText && dateText <= end;
+	    });
+	    const today = text(now);
+	    const dow = now.getDay(); // 4 = 木、5 = 金
+	    if (dow === 4 || dow === 5) {
+	        const lastWeek = indexOf(text(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7)));
+	        if (lastWeek >= 0) return lastWeek;
+	    }
+	    const index = indexOf(today);
+	    return index >= 0 ? index : 0;
+	}
+
+	document.addEventListener("DOMContentLoaded", () => {
+	    // 最初は今日を含む週を出す
+	    wwrCurrentIndex = weeklyReportIndexOfToday();
+	    renderWeeklyReportCard();
+	});
 
 	// PC では「その他の操作」を最初から開いておく（スマホでは閉じておき、上部を短くする）
 	document.addEventListener("DOMContentLoaded", () => {

@@ -1011,6 +1011,52 @@ body.kintai-calendar-view .table-responsive {
 .mc-ot.ng { background: #c50000; color: #ffffff; }
 .mc-ot.wait { background: #fefcbf; color: #744210; border: 1px solid #d69e2e; }
 .mc-ot.ok { background: #e6fffa; color: #22543d; border: 1px solid #38a169; }
+/* まだ時間外の実績がない日の残業事前申請（予定）。実績の印より控えめに点線で出す */
+.mc-ot-plan {
+    display: block;
+    margin-top: 2px;
+    padding: 1px 2px;
+    border-radius: 3px;
+    border: 1px dashed currentColor;
+    font-size: 0.62rem;
+    line-height: 1.25;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background: #ffffff;
+}
+.mc-ot-plan b { display: block; font-size: 0.64rem; }
+.mc-ot-plan.ok { color: #22543d; }
+.mc-ot-plan.wait { color: #744210; }
+.mc-ot-plan.ng { color: #c50000; }
+/* 実績が申請の予定より多い日 */
+.mc-ot-over {
+    display: block;
+    margin-top: 1px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: #c05621;
+    text-align: center;
+    white-space: nowrap;
+}
+/* 勤怠表の時間外の欄：残業事前申請のアイコン */
+.ot-req-slot { display: block; }
+.ot-req-slot:empty { display: none; }
+.ot-req {
+    display: inline-block;
+    margin-top: 2px;
+    padding: 0 6px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: help;
+}
+.ot-req.ok { background: #e6fffa; color: #22543d; border: 1px solid #38a169; }
+.ot-req.wait { background: #fefcbf; color: #744210; border: 1px solid #d69e2e; }
+.ot-req.ng { background: #fff5f5; color: #c50000; border: 1px solid #c50000; }
+.ot-req.over { background: #fffaf0; color: #c05621; border: 1px solid #dd6b20; }
 .mc-day.ot-ng {
     border: 2px solid #c50000;
     background-color: #fff5f5 !important;
@@ -1028,6 +1074,8 @@ body.kintai-calendar-view .table-responsive {
 .mc-ot-key.ng { background: #c50000; color: #ffffff; }
 .mc-ot-key.wait { background: #fefcbf; color: #744210; border: 1px solid #d69e2e; }
 .mc-ot-key.ok { background: #e6fffa; color: #22543d; border: 1px solid #38a169; }
+.mc-ot-key.plan { background: #ffffff; color: #22543d; border: 1px dashed #38a169; }
+.mc-ot-key.over { background: #fffaf0; color: #c05621; border: 1px solid #dd6b20; }
 .mc-ot-alert {
     margin-bottom: 8px;
     padding: 10px 12px;
@@ -1597,7 +1645,10 @@ body.kintai-calendar-view .table-responsive {
 				<c:forEach var="daily" items="${attendanceData.dailyRecords}">
 					<c:set var="week" value="${daily.date.dayOfWeek.toString()}" />
 					<c:set var="holidayName" value="${holidayNames[daily.date]}" />
+					<c:set var="otReq" value="${overtimeRequestsByDate[daily.date]}" />
 					<tr data-date="${daily.date}" data-week="${fn:substring(week, 0, 3)}"
+						<c:if test="${not empty otReq}">data-ot-status="${otReq.status}" data-ot-planned="${otReq.plannedOvertimeMinutes}"
+						data-ot-title="<c:out value='残業事前申請（${otReq.statusLabel}）：予定 ${not empty otReq.plannedStartTime ? otReq.plannedStartTime : "09:00"}〜${not empty otReq.plannedEndTime ? otReq.plannedEndTime : "18:00"}（${otReq.plannedOvertimeBreakdown}）${not empty otReq.projectName ? " ／ " : ""}${otReq.projectName} ／ ${otReq.reason}' />"</c:if>
 						class="${week == 'SATURDAY' ? 'saturday' : ''} ${week == 'SUNDAY' ? 'sunday' : ''} ${not empty holidayName ? 'holiday' : ''}">
 						<td data-label="選択"><input type="checkbox" class="row-checkbox" value="${daily.date}"></td>
 						<td data-label="日"><c:out value="${daily.date.dayOfMonth}" /></td>
@@ -1609,12 +1660,10 @@ body.kintai-calendar-view .table-responsive {
 							<%-- 退勤が出勤より前の時刻なら、日をまたいだ翌日の退勤として扱う --%>
 							<span class="next-day-badge" hidden title="出勤より前の時刻なので、翌日の退勤として扱います">翌日</span></td>
 						<td data-label="時間"><c:out value="${daily.workHours}" /></td>
-						<td data-label="時間外">
-							<c:choose>
+						<td data-label="時間外"><span class="ot-actual"><c:choose>
 								<c:when test="${daily.overtimeMinutes > 0}"><c:out value="${daily.overtimeMinutesFormatted}" /></c:when>
 								<c:otherwise>ー</c:otherwise>
-							</c:choose>
-						</td>
+							</c:choose></span><%-- 残業事前申請のアイコンと予定超過（kintai.js が描く） --%><span class="ot-req-slot"></span></td>
 						<td data-label="勤務区分"><select name="status" class="form-input">
 								<option value="" ${empty daily.abstractId ? 'selected' : ''}>未設定</option>
 								<c:forEach var="opt" items="${workTypes}">
@@ -1835,12 +1884,12 @@ body.kintai-calendar-view .table-responsive {
 	</select>
 
 	<script
-		src="${pageContext.request.contextPath}/resources/js/kintai/kintai.js?v=20261112b"
+		src="${pageContext.request.contextPath}/resources/js/kintai/kintai.js?v=20261113c"
 		type="module">
 	</script>
 	<%-- カレンダー表示と入力ポップアップ。kintai.js の後に読み込む --%>
 	<script
-		src="${pageContext.request.contextPath}/resources/js/kintai/month-calendar.js?v=20261112b"
+		src="${pageContext.request.contextPath}/resources/js/kintai/month-calendar.js?v=20261113c"
 		type="module">
 	</script>
 

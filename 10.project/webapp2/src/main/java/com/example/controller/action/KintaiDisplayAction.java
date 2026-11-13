@@ -133,6 +133,11 @@ public class KintaiDisplayAction implements Action {
             java.util.Map<LocalDate, String> overtimeRequestStatus = myRequests.stream()
                     .collect(Collectors.toMap(OvertimeRequest::getTargetDate, OvertimeRequest::getStatus, (a, b) -> b));
             request.setAttribute("overtimeRequestStatus", overtimeRequestStatus);
+            // 日ごとの申請（取り下げは除く）。勤怠表・カレンダーの申請アイコンと「予定超過」に使う
+            java.util.Map<LocalDate, OvertimeRequest> overtimeRequestsByDate = myRequests.stream()
+                    .filter(r -> !r.isWithdrawn())
+                    .collect(Collectors.toMap(OvertimeRequest::getTargetDate, r -> r, (a, b) -> b));
+            request.setAttribute("overtimeRequestsByDate", overtimeRequestsByDate);
             long pendingRequestCount = myRequests.stream().filter(OvertimeRequest::isPending).count();
             long rejectedRequestCount = myRequests.stream().filter(OvertimeRequest::isRejected).count();
 

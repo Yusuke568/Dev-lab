@@ -219,3 +219,31 @@ export function holidayOvertimeByDate() {
   });
   return result;
 }
+
+// -------- 残業事前申請のアイコン（勤怠表の時間外の欄・カレンダー） --------
+
+const OT_REQUEST_KIND = {
+  APPROVED: { cls: "ok", icon: "✅", label: "承認済" },
+  PENDING: { cls: "wait", icon: "⏳", label: "申請中" },
+  REJECTED: { cls: "ng", icon: "✖", label: "却下" }
+};
+
+/**
+ * その日の残業事前申請（行の data-ot-status / data-ot-planned / data-ot-title）。申請がなければ null。
+ * over は、承認済み・申請中の申請の予定より時間外の実績が多い分（分）。申請し直し（訂正）の目安。
+ * @param {HTMLTableRowElement} row 勤怠表の行
+ * @param {number} actualMinutes その日の時間外（今の入力から計算した値）
+ */
+export function overtimeRequestOf(row, actualMinutes) {
+  const kind = OT_REQUEST_KIND[row.dataset.otStatus || ""];
+  if (!kind) return null;
+  const planned = Number(row.dataset.otPlanned) || 0;
+  const over = row.dataset.otStatus !== "REJECTED" && actualMinutes > planned ? actualMinutes - planned : 0;
+  return Object.assign({ planned, over, title: row.dataset.otTitle || "" }, kind);
+}
+
+/** 分を「2:00」に */
+export function shortHm(minutes) {
+  const m = Math.max(0, Math.round(minutes));
+  return Math.floor(m / 60) + ":" + String(m % 60).padStart(2, "0");
+}

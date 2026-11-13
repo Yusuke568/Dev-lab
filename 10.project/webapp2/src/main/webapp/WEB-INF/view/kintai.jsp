@@ -1332,10 +1332,41 @@ body.kintai-calendar-view .table-responsive {
         max-height: 88dvh;
     }
 }
+/* 画面右上のアカウント操作（パスワード変更・ログアウト）。menu.jsp と同じ見た目 */
+.account-bar {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	max-width: 98%;
+	margin: 0 auto 0.5rem;
+}
+.account-bar a {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 12px;
+	font-size: 0.85rem;
+	border: 1px solid #cbd5e0;
+	border-radius: 999px;
+	color: #4a5568;
+	background: #fff;
+	text-decoration: none;
+	white-space: nowrap;
+}
+.account-bar a:hover {
+	border-color: #90cdf4;
+	color: #1a3d6d;
+}
 </style>
 <%@ include file="_icons.jspf" %>
 </head>
 <body data-context-path="${pageContext.request.contextPath}">
+
+	<%-- 画面右上のアカウント操作（パスワード変更・ログアウト）。メニュー画面と同じ小さいボタン --%>
+	<div class="account-bar">
+		<a href="${pageContext.request.contextPath}/passwordChange.do" title="ログインに使うパスワードを変更します">🔑 パスワード変更</a>
+		<a href="${pageContext.request.contextPath}/logout.do" title="ログアウトしてログイン画面に戻ります">↩️ ログアウト</a>
+	</div>
 
 	<!-- ▼ ステータスエリア ▼ -->
 	<div class="status-area">
@@ -1447,8 +1478,6 @@ body.kintai-calendar-view .table-responsive {
 								onclick="document.getElementById('work-report-import-file').click();">📥 作業報告書(Excel)取込</button>
 						</form>
 						</c:if>
-						<a href="${pageContext.request.contextPath}/passwordChange.do" class="btn btn-secondary">パスワード変更</a>
-						<a href="${pageContext.request.contextPath}/logout.do" class="btn btn-secondary">ログアウト</a>
 					</div>
 				</details>
 			</div>

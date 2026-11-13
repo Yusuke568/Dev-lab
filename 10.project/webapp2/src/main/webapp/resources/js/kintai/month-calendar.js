@@ -8,7 +8,7 @@
  * 「決定」で行の入力欄に書き戻して input / change イベントを送る。これで未保存の印・時間の再計算・
  * 有給残日数・保存（kintai.js）は表で入力したときと同じように動く。
  */
-import { calculateTotalWorkMinutes, calculateOvertime, isNextDayEnd, getMinutes, localDateString, holidayOvertimeByDate, overtimeRequestOf, shortHm } from "./utils.js?v=20261113c";
+import { calculateTotalWorkMinutes, calculateOvertime, isNextDayEnd, getMinutes, localDateString, holidayOvertimeByDate, overtimeRequestOf, shortHm } from "./utils.js?v=20261113d";
 
 const VIEW_KEY = "kintaiView";
 const WEEK_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
@@ -182,7 +182,7 @@ function buildCalendar() {
     '<span><b class="mc-ot-key wait">⏳申請中</b>承認待ち</span>' +
     '<span><b class="mc-ot-key ok">✅承認済</b>残業 承認済み</span>' +
     '<span><b class="mc-ot-key plan">✅予定2:00</b>点線はまだ実績のない日の申請</span>' +
-    '<span><b class="mc-ot-key over">⚠超過+0:30</b>実績が申請の予定より多い</span>' +
+    '<span><b class="mc-ot-key over">⚠超過+0:30</b>実績が申請の予定と違う（⚠少ない−2:00）。日付を開いて申請し直す</span>' +
     '<span><i class="mc-dot wait"></i>有給などの承認待ち・却下</span>' +
     '<span class="mc-legend-hint">日付をタップすると入力できます</span>';
   container.appendChild(legend);
@@ -229,19 +229,23 @@ function renderDay(row) {
     html += '<span class="mc-time">' + (shortTime(v.kintaifrom) || "--:--") + "</span>";
     html += '<span class="mc-time">' + (v.kintaito ? (nextDay ? "翌" : "") + shortTime(v.kintaito) : "--:--") + "</span>";
   }
-  const req = overtimeRequestOf(row, ot.minutes);
+  const req = overtimeRequestOf(row, ot.minutes, !!(v.kintaifrom && v.kintaito));
+  const diffHtml = !req ? "" : req.over > 0
+    ? '<span class="mc-ot-over" title="時間外の実績が、残業事前申請の予定より多くなっています。申請し直してください">⚠超過+' + shortHm(req.over) + "</span>"
+    : req.under > 0
+      ? '<span class="mc-ot-over" title="時間外の実績が、残業事前申請の予定より少なくなっています。申請し直してください">⚠少ない−' + shortHm(req.under) + "</span>"
+      : "";
   if (ot.state) {
     // スマホの狭いマスでも切れないよう、2行目は時間だけにする（「未申請」の下に「2:00」）
     html += '<span class="mc-ot ' + ot.state + '" title="時間外 ' + formatShortHm(ot.minutes)
       + (req ? "\n" + escapeHtml(req.title) : "") + '"><b>' + (OT_ICON[ot.label] || "") + ot.label + "</b>"
       + formatShortHm(ot.minutes) + "</span>";
-    if (req && req.over > 0) {
-      html += '<span class="mc-ot-over" title="時間外の実績が、残業事前申請の予定より多くなっています">⚠超過+' + shortHm(req.over) + "</span>";
-    }
+    html += diffHtml;
   } else if (req) {
     // まだ時間外の実績がない日（これから残業する予定の日など）も、申請があれば出す
     html += '<span class="mc-ot-plan ' + req.cls + '" title="' + escapeHtml(req.title) + '"><b>' + req.icon + req.label + "</b>"
       + (req.cls !== "ng" ? "予定" + shortHm(req.planned) : "") + "</span>";
+    html += diffHtml; // 出退勤を入れたのに時間外が予定より少ない日
   }
   cell.innerHTML = html;
 
@@ -254,7 +258,8 @@ function renderDay(row) {
   if (ot.state) parts.push("時間外 " + formatShortHm(ot.minutes) + "、残業の事前申請 " + ot.label);
   else if (req) parts.push("残業の事前申請 " + req.label + (req.cls !== "ng" ? "、予定 " + shortHm(req.planned) : ""));
   else if (mark) parts.push(mark.label);
-  if (req && req.over > 0) parts.push("予定より " + shortHm(req.over) + " 多い");
+  if (req && req.over > 0) parts.push("予定より " + shortHm(req.over) + " 多い。申請し直してください");
+  if (req && req.under > 0) parts.push("予定より " + shortHm(req.under) + " 少ない。申請し直してください");
   if (dirty) parts.push("未保存");
   cell.setAttribute("aria-label", parts.join("、"));
 }

@@ -1057,6 +1057,7 @@ body.kintai-calendar-view .table-responsive {
 .ot-req.wait { background: #fefcbf; color: #744210; border: 1px solid #d69e2e; }
 .ot-req.ng { background: #fff5f5; color: #c50000; border: 1px solid #c50000; }
 .ot-req.over { background: #fffaf0; color: #c05621; border: 1px solid #dd6b20; }
+.ot-req-link { display: inline-block; margin-top: 2px; margin-left: 4px; font-size: 0.75rem; white-space: nowrap; }
 .mc-day.ot-ng {
     border: 2px solid #c50000;
     background-color: #fff5f5 !important;
@@ -1884,12 +1885,12 @@ body.kintai-calendar-view .table-responsive {
 	</select>
 
 	<script
-		src="${pageContext.request.contextPath}/resources/js/kintai/kintai.js?v=20261113c"
+		src="${pageContext.request.contextPath}/resources/js/kintai/kintai.js?v=20261113d"
 		type="module">
 	</script>
 	<%-- カレンダー表示と入力ポップアップ。kintai.js の後に読み込む --%>
 	<script
-		src="${pageContext.request.contextPath}/resources/js/kintai/month-calendar.js?v=20261113c"
+		src="${pageContext.request.contextPath}/resources/js/kintai/month-calendar.js?v=20261113d"
 		type="module">
 	</script>
 

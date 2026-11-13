@@ -230,16 +230,31 @@ const OT_REQUEST_KIND = {
 
 /**
  * その日の残業事前申請（行の data-ot-status / data-ot-planned / data-ot-title）。申請がなければ null。
- * over は、承認済み・申請中の申請の予定より時間外の実績が多い分（分）。申請し直し（訂正）の目安。
+ * 承認済み・申請中の申請で、時間外の実績が予定と違う日は申請し直す（訂正する）運用なので、その差を返す。
+ *   over  … 実績が予定より多い分（分）
+ *   under … 実績が予定より少ない分（分）。出勤・退勤を入力済みの日だけ。休日（土日・祝日）は数えない
+ *           （休日の申請は勤務時間を全部見込みにしていて、週40時間の決まりで実績が少なくなるのは正常なため）
  * @param {HTMLTableRowElement} row 勤怠表の行
  * @param {number} actualMinutes その日の時間外（今の入力から計算した値）
+ * @param {boolean} [hasActual] 出勤・退勤を入力済みか
  */
-export function overtimeRequestOf(row, actualMinutes) {
+export function overtimeRequestOf(row, actualMinutes, hasActual) {
   const kind = OT_REQUEST_KIND[row.dataset.otStatus || ""];
   if (!kind) return null;
   const planned = Number(row.dataset.otPlanned) || 0;
-  const over = row.dataset.otStatus !== "REJECTED" && actualMinutes > planned ? actualMinutes - planned : 0;
-  return Object.assign({ planned, over, title: row.dataset.otTitle || "" }, kind);
+  const active = row.dataset.otStatus !== "REJECTED";
+  const holiday = row.classList.contains("saturday") || row.classList.contains("sunday") || row.classList.contains("holiday");
+  const over = active && actualMinutes > planned ? actualMinutes - planned : 0;
+  const under = active && hasActual && !holiday && actualMinutes < planned ? planned - actualMinutes : 0;
+  return Object.assign({ planned, over, under, title: row.dataset.otTitle || "" }, kind);
+}
+
+/** 申請し直す画面（その日の実績を入れた状態で開く）。上長が代わりに見ている画面では null */
+export function overtimeRequestUrl(row) {
+  const root = document.getElementById("kintai-app-root");
+  if (root && root.dataset.proxyMode === "true") return null;
+  const contextPath = document.body.dataset.contextPath || "";
+  return contextPath + "/overtimeRequestMenu.do?targetDate=" + encodeURIComponent(row.dataset.date);
 }
 
 /** 分を「2:00」に */

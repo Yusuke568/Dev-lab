@@ -1,8 +1,8 @@
 import {
   collectAttendanceRecords, collectRowRecord, getMinutes, calculateTotalWorkMinutes, calculateOvertime,
   localDateString, currentTimeString, getTimeInput, isNextDayEnd, holidayOvertimeByDate,
-  overtimeRequestOf, shortHm
-} from "./utils.js?v=20261113c";
+  overtimeRequestOf, overtimeRequestUrl, shortHm
+} from "./utils.js?v=20261113d";
 
 // Get data from the root element's dataset
 const rootEl = document.getElementById("kintai-app-root");
@@ -468,19 +468,19 @@ function updateOvertimePerRow() {
       const overtime = holidayOvertime.has(row.dataset.date)
         ? holidayOvertime.get(row.dataset.date)
         : calculateOvertime(start, end, addMinutes);
-      setOvertimeCell(row, overtimeCell, overtime);
+      setOvertimeCell(row, overtimeCell, overtime, true);
     } else {
       workTimeCell.textContent = "";
-      setOvertimeCell(row, overtimeCell, 0);
+      setOvertimeCell(row, overtimeCell, 0, false);
     }
   });
 }
 
 /**
  * 勤怠表の時間外の欄：時間外と、残業事前申請のアイコン（✅承認済・⏳申請中・✖却下と予定の時間）、
- * 実績が予定より多い日の「⚠ 予定超過」。文字は textContent で入れる。
+ * 実績が予定と違う日の「⚠ 予定超過」「⚠ 予定より少ない」と「申請し直す」。文字は textContent で入れる。
  */
-function setOvertimeCell(row, cell, overtime) {
+function setOvertimeCell(row, cell, overtime, hasActual) {
   let actual = cell.querySelector(".ot-actual");
   let slot = cell.querySelector(".ot-req-slot");
   if (!actual || !slot) {
@@ -493,19 +493,27 @@ function setOvertimeCell(row, cell, overtime) {
   }
   actual.textContent = overtime > 0 ? formatHm(overtime) : "ー";
   slot.textContent = "";
-  const req = overtimeRequestOf(row, overtime);
+  const req = overtimeRequestOf(row, overtime, hasActual);
   if (!req) return;
   const badge = document.createElement("span");
   badge.className = "ot-req " + req.cls;
   badge.title = req.title;
   badge.textContent = req.icon + " " + req.label + (req.planned > 0 && req.cls !== "ng" ? " " + shortHm(req.planned) : "");
   slot.appendChild(badge);
-  if (req.over > 0) {
-    const over = document.createElement("span");
-    over.className = "ot-req over";
-    over.title = "時間外の実績が、残業事前申請の予定より多くなっています。必要なら申請し直してください。";
-    over.textContent = "⚠ 予定超過 +" + shortHm(req.over);
-    slot.appendChild(over);
+  if (req.over > 0 || req.under > 0) {
+    const diff = document.createElement("span");
+    diff.className = "ot-req over";
+    diff.title = "時間外の実績が、残業事前申請の予定と違います。実績に合わせて申請し直してください。";
+    diff.textContent = req.over > 0 ? "⚠ 予定超過 +" + shortHm(req.over) : "⚠ 予定より少ない −" + shortHm(req.under);
+    slot.appendChild(diff);
+    const url = overtimeRequestUrl(row);
+    if (url) {
+      const link = document.createElement("a");
+      link.className = "ot-req-link";
+      link.href = url;
+      link.textContent = "申請し直す ›";
+      slot.appendChild(link);
+    }
   }
 }
 

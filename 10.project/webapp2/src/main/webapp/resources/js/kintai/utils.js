@@ -241,6 +241,8 @@ const OT_REQUEST_KIND = {
 export function overtimeRequestOf(row, actualMinutes, hasActual) {
   const kind = OT_REQUEST_KIND[row.dataset.otStatus || ""];
   if (!kind) return null;
+  // 出退勤を入れて時間外の実績が0だった日（申請したが残業しなかった日）は、申請の印を出さない
+  if (hasActual && actualMinutes <= 0) return null;
   const planned = Number(row.dataset.otPlanned) || 0;
   const active = row.dataset.otStatus !== "REJECTED";
   const holiday = row.classList.contains("saturday") || row.classList.contains("sunday") || row.classList.contains("holiday");

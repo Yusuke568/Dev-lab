@@ -208,6 +208,10 @@ CREATE TABLE IF NOT EXISTS department (
 
 ALTER TABLE staff_table ADD COLUMN IF NOT EXISTS department_id integer REFERENCES department (id);
 
+-- いつもの補正CD（勤怠画面で本人が選ぶ。migrations/20261122_staff_default_correction.sql と同じ）
+ALTER TABLE staff_table ADD COLUMN IF NOT EXISTS default_correction_id integer;
+COMMENT ON COLUMN staff_table.default_correction_id IS 'いつもの補正CD（勤怠画面で本人が選ぶ。未設定の日の初期値）';
+
 -- 所属名称（作業報告書の「所属：」欄。空なら部署名。migrations/20261119_department_report_name.sql と同じ）
 ALTER TABLE department ADD COLUMN IF NOT EXISTS report_name varchar(100);
 COMMENT ON COLUMN department.report_name IS '所属名称（作業報告書の「所属：」欄。空なら部署名）';

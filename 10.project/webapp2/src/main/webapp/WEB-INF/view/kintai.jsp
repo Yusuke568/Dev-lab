@@ -1379,6 +1379,23 @@ body.kintai-calendar-view .table-responsive {
         max-height: 88dvh;
     }
 }
+/* いつもの補正CD（その他の操作の中） */
+.default-correction-form {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 2px 8px;
+	border: 1px solid #cbd5e0;
+	border-radius: 6px;
+	background: #fff;
+	font-size: 0.9rem;
+	white-space: nowrap;
+}
+.default-correction-form select {
+	width: auto;
+	min-width: 8rem;
+	margin: 0;
+}
 /* 画面右上のアカウント操作（パスワード変更・ログアウト）。menu.jsp と同じ見た目 */
 .account-bar {
 	display: flex;
@@ -1452,6 +1469,7 @@ body.kintai-calendar-view .table-responsive {
 
 	<div id="kintai-app-root" class="card" style="max-width: 98%; margin: 0 auto;"
 		data-staff-id="${staffId}"
+		data-default-correction-id="${defaultCorrectionId}"
 		data-proxy-mode="${proxyMode ? 'true' : 'false'}"
 		data-work-types-json='${workTypesJson}'
 		data-break-periods='${breakPeriodsJson}'
@@ -1508,8 +1526,20 @@ body.kintai-calendar-view .table-responsive {
 				<details class="more-actions" id="more-actions">
 					<summary class="btn btn-secondary">その他の操作</summary>
 					<div class="more-actions-menu">
-						<c:if test="${sessionScope.can.MASTER_CORRECTION}">
-							<a href="${pageContext.request.contextPath}/correctionMasterList.do" class="btn btn-secondary">🔧 補正マスタ設定</a>
+						<%-- いつもの補正CD：勤務区分が未設定の日に入力を始めたとき、補正CDが空ならこれを入れる（選ぶとすぐ保存） --%>
+						<c:if test="${not proxyMode}">
+							<form action="${pageContext.request.contextPath}/defaultCorrectionSave.do" method="post" class="default-correction-form"
+								title="勤務区分が未設定の日に時刻を入れる・出勤ボタンを押すと、補正CDが空ならこの補正CDが入ります">
+								<input type="hidden" name="year" value="${attendanceData.yearMonth.year}">
+								<input type="hidden" name="month" value="${attendanceData.yearMonth.monthValue}">
+								<label for="default-correction">⏱️ いつもの補正CD</label>
+								<select id="default-correction" name="correctionId" class="form-input" onchange="this.form.submit()">
+									<option value="">なし</option>
+									<c:forEach var="cm" items="${correctionMasters}">
+										<option value="${cm.id}" ${cm.id == defaultCorrectionId ? 'selected' : ''}><c:out value="${cm.name}" /></option>
+									</c:forEach>
+								</select>
+							</form>
 						</c:if>
 						<c:if test="${not proxyMode}">
 						<c:url value="/workReportExport.do" var="workReportExportUrl">
@@ -1961,12 +1991,12 @@ body.kintai-calendar-view .table-responsive {
 	</select>
 
 	<script
-		src="${pageContext.request.contextPath}/resources/js/kintai/kintai.js?v=20261113f"
+		src="${pageContext.request.contextPath}/resources/js/kintai/kintai.js?v=20261114b"
 		type="module">
 	</script>
 	<%-- カレンダー表示と入力ポップアップ。kintai.js の後に読み込む --%>
 	<script
-		src="${pageContext.request.contextPath}/resources/js/kintai/month-calendar.js?v=20261114a"
+		src="${pageContext.request.contextPath}/resources/js/kintai/month-calendar.js?v=20261114c"
 		type="module">
 	</script>
 

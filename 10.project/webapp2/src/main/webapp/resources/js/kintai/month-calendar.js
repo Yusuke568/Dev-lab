@@ -413,6 +413,24 @@ function setWorkTypeIfUnset() {
   if (work) select.value = String(work.id);
 }
 
+/**
+ * 入力画面を開いたとき：勤務区分が未設定で補正CDも空なら、「いつもの補正CD」（と登録済みの補正(通)・補正(深)）を入れる。
+ * 決定しなければ勤怠表には入らない。入れたら true
+ */
+/** 開いたときに入れた「いつもの補正CD」（入れていなければ空） */
+let prefilledCorrection = "";
+
+function prefillDefaultCorrection() {
+  const defaultCorrection = (root && root.dataset.defaultCorrectionId) || "";
+  const status = $("dd-status-select");
+  const correction = $("dd-correction-select");
+  if (!defaultCorrection || !status || status.value !== "" || !correction || correction.value !== "") return false;
+  if (!Array.from(correction.options).some((o) => o.value === defaultCorrection)) return false;
+  correction.value = defaultCorrection;
+  correction.dispatchEvent(new Event("change")); // 補正(通)・補正(深)も入れる
+  return true;
+}
+
 /** 分 → "13時間00分" */
 function hm(minutes) {
   return Math.floor(minutes / 60) + "時間" + String(minutes % 60).padStart(2, "0") + "分";
@@ -481,8 +499,11 @@ function loadDay(date) {
   $("dd-mid").value = v.correctionMidTime;
   $("dd-indirect").value = v.indirectTime;
   $("dd-memo").value = v.workDescription;
+  // 勤務区分が未設定で補正CDも空の日は、開いたときに「いつもの補正CD」（と補正(通)・補正(深)）を入れておく
+  const prefilled = prefillDefaultCorrection();
+  prefilledCorrection = prefilled ? $("dd-correction-select").value : "";
   // 補正・備考に入力がある日は最初から開いておく
-  $("dd-more").open = !!(v.correctionId || v.correctionUsTime || v.correctionMidTime || v.indirectTime || v.workDescription);
+  $("dd-more").open = prefilled || !!(v.correctionId || v.correctionUsTime || v.correctionMidTime || v.indirectTime || v.workDescription);
 
   // 承認・申請の状態（リンクを含む）は表の「状態」欄をそのまま見せる
   const statusCell = row.cells[9];
@@ -517,6 +538,17 @@ function setRowValue(row, name, value, eventType) {
 function applyDialog() {
   const row = rowOf(currentDate);
   if (!row) return;
+  // 開いたときに入れた「いつもの補正CD」だけで、ほかに何も入れずに決定したら、補正は入れない（空の日に補正だけ残さない）
+  const statusSel = $("dd-status-select");
+  if (prefilledCorrection && !$("dd-from").value && !$("dd-to").value && statusSel && statusSel.value === ""
+      && !$("dd-indirect").value && !$("dd-memo").value) {
+    const corr = $("dd-correction-select");
+    if (corr && corr.value === prefilledCorrection) {
+      corr.value = "";
+      $("dd-us").value = "";
+      $("dd-mid").value = "";
+    }
+  }
   setRowValue(row, "kintaifrom", $("dd-from").value, "input");
   setRowValue(row, "kintaito", $("dd-to").value, "input");
   // 時刻を入れると表側でも勤務区分が「出勤」になることがあるので、ポップアップの選択で上書きする

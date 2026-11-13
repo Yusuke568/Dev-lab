@@ -30,7 +30,35 @@ import java.util.stream.Collectors;
 
 public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, SaveAttendanceRecordPort, LoadPendingApprovalsPort,
         com.example.kintai.domain.port.out.SubordinatePort, com.example.kintai.domain.port.out.LoadAttendancePeriodPort,
-        com.example.kintai.domain.port.out.CompanyHolidayPort, com.example.kintai.domain.port.out.ReportDepartmentNamePort {
+        com.example.kintai.domain.port.out.CompanyHolidayPort, com.example.kintai.domain.port.out.ReportDepartmentNamePort,
+        com.example.kintai.domain.port.out.DefaultCorrectionPort {
+
+    @Override
+    public Integer findDefaultCorrectionId(String staffId) {
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement("SELECT default_correction_id FROM staff_table WHERE id = ?")) {
+            ps.setInt(1, Integer.parseInt(staffId));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                int id = rs.getInt(1);
+                return rs.wasNull() ? null : id;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load default correction of: " + staffId, e);
+        }
+    }
+
+    @Override
+    public void saveDefaultCorrectionId(String staffId, Integer correctionId) {
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement("UPDATE staff_table SET default_correction_id = ? WHERE id = ?")) {
+            if (correctionId == null) ps.setNull(1, java.sql.Types.INTEGER); else ps.setInt(1, correctionId);
+            ps.setInt(2, Integer.parseInt(staffId));
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to save default correction of: " + staffId, e);
+        }
+    }
 
     @Override
     public String findReportDepartmentName(com.example.kintai.domain.model.employee.EmployeeId employeeId) {

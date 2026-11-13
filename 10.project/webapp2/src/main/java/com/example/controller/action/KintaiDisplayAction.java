@@ -46,6 +46,14 @@ public class KintaiDisplayAction implements Action {
     /** 週40時間の時間外を画面で計算するための、月の外の日（最初と最後の週）。null なら渡さない */
     private com.example.kintai.application.service.WeeklyOvertimeService weeklyOvertimeService;
 
+    /** いつもの補正CD。null なら出さない */
+    private com.example.kintai.domain.port.out.DefaultCorrectionPort defaultCorrectionPort;
+
+    public KintaiDisplayAction withDefaultCorrection(com.example.kintai.domain.port.out.DefaultCorrectionPort port) {
+        this.defaultCorrectionPort = port;
+        return this;
+    }
+
     public KintaiDisplayAction withWeeklyOvertime(com.example.kintai.application.service.WeeklyOvertimeService service) {
         this.weeklyOvertimeService = service;
         return this;
@@ -150,6 +158,14 @@ public class KintaiDisplayAction implements Action {
             request.setAttribute("pendingRequestCount", pendingRequestCount);
             request.setAttribute("rejectedRequestCount", rejectedRequestCount);
             request.setAttribute("staffId", idParam);
+            // いつもの補正CD（表示している社員の。未設定の日に入力を始めたときの初期値）
+            if (defaultCorrectionPort != null) {
+                try {
+                    request.setAttribute("defaultCorrectionId", defaultCorrectionPort.findDefaultCorrectionId(idParam));
+                } catch (RuntimeException e) {
+                    e.printStackTrace(); // 列がない（マイグレーション前）などでも勤怠は開けるようにする
+                }
+            }
 
             // 月遷移（前月・次月）リンク用
             YearMonth prevMonth = yearMonth.minusMonths(1);

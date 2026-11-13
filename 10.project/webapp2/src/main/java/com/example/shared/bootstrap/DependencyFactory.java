@@ -278,7 +278,10 @@ public class DependencyFactory {
         actionMap.put("KintaiDisplay", new KintaiDisplayAction(this.getMonthlyAttendanceUseCase, this.getWorkTypesUseCase, this.getCorrectionMastersUseCase, this.getMyOvertimeRequestsUseCase, this.getWeeklyWorkReportsUseCase, this.attendanceAccessUseCase,
                 new com.example.kintai.application.service.WeeklyWorkSummaryService(this.attendancePersistenceAdapter),
                 new com.example.kintai.application.service.HolidayService(this.attendancePersistenceAdapter),
-                this.noticeUseCase).withWeeklyOvertime(this.weeklyOvertimeService));
+                this.noticeUseCase).withWeeklyOvertime(this.weeklyOvertimeService)
+                .withDefaultCorrection(this.attendancePersistenceAdapter));
+        actionMap.put("DefaultCorrectionSave", new com.example.kintai.adapter.in.web.DefaultCorrectionSaveAction(
+                this.attendancePersistenceAdapter));
 
         // Shain Actions (New Context)
         actionMap.put("ShainList", new com.example.shain.adapter.in.web.ShainListAction(this.getShainListUseCase, this.getAllClassmastersUseCase));
@@ -374,7 +377,7 @@ public class DependencyFactory {
      * アクションごとに必要な機能。ここに無いアクションは、ログインしていれば誰でも使える。
      */
     private void initializeFeatureMap() {
-        requireFeature(Feature.ATTENDANCE, "KintaiDisplay", "KintaiUpdateApi", "WorkReportExport", "WorkReportImport",
+        requireFeature(Feature.ATTENDANCE, "KintaiDisplay", "KintaiUpdateApi", "DefaultCorrectionSave", "WorkReportExport", "WorkReportImport",
                 "WeeklyWorkReportSave");
         requireFeature(Feature.OVERTIME_REQUEST, "OvertimeRequestMenu", "OvertimeRequestSubmit", "OvertimeRequestWithdraw");
         requireFeature(Feature.LEAVE_REQUEST, "LeaveRequestMenu", "LeaveRequestSubmit");

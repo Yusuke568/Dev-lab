@@ -392,6 +392,14 @@ function setWorkTypeIfUnset(row) {
   if (!select || select.value !== "") return;
   const work = workTypes.find((wt) => wt.name === "出勤");
   if (work) select.value = String(work.id);
+  // 未設定の日に入力を始めたら、補正CDが空なら「いつもの補正CD」を入れる（登録済みの補正(通)・補正(深)も）
+  const defaultCorrection = (document.getElementById("kintai-app-root") || {}).dataset?.defaultCorrectionId || "";
+  const correction = row.querySelector("select[name='correctionId']");
+  if (defaultCorrection && correction && correction.value === ""
+      && Array.from(correction.options).some((o) => o.value === defaultCorrection)) {
+    correction.value = defaultCorrection;
+    applyCorrectionMasterToRow(correction);
+  }
 }
 
 /**

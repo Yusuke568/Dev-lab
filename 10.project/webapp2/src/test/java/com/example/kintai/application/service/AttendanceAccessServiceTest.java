@@ -35,6 +35,11 @@ class AttendanceAccessServiceTest {
         }
 
         @Override
+        public java.util.Optional<Subordinate> findStaff(String staffId) {
+            return java.util.Optional.of(new Subordinate(staffId, "社員" + staffId, "開発1課"));
+        }
+
+        @Override
         public List<Subordinate> findStaffInMyDepartments(String staffId) {
             return List.of(new Subordinate(staffId, "本人", "開発1課"), new Subordinate("301", "社員301", "開発1課"));
         }
@@ -77,8 +82,8 @@ class AttendanceAccessServiceTest {
     }
 
     @Test
-    void 配下の一覧は承認権限があるときだけ返す() {
-        assertEquals(List.of("301", "302"),
+    void 配下の一覧は承認権限があるときだけ返し_自分を先頭に入れる() {
+        assertEquals(List.of("300", "301", "302"),
                 service.getSubordinates("300", APPROVER).stream().map(Subordinate::getStaffId).toList());
         assertTrue(service.getSubordinates("300", GENERAL).isEmpty());
     }

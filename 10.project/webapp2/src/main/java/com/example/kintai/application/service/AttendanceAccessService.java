@@ -39,7 +39,15 @@ public class AttendanceAccessService implements AttendanceAccessUseCase {
         if (loginUser == null || !hasApproval(features)) {
             return Collections.emptyList();
         }
-        return subordinatePort.findManagedStaff(loginUser);
+        // 自分も先頭に入れる（自分の当月・年間のサマリーや時間外申請書も、部下と同じ画面で見られるように）
+        List<Subordinate> list = new java.util.ArrayList<>();
+        subordinatePort.findStaff(loginUser).ifPresent(list::add);
+        for (Subordinate s : subordinatePort.findManagedStaff(loginUser)) {
+            if (!s.getStaffId().equals(loginUser)) {
+                list.add(s);
+            }
+        }
+        return list;
     }
 
     @Override

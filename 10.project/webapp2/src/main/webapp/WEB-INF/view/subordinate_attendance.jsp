@@ -67,6 +67,7 @@
 	white-space: nowrap;
 }
 .sum-table .name { font-weight: 700; white-space: nowrap; }
+.self-tag { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 10px; font-size: 0.72rem; font-weight: 700; background: #e3eefb; color: #1d4f8f; }
 .sum-table td.sum-staff { min-width: 120px; }
 .sum-table .meta { font-size: 0.8rem; color: #718096; }
 .sum-num { font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -196,7 +197,7 @@
 <body>
 	<div class="card">
 		<h1>部下の勤怠表</h1>
-		<p>組織図で自分が承認者になっている部署と、その下の部署に所属する社員の勤怠表を参照・編集できます。</p>
+		<p>自分と、組織図で自分が承認者になっている部署・その下の部署に所属する社員の勤怠表を参照・編集できます。</p>
 
 		<c:if test="${not empty sessionScope.subordinateMessage}">
 			<div class="error-message" style="margin: 0 0 1rem;" role="alert">⚠ <c:out value="${sessionScope.subordinateMessage}" /></div>
@@ -245,7 +246,7 @@
 						<c:forEach var="v" items="${summaries}">
 							<tr>
 								<td class="sum-staff">
-									<div class="name"><c:out value="${v.name}" /></div>
+									<div class="name"><c:out value="${v.name}" /><c:if test="${v.staffId == sessionScope.loginUser}"><span class="self-tag">自分</span></c:if></div>
 									<div class="meta">社員ID <c:out value="${v.staffId}" /> ・ <c:out value="${v.departmentName}" /></div>
 								</td>
 								<td data-label="当月の時間外">
@@ -327,7 +328,7 @@
 					<c:forEach var="s" items="${subordinates}">
 						<li>
 							<div>
-								<div class="name"><c:out value="${s.name}" /></div>
+								<div class="name"><c:out value="${s.name}" /><c:if test="${s.staffId == sessionScope.loginUser}"><span class="self-tag">自分</span></c:if></div>
 								<div class="meta">社員ID <c:out value="${s.staffId}" /> ・ <c:out value="${s.departmentName}" /></div>
 							</div>
 							<c:url value="/kintaiDisplay.do" var="kintaiUrl">

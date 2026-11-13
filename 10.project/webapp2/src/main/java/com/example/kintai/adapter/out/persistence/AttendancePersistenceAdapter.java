@@ -422,6 +422,25 @@ public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, S
         return result;
     }
 
+    @Override
+    public java.util.Optional<com.example.kintai.domain.model.attendance.Subordinate> findStaff(String staffId) {
+        String sql = "SELECT s.id, s.name, d.name AS department_name FROM staff_table s "
+                + "LEFT JOIN department d ON d.id = s.department_id WHERE s.id = ?";
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, Integer.parseInt(staffId));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return java.util.Optional.of(new com.example.kintai.domain.model.attendance.Subordinate(
+                            String.valueOf(rs.getInt("id")), rs.getString("name"), rs.getString("department_name")));
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to find staff: " + staffId, e);
+        }
+        return java.util.Optional.empty();
+    }
+
     // ---- 部下のサマリー用（読むだけ） ----
 
     @Override

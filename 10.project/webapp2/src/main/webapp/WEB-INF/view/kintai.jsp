@@ -763,6 +763,35 @@
         min-width: 0;
     }
 }
+/*
+   スマホを横にしたとき（高さが低い横向き）：週次作業報告は PC と同じ左右2列にし、入りきらない分は横にスクロールする。
+   縦向きは上のスマホ用の表示（1列で縦）のまま。
+*/
+@media (orientation: landscape) and (max-height: 500px) {
+    .weekly-report-block {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .weekly-report-block .wwr-grid {
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) !important;
+        min-width: 900px;
+    }
+    .weekly-report-block .wwr-sheet-head {
+        display: grid !important;
+    }
+    .weekly-report-block .wwr-row {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+        margin-bottom: 4px;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    .weekly-report-block .wwr-cell-label:not(.wwr-cell-label-always) {
+        display: none !important;
+    }
+    .weekly-report-block .form-group {
+        flex: 0 1 auto;
+    }
+}
 
 /* ============================================================
    カレンダー表示（resources/js/kintai/month-calendar.js）
@@ -1321,6 +1350,24 @@ body.kintai-calendar-view .table-responsive {
     }
     .mc-ot b {
         font-size: 0.6rem;
+    }
+}
+/* スマホ（幅480px以下。6.1インチは約390px）：マスが狭いので、申請の印は記号と時間だけにする（意味は下の凡例） */
+@media (max-width: 480px) {
+    .mc-ot-text {
+        display: none;
+    }
+    .mc-ot b,
+    .mc-ot-plan b {
+        display: block; /* 1行目は記号、2行目は時間 */
+        font-size: 0.72rem;
+        line-height: 1.1;
+    }
+    .mc-ot,
+    .mc-ot-plan {
+        font-size: 0.66rem;
+        padding: 1px 0;
+        letter-spacing: 0;
     }
     .day-dialog {
         width: 100vw;
@@ -1919,7 +1966,7 @@ body.kintai-calendar-view .table-responsive {
 	</script>
 	<%-- カレンダー表示と入力ポップアップ。kintai.js の後に読み込む --%>
 	<script
-		src="${pageContext.request.contextPath}/resources/js/kintai/month-calendar.js?v=20261113f"
+		src="${pageContext.request.contextPath}/resources/js/kintai/month-calendar.js?v=20261114a"
 		type="module">
 	</script>
 

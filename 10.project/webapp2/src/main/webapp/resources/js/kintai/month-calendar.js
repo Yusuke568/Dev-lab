@@ -231,20 +231,20 @@ function renderDay(row) {
   }
   const req = overtimeRequestOf(row, ot.minutes, !!(v.kintaifrom && v.kintaito));
   const diffHtml = !req ? "" : req.over > 0
-    ? '<span class="mc-ot-over" title="時間外の実績が、残業事前申請の予定より多くなっています。申請し直してください">⚠超過+' + shortHm(req.over) + "</span>"
+    ? '<span class="mc-ot-over" title="時間外の実績が、残業事前申請の予定より多くなっています。申請し直してください">⚠<span class="mc-ot-text">超過</span>+' + shortHm(req.over) + "</span>"
     : req.under > 0
-      ? '<span class="mc-ot-over" title="時間外の実績が、残業事前申請の予定より少なくなっています。申請し直してください">⚠少ない−' + shortHm(req.under) + "</span>"
+      ? '<span class="mc-ot-over" title="時間外の実績が、残業事前申請の予定より少なくなっています。申請し直してください">⚠<span class="mc-ot-text">少ない</span>−' + shortHm(req.under) + "</span>"
       : "";
   if (ot.state) {
     // スマホの狭いマスでも切れないよう、2行目は時間だけにする（「未申請」の下に「2:00」）
     html += '<span class="mc-ot ' + ot.state + '" title="時間外 ' + formatShortHm(ot.minutes)
-      + (req ? "\n" + escapeHtml(req.title) : "") + '"><b>' + (OT_ICON[ot.label] || "") + ot.label + "</b>"
+      + (req ? "\n" + escapeHtml(req.title) : "") + '"><b>' + (OT_ICON[ot.label] || "") + '<span class="mc-ot-text">' + ot.label + "</span></b>"
       + formatShortHm(ot.minutes) + "</span>";
     html += diffHtml;
   } else if (req) {
     // まだ時間外の実績がない日（これから残業する予定の日など）も、申請があれば出す
-    html += '<span class="mc-ot-plan ' + req.cls + '" title="' + escapeHtml(req.title) + '"><b>' + req.icon + req.label + "</b>"
-      + (req.cls !== "ng" ? "予定" + shortHm(req.planned) : "") + "</span>";
+    html += '<span class="mc-ot-plan ' + req.cls + '" title="' + escapeHtml(req.title) + '"><b>' + req.icon + '<span class="mc-ot-text">' + req.label + "</span></b>"
+      + (req.cls !== "ng" ? '<span class="mc-ot-text">予定</span>' + shortHm(req.planned) : "") + "</span>";
     html += diffHtml; // 出退勤を入れたのに時間外が予定より少ない日
   }
   cell.innerHTML = html;

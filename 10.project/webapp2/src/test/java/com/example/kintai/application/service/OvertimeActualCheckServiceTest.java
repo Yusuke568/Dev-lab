@@ -60,6 +60,7 @@ class OvertimeActualCheckServiceTest {
     private final Map<Integer, List<List<Integer>>> checkLevels = new HashMap<>();
     private final Map<String, LocalDate> checked = new LinkedHashMap<>(); // "段:確認者" → 日
     private OvertimeActualCheckPort.State state = OvertimeActualCheckPort.State.NONE;
+    private final Map<Integer, String> comments = new HashMap<>(); // 段 → コメント
 
     private final OvertimeActualCheckPort checkPort = new OvertimeActualCheckPort() {
         @Override public State findState(int id) { return state; }
@@ -69,6 +70,10 @@ class OvertimeActualCheckServiceTest {
             if (checked.keySet().stream().anyMatch(k -> k.startsWith(level + ":"))) return false;
             checked.put(level + ":" + approver, INPUT);
             return true;
+        }
+        @Override public boolean check(int id, int level, int approver, String comment) {
+            if (comment != null) comments.put(level, comment);
+            return check(id, level, approver);
         }
         @Override public void updateState(int id, String status, Integer level) { state = new State(status, level); }
         @Override public Map<Integer, String> findPendingForApprover(int a) { return Map.of(); }
@@ -142,5 +147,23 @@ class OvertimeActualCheckServiceTest {
         service.sync(7);
         assertEquals(new OvertimeActualCheckPort.State("CONFIRMED", null), state);
         assertTrue(checked.containsKey("1:126"));
+    }
+
+    @Test
+    void 確認のときのコメント_任意_を段ごとに残す_空なら残さない() {
+        approvedRequest(INPUT);
+        service.sync(7);
+        assertTrue(service.confirm("300", List.of(7), Map.of(7, "  深夜の対応、了解です ")).isEmpty());
+        assertTrue(service.confirm("401", List.of(7), Map.of(7, "   ")).isEmpty());
+        assertEquals(Map.of(1, "深夜の対応、了解です"), comments);
+    }
+
+    @Test
+    void 実績確認の進みにコメントを出す() {
+        String route = OvertimeActualCheckService.formatRoute(List.of(
+                new Step(1, "山田", true, LocalDate.of(2026, 11, 26), "OK"),
+                new Step(2, "椎屋", false, null),
+                new Step(2, "佐藤", false, null)));
+        assertEquals("1. 山田 確認済 11/26「OK」 → 2. 椎屋／佐藤 未確認", route);
     }
 }

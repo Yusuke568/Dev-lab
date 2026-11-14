@@ -57,7 +57,10 @@ public final class OvertimeFormCalculator {
     }
 
     /** 承認ルートの1段（承認者の名前と判定） */
-    public record Step(int level, String approverName, boolean approved, LocalDate decidedOn) {
+    public record Step(int level, String approverName, boolean approved, LocalDate decidedOn, String comment) {
+        public Step(int level, String approverName, boolean approved, LocalDate decidedOn) {
+            this(level, approverName, approved, decidedOn, null);
+        }
     }
 
     /**

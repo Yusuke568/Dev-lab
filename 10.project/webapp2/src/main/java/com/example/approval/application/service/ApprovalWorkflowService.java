@@ -184,6 +184,12 @@ public class ApprovalWorkflowService {
      */
     public ApprovalOutcome decide(RequestType requestType, int requestId, int currentLevel,
                                   String approverStaffId, boolean approve) {
+        return decide(requestType, requestId, currentLevel, approverStaffId, approve, null);
+    }
+
+    /** 理由（任意）つきで判定する。理由は前後の空白を除き、空なら記録しない（255文字まで）。 */
+    public ApprovalOutcome decide(RequestType requestType, int requestId, int currentLevel,
+                                  String approverStaffId, boolean approve, String comment) {
         List<ApprovalStep> steps = approvalStepPort.findSteps(requestType, requestId);
         List<ApprovalStep> current = steps.stream()
                 .filter(s -> s.getLevel() == currentLevel)
@@ -200,7 +206,7 @@ public class ApprovalWorkflowService {
         }
 
         approvalStepPort.recordDecision(requestType, requestId, currentLevel, approver,
-                approve ? ApprovalStep.APPROVED : ApprovalStep.REJECTED);
+                approve ? ApprovalStep.APPROVED : ApprovalStep.REJECTED, normalizeComment(comment));
 
         if (!approve) {
             return ApprovalOutcome.REJECTED;
@@ -222,5 +228,13 @@ public class ApprovalWorkflowService {
             result.put(requestId, levels);
         });
         return result;
+    }
+
+    /** 承認・却下の理由（任意）を整える：前後の空白を除き、空なら null、255文字を超える分は切る */
+    public static String normalizeComment(String comment) {
+        if (comment == null) return null;
+        String c = comment.strip();
+        if (c.isEmpty()) return null;
+        return c.length() > 255 ? c.substring(0, 255) : c;
     }
 }

@@ -24,4 +24,10 @@ public interface ApprovalStepPort {
 
     /** 段の判定を、判定した候補者の行に記録する。 */
     void recordDecision(RequestType requestType, int requestId, int level, int approverStaffId, String decision);
+
+    /** 段の判定を、理由（任意。空なら null）と一緒に記録する。 */
+    default void recordDecision(RequestType requestType, int requestId, int level, int approverStaffId,
+                                String decision, String comment) {
+        recordDecision(requestType, requestId, level, approverStaffId, decision);
+    }
 }

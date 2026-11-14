@@ -284,7 +284,8 @@ public class DependencyFactory {
                 new com.example.kintai.application.service.HolidayService(this.attendancePersistenceAdapter),
                 this.noticeUseCase).withWeeklyOvertime(this.weeklyOvertimeService)
                 .withDefaultCorrection(this.attendancePersistenceAdapter)
-                .withApprovalBadge(approvalBadgeService));
+                .withApprovalBadge(approvalBadgeService)
+                .withApprovalComments(this.approvalHistoryPersistenceAdapter, this.approvalWorkflowService));
         actionMap.put("DefaultCorrectionSave", new com.example.kintai.adapter.in.web.DefaultCorrectionSaveAction(
                 this.attendancePersistenceAdapter));
 
@@ -337,7 +338,7 @@ public class DependencyFactory {
 
         // Overtime Request Actions
         actionMap.put("OvertimeRequestMenu", new OvertimeRequestMenuAction(this.getMyOvertimeRequestsUseCase, this.getMonthlyAttendanceUseCase,
-                this.approvalWorkflowService));
+                this.approvalWorkflowService).withActualCheck(this.overtimeActualCheckService));
         actionMap.put("WorkReportExport", new WorkReportExportAction(this.exportWorkReportUseCase));
         actionMap.put("WorkReportImport", new com.example.kintai.adapter.in.web.WorkReportImportAction(this.importWorkReportUseCase));
         actionMap.put("WorkReportBulkImport", new com.example.kintai.adapter.in.web.WorkReportBulkImportAction(

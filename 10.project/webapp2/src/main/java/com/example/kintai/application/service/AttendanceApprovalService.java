@@ -54,6 +54,11 @@ public class AttendanceApprovalService implements GetPendingApprovalsUseCase, Ap
 
     @Override
     public void decide(String employeeId, LocalDate date, boolean approve, String decidedBy) {
+        decide(employeeId, date, approve, decidedBy, null);
+    }
+
+    @Override
+    public void decide(String employeeId, LocalDate date, boolean approve, String decidedBy, String comment) {
         if (!loadPendingApprovalsPort.isManagedBy(employeeId, decidedBy)) {
             throw new IllegalStateException("部下の勤怠のみ承認・却下できます: " + employeeId);
         }
@@ -67,7 +72,8 @@ public class AttendanceApprovalService implements GetPendingApprovalsUseCase, Ap
 
         record.setApprovalStatus(approve ? STATUS_APPROVED : STATUS_REJECTED);
         saveAttendanceRecordPort.save(record);
-        saveApprovalHistoryPort.record(employeeId, date, approve, decidedBy);
+        saveApprovalHistoryPort.record(employeeId, date, approve, decidedBy,
+                com.example.approval.application.service.ApprovalWorkflowService.normalizeComment(comment));
     }
 
     @Override

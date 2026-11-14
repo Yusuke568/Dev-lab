@@ -59,6 +59,7 @@
 				<th>承認者ID</th>
 				<th>承認者名</th>
 				<th>判定日時</th>
+				<th>理由</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -76,11 +77,12 @@
 					<td><c:out value="${item.decidedById}" /></td>
 					<td><c:out value="${item.decidedByName}" /></td>
 					<td><c:out value="${item.decidedAt}" /></td>
+					<td style="white-space: normal; max-width: 20rem;"><c:out value="${item.comment}" /></td>
 				</tr>
 			</c:forEach>
 			<c:if test="${empty historyItems}">
 				<tr>
-					<td colspan="7" class="text-center">承認・却下の履歴はまだありません。</td>
+					<td colspan="8" class="text-center">承認・却下の履歴はまだありません。</td>
 				</tr>
 			</c:if>
 		</tbody>

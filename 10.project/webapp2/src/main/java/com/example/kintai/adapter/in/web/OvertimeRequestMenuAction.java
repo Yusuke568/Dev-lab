@@ -45,6 +45,14 @@ public class OvertimeRequestMenuAction implements Action {
         this.approvalWorkflowService = approvalWorkflowService;
     }
 
+    /** 残業の実績確認の進みを申請履歴に出す。null なら出さない */
+    private com.example.kintai.application.service.OvertimeActualCheckService actualCheckService;
+
+    public OvertimeRequestMenuAction withActualCheck(com.example.kintai.application.service.OvertimeActualCheckService service) {
+        this.actualCheckService = service;
+        return this;
+    }
+
     @Override
     public View execute(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -78,6 +86,14 @@ public class OvertimeRequestMenuAction implements Action {
         }
 
         request.setAttribute("myRequests", myRequests);
+        // 申請ごとの承認の進み（申請者が、誰のところで止まっているか・誰がいつ承認／却下したか・理由を見られるように）
+        List<Integer> requestIds = new java.util.ArrayList<>();
+        for (OvertimeRequest r : myRequests) requestIds.add(r.getId());
+        request.setAttribute("overtimeRoutes",
+                approvalWorkflowService.getRoutes(com.example.approval.domain.model.RequestType.OVERTIME, requestIds));
+        if (actualCheckService != null) {
+            request.setAttribute("actualCheckRoutes", actualCheckService.routesFor(requestIds));
+        }
         setPreviousDetails(request, myRequests);
         request.setAttribute("myDepartments", approvalWorkflowService.getDepartmentsOfStaff(Integer.parseInt(employeeId)));
         request.setAttribute("attendanceByDate", attendanceByDate);

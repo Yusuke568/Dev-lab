@@ -30,6 +30,11 @@ public interface OvertimeActualCheckPort {
     /** 段の確認者として確認した日時を入れる。その段をまだ誰も確認していなければ true */
     boolean check(int requestId, int level, int approverStaffId);
 
+    /** コメント（任意。空なら null）つきで確認する */
+    default boolean check(int requestId, int level, int approverStaffId, String comment) {
+        return check(requestId, level, approverStaffId);
+    }
+
     void updateState(int requestId, String status, Integer level);
 
     /** 承認者が今の段の候補者で、まだ誰も確認していない申請（申請ID → 申請者の氏名。社員・対象日の順） */

@@ -412,3 +412,7 @@ ALTER TABLE overtime_request ADD COLUMN IF NOT EXISTS actual_level integer;
 COMMENT ON COLUMN overtime_request.actual_status IS '実績確認の状態（NULL / PENDING / CONFIRMED）';
 COMMENT ON COLUMN overtime_request.actual_level IS '実績確認の確認待ちの段';
 ALTER TABLE leave_request ADD COLUMN IF NOT EXISTS department_id integer;
+ALTER TABLE overtime_actual_step ADD COLUMN IF NOT EXISTS comment varchar(255);
+ALTER TABLE kintai_approval_history ADD COLUMN IF NOT EXISTS comment varchar(255);
+COMMENT ON COLUMN overtime_actual_step.comment IS '実績を確認したときのコメント（任意）';
+COMMENT ON COLUMN kintai_approval_history.comment IS '承認・却下の理由（任意）';

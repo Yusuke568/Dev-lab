@@ -11,4 +11,10 @@ import java.util.List;
 public interface LoadApprovalHistoryPort {
 
     List<ApprovalHistoryEntry> loadAll(ApprovalHistoryFilter filter);
+
+    /** 社員の期間内の日ごとの、いちばん新しい承認・却下の理由（理由のある日だけ） */
+    default java.util.Map<java.time.LocalDate, String> findLatestComments(String employeeId,
+                                                                        java.time.LocalDate from, java.time.LocalDate to) {
+        return java.util.Map.of();
+    }
 }

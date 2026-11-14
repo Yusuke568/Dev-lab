@@ -1438,6 +1438,7 @@ body.kintai-calendar-view .table-responsive {
 	border-color: #90cdf4;
 	color: #1a3d6d;
 }
+.approval-comment { display: inline-block; max-width: 14rem; color: #4a5568; font-size: 0.8rem; white-space: normal; text-align: left; }
 </style>
 <%@ include file="_icons.jspf" %>
 </head>
@@ -1824,6 +1825,7 @@ body.kintai-calendar-view .table-responsive {
 										<c:when test="${daily.approvalStatus == 1}"><span style="color: orange; font-weight: bold;">承認待ち</span></c:when>
 										<c:otherwise><span style="color: gray;">未提出</span></c:otherwise>
 									</c:choose>
+									<c:if test="${daily.approvalStatus >= 2 and not empty attendanceApprovalComments[daily.date]}"><br><span class="approval-comment">理由：<c:out value="${attendanceApprovalComments[daily.date]}" /></span></c:if>
 								</c:when>
 								<c:when test="${otRequest == 'APPROVED'}"><span style="color: green; font-weight: bold;">事前申請 承認済</span></c:when>
 								<c:when test="${otRequest == 'PENDING'}"><span style="color: orange; font-weight: bold;">事前申請 申請中</span></c:when>
@@ -1838,6 +1840,15 @@ body.kintai-calendar-view .table-responsive {
 										<br><a href="${dayRequestUrl}" style="font-size: 0.85rem;">申請する ›</a>
 									</c:if>
 								</c:otherwise>
+							</c:choose>
+							<%-- 承認・却下の理由（任意）。事前申請の日は事前申請の理由、そうでなければ勤怠の承認の理由 --%>
+							<c:choose>
+								<c:when test="${not isPaidLeaveDay and (otRequest == 'APPROVED' or otRequest == 'PENDING' or otRequest == 'REJECTED')}">
+									<c:if test="${not empty overtimeRequestComments[daily.date]}"><br><span class="approval-comment">理由：<c:out value="${overtimeRequestComments[daily.date]}" /></span></c:if>
+								</c:when>
+								<c:when test="${not isPaidLeaveDay and daily.overtimeMinutes != 0 and daily.approvalStatus >= 2 and not empty attendanceApprovalComments[daily.date]}">
+									<br><span class="approval-comment">理由：<c:out value="${attendanceApprovalComments[daily.date]}" /></span>
+								</c:when>
 							</c:choose>
 						</td>
 						<td data-label="補正CD" class="detail-col"><select name="correctionId" class="form-input correction-select">

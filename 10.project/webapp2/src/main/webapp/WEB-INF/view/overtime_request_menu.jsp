@@ -32,6 +32,15 @@
 .ot-cal .day.is-today { outline: 2px solid #1baf7a; outline-offset: -2px; }
 .ot-multi-selected { font-size: 0.85rem; color: #2d3748; margin-top: 6px; }
 .ot-prev-note { flex: 1 1 100%; font-size: 0.82rem; color: #4a5568; margin: -0.25rem 0 0; }
+.route-cell { font-size: 0.85rem; min-width: 12rem; }
+.route-step { margin-bottom: 2px; }
+.route-step.is-approved b { color: green; }
+.route-step.is-rejected b { color: #c50000; }
+.route-step.is-current b { color: #c05600; }
+.route-step.is-waiting { color: #a0aec0; }
+.route-at { color: #718096; font-size: 0.8rem; margin-left: 4px; }
+.route-comment { display: block; color: #4a5568; margin-left: 1em; white-space: normal; }
+.route-actual { margin-top: 4px; padding-top: 4px; border-top: 1px dashed #e2e8f0; color: #4a5568; }
 </style>
 </head>
 <body>
@@ -174,7 +183,7 @@
 				<th>申請理由</th>
 				<th>ステータス</th>
 				<th>申請日時</th>
-				<th>承認/却下日時</th>
+				<th>承認の進み・理由</th>
 				<th>実際の勤怠実績</th>
 				<th class="text-center">操作</th>
 			</tr>
@@ -198,7 +207,25 @@
 						</c:choose>
 					</td>
 					<td><c:out value="${req.createdAt}" /></td>
-					<td><c:out value="${req.decidedAt}" /></td>
+					<td class="route-cell">
+						<c:forEach var="step" items="${overtimeRoutes[req.id]}">
+							<div class="route-step ${step.decision == 'REJECTED' ? 'is-rejected' : (empty step.decision ? (req.status == 'PENDING' && step.level == req.currentLevel ? 'is-current' : 'is-waiting') : 'is-approved')}">
+								<c:out value="${step.level}" />. <c:forEach var="cand" items="${step.candidates}" varStatus="cs"><c:if test="${empty step.decision or cand.decided}"><c:if test="${!cs.first and empty step.decision}">／</c:if><c:out value="${cand.approverName}" /></c:if></c:forEach>
+								<c:choose>
+									<c:when test="${step.decision == 'APPROVED'}"><b>承認</b></c:when>
+									<c:when test="${step.decision == 'REJECTED'}"><b>却下</b></c:when>
+									<c:when test="${req.status == 'PENDING' and step.level == req.currentLevel}"><b>承認待ち</b></c:when>
+									<c:otherwise>未処理</c:otherwise>
+								</c:choose>
+								<c:if test="${not empty step.decidedAtShort}"><span class="route-at"><c:out value="${step.decidedAtShort}" /></span></c:if>
+								<c:if test="${not empty step.comment}"><span class="route-comment">理由：<c:out value="${step.comment}" /></span></c:if>
+							</div>
+						</c:forEach>
+						<c:if test="${empty overtimeRoutes[req.id] and not empty req.decidedAt}"><c:out value="${req.decidedAt}" /></c:if>
+						<c:if test="${not empty actualCheckRoutes[req.id]}">
+							<div class="route-actual">実績確認：<c:out value="${actualCheckRoutes[req.id]}" /></div>
+						</c:if>
+					</td>
 					<td>
 						<c:choose>
 							<c:when test="${not empty actual}">

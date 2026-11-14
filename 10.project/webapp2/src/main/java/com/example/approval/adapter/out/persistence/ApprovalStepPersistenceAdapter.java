@@ -29,12 +29,12 @@ public class ApprovalStepPersistenceAdapter implements ApprovalStepPort {
     private static final String INSERT_SQL =
             "INSERT INTO approval_step (request_type, request_id, level, approver_staff_id) VALUES (?, ?, ?, ?)";
     private static final String SELECT_SQL =
-            "SELECT a.request_id, a.level, a.approver_staff_id, s.name AS approver_name, a.decision, a.decided_at " +
+            "SELECT a.request_id, a.level, a.approver_staff_id, s.name AS approver_name, a.decision, a.decided_at, a.comment " +
             "FROM approval_step a LEFT JOIN staff_table s ON a.approver_staff_id = s.id " +
             "WHERE a.request_type = ? AND a.request_id = ANY (?) ORDER BY a.request_id, a.level, a.id";
     /** 判定した候補者の行に記録する（同じ段のほかの候補者の行は未処理のまま残る） */
     private static final String DECIDE_SQL =
-            "UPDATE approval_step SET decision = ?, decided_at = CURRENT_TIMESTAMP " +
+            "UPDATE approval_step SET decision = ?, comment = ?, decided_at = CURRENT_TIMESTAMP " +
             "WHERE request_type = ? AND request_id = ? AND level = ? AND approver_staff_id = ?";
 
     @Override
@@ -90,7 +90,8 @@ public class ApprovalStepPersistenceAdapter implements ApprovalStepPort {
                             rs.getInt("approver_staff_id"),
                             rs.getString("approver_name"),
                             rs.getString("decision"),
-                            decidedAt != null ? decidedAt.toLocalDateTime().format(DATETIME_FORMATTER) : null);
+                            decidedAt != null ? decidedAt.toLocalDateTime().format(DATETIME_FORMATTER) : null,
+                            rs.getString("comment"));
                     result.computeIfAbsent(rs.getInt("request_id"), k -> new ArrayList<>()).add(step);
                 }
             }
@@ -102,13 +103,20 @@ public class ApprovalStepPersistenceAdapter implements ApprovalStepPort {
 
     @Override
     public void recordDecision(RequestType requestType, int requestId, int level, int approverStaffId, String decision) {
+        recordDecision(requestType, requestId, level, approverStaffId, decision, null);
+    }
+
+    @Override
+    public void recordDecision(RequestType requestType, int requestId, int level, int approverStaffId,
+                               String decision, String comment) {
         try (Connection con = ConnectionBase.getConnection();
              PreparedStatement ps = con.prepareStatement(DECIDE_SQL)) {
             ps.setString(1, decision);
-            ps.setString(2, requestType.name());
-            ps.setInt(3, requestId);
-            ps.setInt(4, level);
-            ps.setInt(5, approverStaffId);
+            ps.setString(2, comment);
+            ps.setString(3, requestType.name());
+            ps.setInt(4, requestId);
+            ps.setInt(5, level);
+            ps.setInt(6, approverStaffId);
             ps.executeUpdate();
         } catch (Exception e) {
             throw new RuntimeException("Failed to record approval decision.", e);

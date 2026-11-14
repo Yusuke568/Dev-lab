@@ -31,6 +31,11 @@ public class ApprovalHistoryPersistenceAdapter implements SaveApprovalHistoryPor
 
     @Override
     public void record(String employeeId, LocalDate date, boolean approved, String decidedBy) {
+        record(employeeId, date, approved, decidedBy, null);
+    }
+
+    @Override
+    public void record(String employeeId, LocalDate date, boolean approved, String decidedBy, String comment) {
         String sql = readSqlFile("insert_approval_history.sql");
 
         try (Connection con = ConnectionBase.getConnection();
@@ -39,6 +44,7 @@ public class ApprovalHistoryPersistenceAdapter implements SaveApprovalHistoryPor
             ps.setDate(2, java.sql.Date.valueOf(date));
             ps.setString(3, approved ? "APPROVED" : "REJECTED");
             ps.setInt(4, Integer.parseInt(decidedBy));
+            ps.setString(5, comment);
             ps.executeUpdate();
         } catch (Exception e) {
             throw new RuntimeException("Failed to record approval history.", e);
@@ -103,7 +109,8 @@ public class ApprovalHistoryPersistenceAdapter implements SaveApprovalHistoryPor
                     Timestamp decidedAtTs = rs.getTimestamp("decided_at");
                     String decidedAt = decidedAtTs != null ? decidedAtTs.toLocalDateTime().format(DATETIME_FORMATTER) : "-";
 
-                    list.add(new ApprovalHistoryEntry(employeeId, employeeName, date, decision, decidedById, decidedByName, decidedAt));
+                    list.add(new ApprovalHistoryEntry(employeeId, employeeName, date, decision, decidedById, decidedByName, decidedAt,
+                            rs.getString("comment")));
                 }
             }
         } catch (Exception e) {
@@ -111,6 +118,28 @@ public class ApprovalHistoryPersistenceAdapter implements SaveApprovalHistoryPor
         }
 
         return list;
+    }
+
+    @Override
+    public java.util.Map<LocalDate, String> findLatestComments(String employeeId, LocalDate from, LocalDate to) {
+        String sql = "SELECT DISTINCT ON (work_date) work_date, comment FROM kintai_approval_history "
+                + "WHERE staff_id = ? AND work_date BETWEEN ? AND ? ORDER BY work_date, decided_at DESC, id DESC";
+        java.util.Map<LocalDate, String> result = new java.util.HashMap<>();
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, Integer.parseInt(employeeId));
+            ps.setDate(2, java.sql.Date.valueOf(from));
+            ps.setDate(3, java.sql.Date.valueOf(to));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String c = rs.getString("comment");
+                    if (c != null && !c.isBlank()) result.put(rs.getDate("work_date").toLocalDate(), c);
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load approval comments.", e);
+        }
+        return result;
     }
 
     private String readSqlFile(String fileName) {

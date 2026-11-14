@@ -28,7 +28,8 @@ public class OvertimeRequestExecuteAction implements Action {
             String decision = request.getParameter("decision");
             String decidedBy = (String) request.getSession().getAttribute("loginUser");
 
-            decideOvertimeRequestUseCase.decide(requestId, "approve".equals(decision), decidedBy);
+            decideOvertimeRequestUseCase.decide(requestId, "approve".equals(decision), decidedBy,
+                    request.getParameter("comment"));
         } catch (Exception e) {
             request.getSession().setAttribute("approvalErrorMessage", e.getMessage());
         }

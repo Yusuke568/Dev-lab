@@ -13,6 +13,12 @@
 <style>
 /* 残業事前申請ごとの、申請者のその月の時間外の累計（折れ線・基準線） */
 .ot-chart-row td { background: #fcfcfb; padding: 4px 12px 12px !important; border-top: 0 !important; }
+.decide-form { display: flex; flex-direction: column; gap: 4px; min-width: 11rem; }
+.decide-buttons { display: flex; gap: 0.5rem; justify-content: center; }
+.decide-comment { padding: 4px 6px; font-size: 0.85rem; width: 100%; box-sizing: border-box; margin-bottom: 4px; }
+.route-step { white-space: nowrap; }
+.route-at { color: #718096; font-size: 0.8rem; }
+.route-comment { display: block; white-space: normal; color: #4a5568; font-size: 0.8rem; margin-left: 1em; }
 .otc { --actual: #2a78d6; --proj: #eb6834; --approved: #1baf7a; --pending: #6250d6; --ink: #0b0b0b; --ink2: #52514e; --grid: #e6e5e0;
   font-size: 0.82rem; color: var(--ink); max-width: 760px; }
 .otc-head { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; margin-bottom: 2px; }
@@ -99,22 +105,19 @@
 					<td><c:out value="${req.createdAt}" /></td>
 					<td>
 						<c:forEach var="step" items="${overtimeRoutes[req.id]}" varStatus="st">
-							<c:out value="${step.label}" /><c:if test="${!st.last}"> → </c:if>
+							<div class="route-step"><c:out value="${step.label}" /><c:if test="${not empty step.decidedAtShort}"> <span class="route-at"><c:out value="${step.decidedAtShort}" /></span></c:if><c:if test="${not empty step.comment}"><span class="route-comment">「<c:out value="${step.comment}" />」</span></c:if></div>
 						</c:forEach>
 					</td>
 					<td>
-						<div style="display: flex; gap: 0.5rem; justify-content: center;">
-							<form action="${pageContext.request.contextPath}/overtimeRequestExecute.do" method="post">
-								<input type="hidden" name="requestId" value="${req.id}">
-								<input type="hidden" name="decision" value="approve">
-								<button type="submit" class="btn btn-primary">承認</button>
-							</form>
-							<form action="${pageContext.request.contextPath}/overtimeRequestExecute.do" method="post">
-								<input type="hidden" name="requestId" value="${req.id}">
-								<input type="hidden" name="decision" value="reject">
-								<button type="submit" class="btn btn-danger">却下</button>
-							</form>
-						</div>
+						<form action="${pageContext.request.contextPath}/overtimeRequestExecute.do" method="post" class="decide-form">
+							<input type="hidden" name="requestId" value="${req.id}">
+							<input type="text" name="comment" maxlength="255" class="form-input decide-comment" placeholder="理由（任意）"
+								aria-label="<c:out value='${req.employeeName}' /> ${req.targetDate} の承認・却下の理由（任意）">
+							<div class="decide-buttons">
+								<button type="submit" name="decision" value="approve" class="btn btn-primary">承認</button>
+								<button type="submit" name="decision" value="reject" class="btn btn-danger">却下</button>
+							</div>
+						</form>
 					</td>
 				</tr>
 				<%-- 申請者のその月の時間外（グラフは approval-overtime-chart.js が描く。同じ社員・同じ月の申請は最後の行の下に1つにまとめる） --%>
@@ -176,6 +179,8 @@
 					<td><c:out value="${ar.projectName}" /><c:if test="${not empty ar.category}"><br><span style="font-size: 0.85rem; color: #4a5568;"><c:out value="${ar.category}" /></span></c:if></td>
 					<td style="font-size: 0.85rem;"><c:out value="${ac.route}" /></td>
 					<td class="text-center">
+						<input type="text" name="comment_${ar.id}" maxlength="255" class="form-input decide-comment" placeholder="コメント（任意）"
+							aria-label="<c:out value='${ac.employeeName}' /> ${ar.targetDate} の実績確認のコメント（任意）">
 						<button type="submit" class="btn btn-primary" name="requestId" value="${ar.id}" formnovalidate
 							onclick="document.querySelectorAll('.actual-check-row').forEach(c => c.checked = false);">確認</button>
 					</td>
@@ -204,6 +209,10 @@
 				e.preventDefault();
 				alert("確認する実績を選んでください。");
 			}
+		});
+		// 理由・コメントの欄で Enter を押しても送らない（却下の理由を打っている途中で「承認」にならないように）
+		document.addEventListener("keydown", (e) => {
+			if (e.key === "Enter" && e.target.classList && e.target.classList.contains("decide-comment")) e.preventDefault();
 		});
 	})();
 	</script>
@@ -315,20 +324,16 @@
 					</td>
 					<td><c:out value="${item.memo}" /></td>
 					<td>
-						<div style="display: flex; gap: 0.5rem; justify-content: center;">
-							<form action="${pageContext.request.contextPath}/approvalExecute.do" method="post">
-								<input type="hidden" name="employeeId" value="${item.employeeId}">
-								<input type="hidden" name="date" value="${item.date}">
-								<input type="hidden" name="decision" value="approve">
-								<button type="submit" class="btn btn-primary">承認</button>
-							</form>
-							<form action="${pageContext.request.contextPath}/approvalExecute.do" method="post">
-								<input type="hidden" name="employeeId" value="${item.employeeId}">
-								<input type="hidden" name="date" value="${item.date}">
-								<input type="hidden" name="decision" value="reject">
-								<button type="submit" class="btn btn-danger">却下</button>
-							</form>
-						</div>
+						<form action="${pageContext.request.contextPath}/approvalExecute.do" method="post" class="decide-form">
+							<input type="hidden" name="employeeId" value="${item.employeeId}">
+							<input type="hidden" name="date" value="${item.date}">
+							<input type="text" name="comment" maxlength="255" class="form-input decide-comment" placeholder="理由（任意）"
+								aria-label="<c:out value='${item.employeeName}' /> ${item.date} の承認・却下の理由（任意）">
+							<div class="decide-buttons">
+								<button type="submit" name="decision" value="approve" class="btn btn-primary">承認</button>
+								<button type="submit" name="decision" value="reject" class="btn btn-danger">却下</button>
+							</div>
+						</form>
 					</td>
 				</tr>
 			</c:forEach>

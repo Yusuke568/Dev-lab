@@ -14,4 +14,9 @@ public interface SaveApprovalHistoryPort {
      * @param decidedBy  決定を行った人物の社員ID
      */
     void record(String employeeId, LocalDate date, boolean approved, String decidedBy);
+
+    /** 理由（任意。空なら null）と一緒に記録する */
+    default void record(String employeeId, LocalDate date, boolean approved, String decidedBy, String comment) {
+        record(employeeId, date, approved, decidedBy);
+    }
 }

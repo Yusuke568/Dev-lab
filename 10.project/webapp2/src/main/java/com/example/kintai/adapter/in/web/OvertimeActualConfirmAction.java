@@ -46,7 +46,12 @@ public class OvertimeActualConfirmAction implements Action {
             return new View("/approvalList.do", true);
         }
         try {
-            List<String> errors = actualCheckService.confirm(approverId, ids);
+            java.util.Map<Integer, String> comments = new java.util.HashMap<>();
+            for (Integer id : ids) {
+                String c = request.getParameter("comment_" + id);
+                if (c != null && !c.isBlank()) comments.put(id, c);
+            }
+            List<String> errors = actualCheckService.confirm(approverId, ids, comments);
             int done = ids.size() - errors.size();
             if (!errors.isEmpty()) {
                 session.setAttribute("approvalErrorMessage",

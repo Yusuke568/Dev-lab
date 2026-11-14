@@ -32,7 +32,8 @@ public class ApprovalExecuteAction implements Action {
         try {
             LocalDate date = LocalDate.parse(dateParam, DateTimeFormatter.ISO_LOCAL_DATE);
             String decidedBy = (String) request.getSession().getAttribute("loginUser");
-            approveAttendanceUseCase.decide(employeeId, date, "approve".equals(decision), decidedBy);
+            approveAttendanceUseCase.decide(employeeId, date, "approve".equals(decision), decidedBy,
+                    request.getParameter("comment"));
         } catch (Exception e) {
             request.getSession().setAttribute("approvalErrorMessage", e.getMessage());
         }

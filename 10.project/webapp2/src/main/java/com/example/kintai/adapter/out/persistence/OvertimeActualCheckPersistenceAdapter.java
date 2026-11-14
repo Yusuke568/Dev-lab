@@ -77,16 +77,22 @@ public class OvertimeActualCheckPersistenceAdapter implements OvertimeActualChec
 
     @Override
     public boolean check(int requestId, int level, int approverStaffId) {
-        String sql = "UPDATE overtime_actual_step SET checked_at = NOW() "
+        return check(requestId, level, approverStaffId, null);
+    }
+
+    @Override
+    public boolean check(int requestId, int level, int approverStaffId, String comment) {
+        String sql = "UPDATE overtime_actual_step SET checked_at = NOW(), comment = ? "
                 + "WHERE request_id = ? AND level = ? AND approver_staff_id = ? AND checked_at IS NULL "
                 + "AND NOT EXISTS (SELECT 1 FROM overtime_actual_step x WHERE x.request_id = ? AND x.level = ? AND x.checked_at IS NOT NULL)";
         try (Connection con = ConnectionBase.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, requestId);
-            ps.setInt(2, level);
-            ps.setInt(3, approverStaffId);
-            ps.setInt(4, requestId);
-            ps.setInt(5, level);
+            ps.setString(1, comment);
+            ps.setInt(2, requestId);
+            ps.setInt(3, level);
+            ps.setInt(4, approverStaffId);
+            ps.setInt(5, requestId);
+            ps.setInt(6, level);
             return ps.executeUpdate() == 1;
         } catch (Exception e) {
             throw new RuntimeException("Failed to record actual check.", e);
@@ -135,7 +141,7 @@ public class OvertimeActualCheckPersistenceAdapter implements OvertimeActualChec
     public Map<Integer, List<Step>> findSteps(Collection<Integer> requestIds) {
         Map<Integer, List<Step>> result = new HashMap<>();
         if (requestIds == null || requestIds.isEmpty()) return result;
-        String sql = "SELECT a.request_id, a.level, a.checked_at, s.name FROM overtime_actual_step a "
+        String sql = "SELECT a.request_id, a.level, a.checked_at, a.comment, s.name FROM overtime_actual_step a "
                 + "LEFT JOIN staff_table s ON s.id = a.approver_staff_id "
                 + "WHERE a.request_id = ANY(?) ORDER BY a.request_id, a.level, a.id";
         try (Connection con = ConnectionBase.getConnection();
@@ -146,7 +152,8 @@ public class OvertimeActualCheckPersistenceAdapter implements OvertimeActualChec
                     Timestamp checked = rs.getTimestamp("checked_at");
                     result.computeIfAbsent(rs.getInt("request_id"), k -> new ArrayList<>())
                             .add(new Step(rs.getInt("level"), rs.getString("name"), checked != null,
-                                    checked == null ? null : checked.toLocalDateTime().toLocalDate()));
+                                    checked == null ? null : checked.toLocalDateTime().toLocalDate(),
+                                    rs.getString("comment")));
                 }
             }
         } catch (Exception e) {

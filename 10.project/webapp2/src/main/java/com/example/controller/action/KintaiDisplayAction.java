@@ -67,6 +67,55 @@ public class KintaiDisplayAction implements Action {
         }
     }
 
+    /** 承認・却下の理由（勤怠の承認履歴）。null なら出さない */
+    private com.example.kintai.domain.port.out.LoadApprovalHistoryPort approvalHistoryPort;
+    /** 残業事前申請の承認・却下の理由。null なら出さない */
+    private com.example.approval.application.service.ApprovalWorkflowService approvalWorkflowService;
+
+    public KintaiDisplayAction withApprovalComments(com.example.kintai.domain.port.out.LoadApprovalHistoryPort historyPort,
+                                                    com.example.approval.application.service.ApprovalWorkflowService workflow) {
+        this.approvalHistoryPort = historyPort;
+        this.approvalWorkflowService = workflow;
+        return this;
+    }
+
+    /**
+     * 日ごとの承認・却下の理由を画面に渡す。
+     *   attendanceApprovalComments … 勤怠（有給・事前申請のない時間外）の、いちばん新しい判定の理由
+     *   overtimeRequestComments    … 残業事前申請の、各段の理由（「山田：理由」を ／ でつなぐ）
+     */
+    private void setApprovalComments(HttpServletRequest request, String employeeId, YearMonth yearMonth,
+                                     java.util.Map<LocalDate, OvertimeRequest> requestsByDate) {
+        try {
+            if (approvalHistoryPort != null) {
+                request.setAttribute("attendanceApprovalComments",
+                        approvalHistoryPort.findLatestComments(employeeId, yearMonth.atDay(1), yearMonth.atEndOfMonth()));
+            }
+            if (approvalWorkflowService != null && !requestsByDate.isEmpty()) {
+                java.util.Map<Integer, LocalDate> dateOf = new java.util.HashMap<>();
+                requestsByDate.forEach((d, r) -> {
+                    if (YearMonth.from(d).equals(yearMonth)) dateOf.put(r.getId(), d);
+                });
+                java.util.Map<LocalDate, String> comments = new java.util.HashMap<>();
+                approvalWorkflowService.getRoutes(com.example.approval.domain.model.RequestType.OVERTIME, dateOf.keySet())
+                        .forEach((id, levels) -> {
+                            List<String> parts = new java.util.ArrayList<>();
+                            for (com.example.approval.domain.model.ApprovalLevel lv : levels) {
+                                if (!lv.getComment().isEmpty()) {
+                                    parts.add(lv.getDecided().getApproverName() + "：" + lv.getComment());
+                                }
+                            }
+                            if (!parts.isEmpty()) comments.put(dateOf.get(id), String.join(" ／ ", parts));
+                        });
+                request.setAttribute("overtimeRequestComments", comments);
+            }
+        } catch (RuntimeException e) {
+            // 理由が出せなくても勤怠表は出す
+            java.util.logging.Logger.getLogger(KintaiDisplayAction.class.getName())
+                    .log(java.util.logging.Level.WARNING, "承認・却下の理由を読めませんでした", e);
+        }
+    }
+
     public KintaiDisplayAction withDefaultCorrection(com.example.kintai.domain.port.out.DefaultCorrectionPort port) {
         this.defaultCorrectionPort = port;
         return this;
@@ -164,6 +213,7 @@ public class KintaiDisplayAction implements Action {
                     .filter(r -> !r.isWithdrawn())
                     .collect(Collectors.toMap(OvertimeRequest::getTargetDate, r -> r, (a, b) -> b));
             request.setAttribute("overtimeRequestsByDate", overtimeRequestsByDate);
+            setApprovalComments(request, idParam, yearMonth, overtimeRequestsByDate);
             long pendingRequestCount = myRequests.stream().filter(OvertimeRequest::isPending).count();
             long rejectedRequestCount = myRequests.stream().filter(OvertimeRequest::isRejected).count();
 

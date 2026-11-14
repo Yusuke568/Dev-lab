@@ -207,6 +207,11 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
 
     @Override
     public void decide(int requestId, boolean approve, String decidedBy) {
+        decide(requestId, approve, decidedBy, null);
+    }
+
+    @Override
+    public void decide(int requestId, boolean approve, String decidedBy, String comment) {
         OvertimeRequest request = overtimeRequestPort.findById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("対象の残業事前申請が見つかりません: " + requestId));
         if (!request.isPending()) {
@@ -214,7 +219,7 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
         }
 
         ApprovalOutcome outcome = approvalWorkflowService.decide(
-                RequestType.OVERTIME, requestId, request.getCurrentLevel(), decidedBy, approve);
+                RequestType.OVERTIME, requestId, request.getCurrentLevel(), decidedBy, approve, comment);
         switch (outcome) {
             case NEXT_LEVEL:
                 overtimeRequestPort.advanceLevel(requestId);

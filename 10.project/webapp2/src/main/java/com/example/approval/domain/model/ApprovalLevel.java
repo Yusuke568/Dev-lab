@@ -43,6 +43,26 @@ public class ApprovalLevel {
         return level + ". " + names + " 未処理";
     }
 
+    /** 判定した日時（「11/10 13:05」。未処理なら空） */
+    public String getDecidedAtShort() {
+        ApprovalStep decided = getDecided();
+        String at = decided != null ? decided.getDecidedAt() : null;
+        if (at == null || at.length() < 16) return "";
+        return Integer.parseInt(at.substring(5, 7)) + "/" + Integer.parseInt(at.substring(8, 10)) + " " + at.substring(11, 16);
+    }
+
+    /** 判定した人の理由（未処理・理由なしなら空） */
+    public String getComment() {
+        ApprovalStep decided = getDecided();
+        return decided != null && decided.getComment() != null ? decided.getComment() : "";
+    }
+
+    /** 判定の状態（APPROVED / REJECTED。未処理なら空） */
+    public String getDecision() {
+        ApprovalStep decided = getDecided();
+        return decided != null ? decided.getDecision() : "";
+    }
+
     private static String nameOf(ApprovalStep step) {
         return step.getApproverName() != null ? step.getApproverName() : String.valueOf(step.getApproverStaffId());
     }

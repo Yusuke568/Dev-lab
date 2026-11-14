@@ -11,9 +11,15 @@ public class ApprovalHistoryEntry {
     private final String decidedById;
     private final String decidedByName;
     private final String decidedAt; // yyyy-MM-dd HH:mm
+    private final String comment;   // 承認・却下の理由（任意）
 
     public ApprovalHistoryEntry(String employeeId, String employeeName, String date, String decision,
                                  String decidedById, String decidedByName, String decidedAt) {
+        this(employeeId, employeeName, date, decision, decidedById, decidedByName, decidedAt, null);
+    }
+
+    public ApprovalHistoryEntry(String employeeId, String employeeName, String date, String decision,
+                                 String decidedById, String decidedByName, String decidedAt, String comment) {
         this.employeeId = employeeId;
         this.employeeName = employeeName;
         this.date = date;
@@ -21,6 +27,7 @@ public class ApprovalHistoryEntry {
         this.decidedById = decidedById;
         this.decidedByName = decidedByName;
         this.decidedAt = decidedAt;
+        this.comment = comment;
     }
 
     public String getEmployeeId() { return employeeId; }
@@ -30,4 +37,5 @@ public class ApprovalHistoryEntry {
     public String getDecidedById() { return decidedById; }
     public String getDecidedByName() { return decidedByName; }
     public String getDecidedAt() { return decidedAt; }
+    public String getComment() { return comment; }
 }

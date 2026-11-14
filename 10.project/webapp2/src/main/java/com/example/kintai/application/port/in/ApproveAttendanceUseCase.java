@@ -14,4 +14,9 @@ public interface ApproveAttendanceUseCase {
      * @param decidedBy  決定を行った人物（承認者）の社員ID
      */
     void decide(String employeeId, LocalDate date, boolean approve, String decidedBy);
+
+    /** 理由（任意）つきで承認・却下する */
+    default void decide(String employeeId, LocalDate date, boolean approve, String decidedBy, String comment) {
+        decide(employeeId, date, approve, decidedBy);
+    }
 }

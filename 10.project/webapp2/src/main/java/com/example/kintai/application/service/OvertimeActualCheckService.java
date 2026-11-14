@@ -66,6 +66,11 @@ public class OvertimeActualCheckService {
      * @return 確認できなかった申請の理由（確認できた分は含めない）
      */
     public List<String> confirm(String approverId, Collection<Integer> requestIds) {
+        return confirm(approverId, requestIds, Map.of());
+    }
+
+    /** comments は申請ID → コメント（任意） */
+    public List<String> confirm(String approverId, Collection<Integer> requestIds, Map<Integer, String> comments) {
         int approver = Integer.parseInt(approverId);
         List<String> errors = new ArrayList<>();
         for (Integer id : requestIds) {
@@ -86,7 +91,9 @@ public class OvertimeActualCheckService {
                 errors.add(req.getTargetDate() + " の実績は、あなたの確認の番ではありません。");
                 continue;
             }
-            if (!checkPort.check(id, level, approver)) {
+            String comment = com.example.approval.application.service.ApprovalWorkflowService
+                    .normalizeComment(comments == null ? null : comments.get(id));
+            if (!checkPort.check(id, level, approver, comment)) {
                 errors.add(req.getTargetDate() + " の実績は、同じ段のほかの人がすでに確認しています。");
                 continue;
             }
@@ -106,6 +113,30 @@ public class OvertimeActualCheckService {
             rows.add(new PendingActualCheck(req, name, record.orElse(null), steps.getOrDefault(id, List.of())));
         }));
         return rows;
+    }
+
+    /** 申請ごとの実績確認の進み（「1. 山田 確認済 11/26「OK」 → 2. 椎屋 未確認」。始まっていない申請は含めない） */
+    public Map<Integer, String> routesFor(Collection<Integer> requestIds) {
+        Map<Integer, String> result = new java.util.HashMap<>();
+        checkPort.findSteps(requestIds).forEach((id, steps) -> result.put(id, formatRoute(steps)));
+        return result;
+    }
+
+    /** 「1. 山田 確認済 11/26「OK」 → 2. 椎屋 未確認」 */
+    static String formatRoute(List<Step> steps) {
+        TreeMap<Integer, List<Step>> byLevel = new TreeMap<>();
+        for (Step s : steps) byLevel.computeIfAbsent(s.level(), k -> new ArrayList<>()).add(s);
+        List<String> parts = new ArrayList<>();
+        byLevel.forEach((level, list) -> {
+            Step done = list.stream().filter(Step::approved).findFirst().orElse(null);
+            String names = done != null ? done.approverName()
+                    : String.join("／", list.stream().map(Step::approverName).toList());
+            String state = done == null ? " 未確認"
+                    : " 確認済 " + done.decidedOn().getMonthValue() + "/" + done.decidedOn().getDayOfMonth()
+                    + (done.comment() != null && !done.comment().isBlank() ? "「" + done.comment() + "」" : "");
+            parts.add(level + ". " + names + state);
+        });
+        return String.join(" → ", parts);
     }
 
     /** level 段目から先へ進める。申請者本人だけの段は確認済みにして飛ばす。全段終われば確認済み */
@@ -165,17 +196,7 @@ public class OvertimeActualCheckService {
         }
         /** 「1. 山田 確認済 11/26 → 2. 椎屋 未確認」 */
         public String getRoute() {
-            TreeMap<Integer, List<Step>> byLevel = new TreeMap<>();
-            for (Step s : steps) byLevel.computeIfAbsent(s.level(), k -> new ArrayList<>()).add(s);
-            List<String> parts = new ArrayList<>();
-            byLevel.forEach((level, list) -> {
-                Step done = list.stream().filter(Step::approved).findFirst().orElse(null);
-                String names = done != null ? done.approverName()
-                        : String.join("／", list.stream().map(Step::approverName).toList());
-                parts.add(level + ". " + names + (done != null
-                        ? " 確認済 " + done.decidedOn().getMonthValue() + "/" + done.decidedOn().getDayOfMonth() : " 未確認"));
-            });
-            return String.join(" → ", parts);
+            return formatRoute(steps);
         }
     }
 }

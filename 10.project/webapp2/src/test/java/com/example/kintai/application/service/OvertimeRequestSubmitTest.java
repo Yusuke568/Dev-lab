@@ -105,18 +105,24 @@ class OvertimeRequestSubmitTest {
 
     @Test
     void 翌日の退勤も残業として申請できる() {
-        // 13:00〜翌1:30 → 18:00〜24:00 の6時間 ＋ 1:30 ＝ 7:30
+        // 13:00〜翌1:30 → 18:00〜翌1:30 の 7:30 から休憩（18:00〜18:30・22:00〜22:30）を除いて 6:30
         service.submit("126", DAY, "13:00", "01:30", "リリース対応");
 
-        assertEquals(List.of(7 * 60 + 30), inserted);
-        assertEquals(7 * 60 + 30, OvertimeRequest.calculatePlannedOvertimeMinutes("13:00", "01:30"));
+        assertEquals(List.of(6 * 60 + 30), inserted);
+        assertEquals(6 * 60 + 30, OvertimeRequest.calculatePlannedOvertimeMinutes("13:00", "01:30"));
         assertTrue(OvertimeRequest.isPlannedEndNextDay("13:00", "01:30"));
     }
 
     @Test
-    void 同じ日のうちの退勤はこれまでどおり() {
-        assertEquals(2 * 60 + 30, OvertimeRequest.calculatePlannedOvertimeMinutes("09:00", "20:30"));
-        assertEquals(30 + 60, OvertimeRequest.calculatePlannedOvertimeMinutes("08:30", "19:00"));
+    void 休憩を除いて数える_勤怠の実績と同じ() {
+        // 18:00〜20:30 から 18:00〜18:30 を除いて 2:00
+        assertEquals(2 * 60, OvertimeRequest.calculatePlannedOvertimeMinutes("09:00", "20:30"));
+        // 早出 8:30〜9:00 は休憩なので 0、残業 18:00〜19:00 は 0:30
+        assertEquals(30, OvertimeRequest.calculatePlannedOvertimeMinutes("08:30", "19:00"));
+        // 早出 7:00〜9:00 は 8:30〜9:00 を除いて 1:30
+        assertEquals(90, OvertimeRequest.calculatePlannedOvertimeMinutes("07:00", "18:00"));
+        // 9:00〜22:30 は 18:00〜18:30・22:00〜22:30 を除いて 3:30（実績の時間外と同じ）
+        assertEquals(3 * 60 + 30, OvertimeRequest.calculatePlannedOvertimeMinutes("09:00", "22:30"));
         assertEquals(0, OvertimeRequest.calculatePlannedOvertimeMinutes("09:00", "17:45"));
     }
 
@@ -124,10 +130,10 @@ class OvertimeRequestSubmitTest {
     void 予定出勤が18時より遅いときは予定出勤から数える() {
         // 20:00〜22:00 は 2:00（18:00 から数えて 4:00 にしない）
         assertEquals(120, OvertimeRequest.calculatePlannedOvertimeMinutes("20:00", "22:00"));
-        // 19:00〜翌1:00 は 6:00
-        assertEquals(360, OvertimeRequest.calculatePlannedOvertimeMinutes("19:00", "01:00"));
-        // 予定出勤が空なら 18:00 から
-        assertEquals(240, OvertimeRequest.calculatePlannedOvertimeMinutes("", "22:00"));
+        // 19:00〜翌1:00 は 22:00〜22:30 を除いて 5:30
+        assertEquals(330, OvertimeRequest.calculatePlannedOvertimeMinutes("19:00", "01:00"));
+        // 予定出勤が空なら 18:00 から（18:00〜18:30 を除いて 3:30）
+        assertEquals(210, OvertimeRequest.calculatePlannedOvertimeMinutes("", "22:00"));
     }
 
     @Test
@@ -164,7 +170,7 @@ class OvertimeRequestSubmitTest {
 
         assertFalse(service.submit("126", DAY, "09:00", "21:00", "訂正", null, "税保守", "⑤その他", null, null));
 
-        assertEquals(List.of("77:180"), resubmitted);
+        assertEquals(List.of("77:150"), resubmitted); // 18:00〜21:00 から休憩0:30を除いて 2:30
         assertTrue(inserted.isEmpty());
         assertEquals(List.of(List.of(300)), savedLevels); // 承認ルートを最初からやり直す
     }
@@ -176,7 +182,7 @@ class OvertimeRequestSubmitTest {
 
         service.submit("126", DAY, "09:00", "20:00", "訂正", null, "税保守", "⑤その他", null, null);
 
-        assertEquals(List.of("78:120"), resubmitted);
+        assertEquals(List.of("78:90"), resubmitted); // 18:00〜20:00 から休憩0:30を除いて 1:30
     }
 
     // ---- 休日出勤 ----
@@ -210,10 +216,10 @@ class OvertimeRequestSubmitTest {
 
     @Test
     void 事前の申請は入力した補正を予定の時間に足す() {
-        // 9:00〜20:00 の残業 2:00 ＋ 補正（通常）0:30 ＋ 補正（深夜）0:15
+        // 9:00〜20:00 の残業 1:30（休憩0:30を除く）＋ 補正（通常）0:30 ＋ 補正（深夜）0:15
         service.submit("126", DAY, "09:00", "20:00", "障害対応", null, "税保守", "⑤その他", 30, 15);
 
-        assertEquals(List.of(2 * 60 + 45), inserted);
+        assertEquals(List.of(2 * 60 + 15), inserted);
         assertEquals(List.of("30/15"), corrections);
     }
 
@@ -287,7 +293,7 @@ class OvertimeRequestSubmitTest {
         routeWithExtras();
         recordOvertime(1, 16 * 60);
         recordOvertime(5, 10 * 60); // 申請日の実績は今回の申請の時間で数えるので足さない
-        service.submit("126", DAY, "09:00", "20:30", "障害対応"); // 16h ＋ 2.5h ＝ 18.5h
+        service.submit("126", DAY, "09:00", "21:00", "障害対応"); // 16h ＋ 2.5h（18:00〜21:00 から休憩0:30を除く）＝ 18.5h
 
         assertEquals(List.of(List.of(300), List.of(500)), savedLevels);
     }

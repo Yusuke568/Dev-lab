@@ -486,7 +486,7 @@ function updateOvertimePerRow() {
 
 /**
  * 勤怠表の時間外の欄：時間外と、残業事前申請のアイコン（✅承認済・⏳申請中・✖却下と予定の時間）、
- * 実績が予定と違う日の「⚠ 予定超過」「⚠ 予定より少ない」と「申請し直す」。文字は textContent で入れる。
+ * 実績が予定と違う日の「⚠️ 予定超過」「⚠️ 予定より少ない」と「申請し直す」。文字は textContent で入れる。
  */
 function setOvertimeCell(row, cell, overtime, hasActual) {
   let actual = cell.querySelector(".ot-actual");
@@ -512,7 +512,7 @@ function setOvertimeCell(row, cell, overtime, hasActual) {
     const diff = document.createElement("span");
     diff.className = "ot-req over";
     diff.title = "時間外の実績が、残業事前申請の予定と違います。実績に合わせて申請し直してください。";
-    diff.textContent = req.over > 0 ? "⚠ 予定超過 +" + shortHm(req.over) : "⚠ 予定より少ない −" + shortHm(req.under);
+    diff.textContent = req.over > 0 ? "⚠️ 予定超過 +" + shortHm(req.over) : "⚠️ 予定より少ない −" + shortHm(req.under);
     slot.appendChild(diff);
     const url = overtimeRequestUrl(row);
     if (url) {

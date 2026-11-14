@@ -206,15 +206,19 @@ public class OvertimeRequest {
         return LocalTime.parse(endTime).isBefore(start);
     }
 
+    /** 早出：予定出勤から 9:00 まで。休憩（BreakSchedule。例 8:30〜9:00）は除く（勤怠の実績と同じ数え方） */
     private static int calculateEarlyMinutes(String startTime) {
         if (startTime == null || startTime.isBlank()) return 0;
-        LocalTime t = LocalTime.parse(startTime);
-        return t.isBefore(STANDARD_START) ? (int) Duration.between(t, STANDARD_START).toMinutes() : 0;
+        int start = LocalTime.parse(startTime).toSecondOfDay() / 60;
+        int standardStart = STANDARD_START.toSecondOfDay() / 60;
+        if (start >= standardStart) return 0;
+        return Math.max(0, standardStart - start - BreakSchedule.overlapMinutes(start, standardStart));
     }
 
     /**
-     * 残業：18:00（予定出勤が18:00より遅ければ予定出勤）から予定退勤まで。
-     * 例：9:00〜22:00 → 4:00、20:00〜22:00 → 2:00、13:00〜翌1:30 → 7:30
+     * 残業：18:00（予定出勤が18:00より遅ければ予定出勤）から予定退勤まで。休憩（BreakSchedule。例 18:00〜18:30・22:00〜22:30）は除く
+     * （勤怠の実績・時間外申請書の様式と同じ数え方）。
+     * 例：9:00〜22:00 → 3:30、20:00〜22:00 → 2:00、13:00〜翌1:30 → 6:30
      */
     private static int calculateLateMinutes(String startTime, String endTime) {
         if (endTime == null || endTime.isBlank()) return 0;
@@ -226,7 +230,7 @@ public class OvertimeRequest {
         if (startTime != null && !startTime.isBlank()) {
             from = Math.max(from, LocalTime.parse(startTime).toSecondOfDay() / 60);
         }
-        return Math.max(0, end - from);
+        return Math.max(0, end - from - BreakSchedule.overlapMinutes(from, Math.max(from, end)));
     }
 
     private static String formatMinutes(int totalMinutes) {

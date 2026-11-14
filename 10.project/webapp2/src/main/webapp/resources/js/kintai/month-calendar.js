@@ -178,11 +178,11 @@ function buildCalendar() {
   legend.className = "mc-legend";
   legend.innerHTML =
     '<span><i class="mc-dot dirty"></i>未保存</span>' +
-    '<span><b class="mc-ot-key ng">⚠未申請</b>残業の事前申請がまだ（✖却下）</span>' +
+    '<span><b class="mc-ot-key ng">⚠️未申請</b>残業の事前申請がまだ（✖却下）</span>' +
     '<span><b class="mc-ot-key wait">⏳申請中</b>承認待ち</span>' +
     '<span><b class="mc-ot-key ok">✅承認済</b>残業 承認済み</span>' +
     '<span><b class="mc-ot-key plan">✅予定2:00</b>点線はまだ実績のない日の申請</span>' +
-    '<span><b class="mc-ot-key over">⚠超過+0:30</b>実績が申請の予定と違う（⚠少ない−2:00）。日付を開いて申請し直す</span>' +
+    '<span><b class="mc-ot-key over">⚠️超過+0:30</b>実績が申請の予定と違う（⚠️少ない−2:00）。日付を開いて申請し直す</span>' +
     '<span><i class="mc-dot wait"></i>有給などの承認待ち・却下</span>' +
     '<span class="mc-legend-hint">日付をタップすると入力できます</span>';
   container.appendChild(legend);
@@ -231,9 +231,9 @@ function renderDay(row) {
   }
   const req = overtimeRequestOf(row, ot.minutes, !!(v.kintaifrom && v.kintaito));
   const diffHtml = !req ? "" : req.over > 0
-    ? '<span class="mc-ot-over" title="時間外の実績が、残業事前申請の予定より多くなっています。申請し直してください">⚠<span class="mc-ot-text">超過</span>+' + shortHm(req.over) + "</span>"
+    ? '<span class="mc-ot-over" title="時間外の実績が、残業事前申請の予定より多くなっています。申請し直してください">⚠️<span class="mc-ot-text">超過</span>+' + shortHm(req.over) + "</span>"
     : req.under > 0
-      ? '<span class="mc-ot-over" title="時間外の実績が、残業事前申請の予定より少なくなっています。申請し直してください">⚠<span class="mc-ot-text">少ない</span>−' + shortHm(req.under) + "</span>"
+      ? '<span class="mc-ot-over" title="時間外の実績が、残業事前申請の予定より少なくなっています。申請し直してください">⚠️<span class="mc-ot-text">少ない</span>−' + shortHm(req.under) + "</span>"
       : "";
   if (ot.state) {
     // スマホの狭いマスでも切れないよう、2行目は時間だけにする（「未申請」の下に「2:00」）
@@ -265,7 +265,7 @@ function renderDay(row) {
 }
 
 /** カレンダーの申請の印のアイコン（色だけに頼らない） */
-const OT_ICON = { "承認済": "✅", "申請中": "⏳", "却下": "✖", "未申請": "⚠" };
+const OT_ICON = { "承認済": "✅", "申請中": "⏳", "却下": "✖", "未申請": "⚠️" };
 
 function renderAll() {
   rows.forEach(renderDay);
@@ -282,7 +282,7 @@ function renderOvertimeAlert() {
   if (pending.length === 0) return;
   const title = document.createElement("div");
   title.className = "mc-ot-alert-title";
-  title.textContent = "⚠ 残業の事前申請が必要な日があります（" + pending.length + "日）";
+  title.textContent = "⚠️ 残業の事前申請が必要な日があります（" + pending.length + "日）";
   box.appendChild(title);
   const list = document.createElement("div");
   list.className = "mc-ot-alert-list";
@@ -511,7 +511,7 @@ function loadDay(date) {
   const ot = overtimeInfo(row);
   let statusHtml = statusCell && statusText !== "ー" ? "<span class='dd-status-label'>状態</span>" + statusCell.innerHTML : "";
   if (ot.state === "ng") {
-    statusHtml = "<div class='dd-ot-alert'>⚠ 時間外 " + formatShortHm(ot.minutes) + " があります。残業の事前申請が"
+    statusHtml = "<div class='dd-ot-alert'>⚠️ 時間外 " + formatShortHm(ot.minutes) + " があります。残業の事前申請が"
       + (ot.label === "却下" ? "却下されています。内容を見直して再申請してください。" : "まだです。")
       + requestLinkHtml(row, statusCell)
       + "</div>" + statusHtml;

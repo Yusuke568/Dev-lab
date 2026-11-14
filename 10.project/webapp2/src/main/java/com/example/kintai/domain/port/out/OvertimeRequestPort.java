@@ -21,6 +21,11 @@ public interface OvertimeRequestPort {
     /** 指定した承認者の、いまの段で処理待ちになっている申請。 */
     List<OvertimeRequest> findPendingForApprover(String approverId);
 
+    /** 承認者が自分の段で承認したが、まだ申請中（後の段の承認待ち）の申請 */
+    default List<OvertimeRequest> findApprovedInProgressBy(String approverId) {
+        return List.of();
+    }
+
     /** 新規申請を保存し、採番された ID を返す。 */
     int insert(EmployeeId employeeId, LocalDate date, int plannedOvertimeMinutes, String plannedStartTime, String plannedEndTime, String reason);
 

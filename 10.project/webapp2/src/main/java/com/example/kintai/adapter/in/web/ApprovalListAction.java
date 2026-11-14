@@ -86,6 +86,20 @@ public class ApprovalListAction implements Action {
         request.setAttribute("leaveRoutes", approvalWorkflowService.getRoutes(RequestType.LEAVE,
                 pendingLeaveRequests.stream().map(LeaveRequest::getId).collect(Collectors.toList())));
 
+        // 自分は承認したが、まだ申請中（後の段の承認待ち）の申請。いまどの段で止まっているかを見られるように
+        try {
+            List<OvertimeRequest> approvedOvertime = getPendingOvertimeRequestsUseCase.getApprovedInProgress(approverId);
+            List<LeaveRequest> approvedLeave = leaveRequestUseCase.getApprovedInProgress(approverId);
+            request.setAttribute("approvedInProgressOvertime", approvedOvertime);
+            request.setAttribute("approvedInProgressLeave", approvedLeave);
+            request.setAttribute("approvedOvertimeRoutes", approvalWorkflowService.getRoutes(RequestType.OVERTIME,
+                    approvedOvertime.stream().map(OvertimeRequest::getId).collect(Collectors.toList())));
+            request.setAttribute("approvedLeaveRoutes", approvalWorkflowService.getRoutes(RequestType.LEAVE,
+                    approvedLeave.stream().map(LeaveRequest::getId).collect(Collectors.toList())));
+        } catch (RuntimeException e) {
+            e.printStackTrace(); // 出せなくても承認はできるようにする
+        }
+
         if (session.getAttribute("approvalErrorMessage") != null) {
             request.setAttribute("errorMessage", session.getAttribute("approvalErrorMessage"));
             session.removeAttribute("approvalErrorMessage");

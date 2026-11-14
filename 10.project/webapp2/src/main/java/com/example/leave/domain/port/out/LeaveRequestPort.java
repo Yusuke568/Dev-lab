@@ -20,6 +20,11 @@ public interface LeaveRequestPort {
     /** 指定した承認者の、いまの段で処理待ちになっている申請。 */
     List<LeaveRequest> findPendingForApprover(int approverId);
 
+    /** 承認者が自分の段で承認したが、まだ申請中（後の段の承認待ち）の申請 */
+    default List<LeaveRequest> findApprovedInProgressBy(int approverId) {
+        return List.of();
+    }
+
     /** 新規申請を保存し、採番された ID を返す。 */
     int insert(int staffId, LocalDate date, int abstractId, String reason);
 

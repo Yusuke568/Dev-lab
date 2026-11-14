@@ -62,6 +62,11 @@ public class LeaveRequestService implements LeaveRequestUseCase {
     }
 
     @Override
+    public List<LeaveRequest> getApprovedInProgress(String approverId) {
+        return leaveRequestPort.findApprovedInProgressBy(Integer.parseInt(approverId));
+    }
+
+    @Override
     public void decide(int requestId, boolean approve, String decidedBy) {
         LeaveRequest request = leaveRequestPort.findById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("対象の休暇申請が見つかりません: " + requestId));

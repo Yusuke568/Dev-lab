@@ -24,5 +24,10 @@ public interface LeaveRequestUseCase {
     /** 承認者宛ての、承認待ちの申請。 */
     List<LeaveRequest> getPending(String approverId);
 
+    /** 自分は承認したが、まだ申請中（後の段の承認待ち）の申請 */
+    default List<LeaveRequest> getApprovedInProgress(String approverId) {
+        return List.of();
+    }
+
     void decide(int requestId, boolean approve, String decidedBy);
 }

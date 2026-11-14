@@ -344,6 +344,61 @@
 			</c:if>
 		</tbody>
 	</table>
+
+	<%-- 自分は承認したが、まだ申請中（後の段の承認待ち）の申請。いまどの段で止まっているかを見る（操作はない） --%>
+	<h2 class="table-title">自分が承認した申請の進み（申請中）</h2>
+	<p style="font-size: 0.9rem; color: #4a5568; margin: 0 0 0.5rem;">あなたは承認済みで、後の段の承認を待っている申請です。いまの段は「承認待ち」と出ます。</p>
+	<table class="table">
+		<thead>
+			<tr>
+				<th>種類</th>
+				<th>社員ID</th>
+				<th>氏名</th>
+				<th>対象日</th>
+				<th>内容</th>
+				<th>申請日時</th>
+				<th>承認の進み・理由</th>
+			</tr>
+		</thead>
+		<tbody>
+			<c:forEach var="req" items="${approvedInProgressOvertime}">
+				<tr>
+					<td>残業事前申請</td>
+					<td><c:out value="${req.employeeId}" /></td>
+					<td><c:out value="${req.employeeName}" /></td>
+					<td><c:out value="${req.targetDate}" /></td>
+					<td><c:out value="${not empty req.plannedStartTime ? req.plannedStartTime : '09:00'}" />〜<c:out value="${not empty req.plannedEndTime ? req.plannedEndTime : '18:00'}" />
+						<br><span style="font-size: 0.85rem;"><c:out value="${req.plannedOvertimeBreakdown}" /></span></td>
+					<td><c:out value="${req.createdAt}" /></td>
+					<td style="font-size: 0.85rem;">
+						<c:forEach var="step" items="${approvedOvertimeRoutes[req.id]}">
+							<div class="route-step"><c:choose><c:when test="${step.decided}"><c:out value="${step.label}" /></c:when><c:otherwise><c:out value="${step.level}" />. <c:forEach var="cand" items="${step.candidates}" varStatus="cs"><c:if test="${!cs.first}">／</c:if><c:out value="${cand.approverName}" /></c:forEach> <b style="color: ${step.level == req.currentLevel ? '#c05600' : '#a0aec0'};">${step.level == req.currentLevel ? '承認待ち' : '未処理'}</b></c:otherwise></c:choose><c:if test="${not empty step.decidedAtShort}"> <span class="route-at"><c:out value="${step.decidedAtShort}" /></span></c:if><c:if test="${not empty step.comment}"><span class="route-comment">「<c:out value="${step.comment}" />」</span></c:if></div>
+						</c:forEach>
+					</td>
+				</tr>
+			</c:forEach>
+			<c:forEach var="req" items="${approvedInProgressLeave}">
+				<tr>
+					<td>休暇申請</td>
+					<td><c:out value="${req.employeeId}" /></td>
+					<td><c:out value="${req.employeeName}" /></td>
+					<td><c:out value="${req.targetDate}" /></td>
+					<td><c:out value="${req.abstractName}" /></td>
+					<td><c:out value="${req.createdAt}" /></td>
+					<td style="font-size: 0.85rem;">
+						<c:forEach var="step" items="${approvedLeaveRoutes[req.id]}">
+							<div class="route-step"><c:choose><c:when test="${step.decided}"><c:out value="${step.label}" /></c:when><c:otherwise><c:out value="${step.level}" />. <c:forEach var="cand" items="${step.candidates}" varStatus="cs"><c:if test="${!cs.first}">／</c:if><c:out value="${cand.approverName}" /></c:forEach> <b style="color: ${step.level == req.currentLevel ? '#c05600' : '#a0aec0'};">${step.level == req.currentLevel ? '承認待ち' : '未処理'}</b></c:otherwise></c:choose><c:if test="${not empty step.decidedAtShort}"> <span class="route-at"><c:out value="${step.decidedAtShort}" /></span></c:if><c:if test="${not empty step.comment}"><span class="route-comment">「<c:out value="${step.comment}" />」</span></c:if></div>
+						</c:forEach>
+					</td>
+				</tr>
+			</c:forEach>
+			<c:if test="${empty approvedInProgressOvertime and empty approvedInProgressLeave}">
+				<tr>
+					<td colspan="7" class="text-center">承認したあと、まだ申請中の申請はありません。</td>
+				</tr>
+			</c:if>
+		</tbody>
+	</table>
 </div>
 
 <script type="application/json" id="overtime-status">${overtimeStatusJson}</script>

@@ -47,6 +47,15 @@ public class LeaveRequestPersistenceAdapter implements LeaveRequestPort {
     }
 
     @Override
+    public List<LeaveRequest> findApprovedInProgressBy(int approverId) {
+        return query(SELECT_BASE +
+                "WHERE r.status = 'PENDING' AND r.staff_id <> ? " +
+                "AND EXISTS (SELECT 1 FROM approval_step a WHERE a.request_type = 'LEAVE' AND a.request_id = r.id " +
+                "AND a.approver_staff_id = ? AND a.decision = 'APPROVED') " +
+                "ORDER BY r.staff_id, r.target_date ASC", approverId, approverId);
+    }
+
+    @Override
     public List<LeaveRequest> findPendingForApprover(int approverId) {
         return query(SELECT_BASE +
                 "JOIN approval_step a ON a.request_type = 'LEAVE' AND a.request_id = r.id AND a.level = r.current_level " +

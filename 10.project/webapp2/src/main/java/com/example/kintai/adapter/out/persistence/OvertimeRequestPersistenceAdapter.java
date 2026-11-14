@@ -103,6 +103,26 @@ public class OvertimeRequestPersistenceAdapter implements OvertimeRequestPort {
     }
 
     @Override
+    public List<OvertimeRequest> findApprovedInProgressBy(String approverId) {
+        String sql = readSqlFile("find_approved_in_progress_overtime_requests.sql");
+        List<OvertimeRequest> list = new ArrayList<>();
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            int approver = Integer.parseInt(approverId);
+            ps.setInt(1, approver);
+            ps.setInt(2, approver);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapRow(rs, rs.getString("staff_name")));
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to find approved in-progress overtime requests.", e);
+        }
+        return list;
+    }
+
+    @Override
     public void advanceLevel(int requestId) {
         try (Connection con = ConnectionBase.getConnection();
              PreparedStatement ps = con.prepareStatement(

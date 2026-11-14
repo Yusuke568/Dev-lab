@@ -206,6 +206,11 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
     }
 
     @Override
+    public List<OvertimeRequest> getApprovedInProgress(String approverId) {
+        return overtimeRequestPort.findApprovedInProgressBy(approverId);
+    }
+
+    @Override
     public void decide(int requestId, boolean approve, String decidedBy) {
         decide(requestId, approve, decidedBy, null);
     }

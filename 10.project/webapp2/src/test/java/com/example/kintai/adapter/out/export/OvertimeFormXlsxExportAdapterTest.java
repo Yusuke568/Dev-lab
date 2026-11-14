@@ -79,6 +79,29 @@ class OvertimeFormXlsxExportAdapterTest {
         }
     }
 
+    @Test
+    void 式の計算結果を出力のときに入れ直し_テンプレートの古い結果を残さない() throws Exception {
+        // 11/5（木）だけの申請。テンプレートに残っていた古い結果（曜日・時間）が出ないこと
+        FormRow r = new FormRow(LocalDate.of(2026, 11, 5), "PJ", OvertimeFormCalculator.planned(null, t(20, 0), t(1, 30)),
+                "⑤その他", List.of(), OvertimeFormCalculator.TimeCells.EMPTY, "x");
+        byte[] bytes = new OvertimeFormXlsxExportAdapter().write(new OvertimeForm(YearMonth.of(2026, 11), "部", "氏名",
+                null, null, List.of(r)));
+        try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {
+            Sheet sh = wb.getSheetAt(0);
+            // 計算し直さずに、保存されている計算結果を読む（保護ビューで開いたときと同じ）
+            assertEquals("木", cached(sh, "B10").getStringCellValue());
+            assertEquals(t(1, 30), (int) Math.round(cached(sh, "L10").getNumericCellValue() * 1440));
+            assertEquals("", cached(sh, "B11").getStringCellValue()); // 申請のない行は空
+            assertEquals(0, (int) Math.round(cached(sh, "L11").getNumericCellValue() * 1440));
+            assertEquals(t(1, 30), (int) Math.round(cached(sh, "M20").getNumericCellValue() * 1440)); // 累計は1件分だけ
+        }
+    }
+
+    private static Cell cached(Sheet sh, String ref) {
+        CellReference cr = new CellReference(ref);
+        return sh.getRow(cr.getRow()).getCell(cr.getCol());
+    }
+
     private static String text(Sheet sh, String ref) {
         CellReference cr = new CellReference(ref);
         Cell c = sh.getRow(cr.getRow()).getCell(cr.getCol());

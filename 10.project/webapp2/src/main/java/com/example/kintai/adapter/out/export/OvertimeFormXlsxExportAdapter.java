@@ -44,6 +44,14 @@ public class OvertimeFormXlsxExportAdapter implements OvertimeFormExportPort {
                 for (int i = 0; i < rows.size() && i < MAX_ROWS; i++) {
                     writeRow(sh, FIRST_ROW + i, rows.get(i));
                 }
+                // 式の計算結果をここで入れ直す。テンプレートには元の Excel の古い計算結果が残っていて、
+                // 保護ビューなど計算し直さずに開くと、空の行に曜日・時間が出たり、曜日がずれたりするため
+                try {
+                    wb.getCreationHelper().createFormulaEvaluator().evaluateAll();
+                } catch (RuntimeException e) {
+                    java.util.logging.Logger.getLogger(OvertimeFormXlsxExportAdapter.class.getName())
+                            .log(java.util.logging.Level.WARNING, "時間外申請書の式を計算し直せませんでした（Excel で開いたときに計算します）", e);
+                }
                 wb.setForceFormulaRecalculation(true);
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 wb.write(out);

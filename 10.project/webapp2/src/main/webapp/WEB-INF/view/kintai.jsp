@@ -1400,6 +1400,7 @@ body.kintai-calendar-view .table-responsive {
 .account-bar {
 	display: flex;
 	justify-content: flex-end;
+	flex-wrap: wrap; /* スマホ幅では折り返して、承認待ちバッジなどが見切れないようにする */
 	gap: 8px;
 	max-width: 98%;
 	margin: 0 auto 0.5rem;

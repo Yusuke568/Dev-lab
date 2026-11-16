@@ -50,8 +50,8 @@ public class GrantLeaveSelectedAction implements Action {
             } catch (NumberFormatException e) {
                 PaidLeaveFlash.error(request, "付与日数は1以上の整数で入れてください。");
             } catch (RuntimeException e) {
-                e.printStackTrace();
-                PaidLeaveFlash.error(request, "付与できませんでした。（" + e.getMessage() + "）");
+                PaidLeaveFlash.error(request, com.example.shared.error.UserMessages.of(e,
+                        "付与できませんでした。時間をおいてもう一度お試しください。"));
             }
         }
         return new View("/paidLeaveAdmin.do", true);

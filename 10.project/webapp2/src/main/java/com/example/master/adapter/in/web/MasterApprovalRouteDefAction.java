@@ -71,7 +71,7 @@ public class MasterApprovalRouteDefAction extends MasterActionSupport {
                 request.setAttribute("previewSource", route.getSource());
                 request.setAttribute("previewLevels", levelLabels(route.getLevels(), staffNames));
             } catch (RuntimeException e) {
-                request.setAttribute("previewError", e.getMessage());
+                request.setAttribute("previewError", com.example.shared.error.UserMessages.of(e, "承認ルートを調べられませんでした。"));
             }
         }
         return "/WEB-INF/view/master/master_approval_route_def.jsp";

@@ -6,6 +6,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>勤怠承認</title>
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/style.css">
@@ -54,6 +55,30 @@
 .otc-swatch.k-this { background: var(--proj); }
 .otc-tip { position: absolute; z-index: 50; background: #0b0b0b; color: #fff; font-size: 0.78rem; padding: 6px 9px; border-radius: 6px; pointer-events: none; }
 .otc-tip-title { font-weight: 700; }
+
+/* スマホ幅では、表の1行（1件の申請）を1枚のカードにする。項目名は data-label から出す */
+@media (max-width: 768px) {
+	.approval-table thead { display: none; }
+	.approval-table, .approval-table tbody { display: block; width: 100%; border: 0; background: transparent; }
+	.approval-table tr { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px 16px;
+		border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 12px; padding: 10px 12px; background: #fff !important; }
+	.approval-table td { display: block; border: 0; padding: 0; text-align: left; min-width: 0; }
+	.approval-table td[data-label]::before { content: attr(data-label); display: block; font-size: 0.7rem; font-weight: 700; color: #718096; }
+	.approval-table td[data-label="操作"]::before { content: none; }
+	.approval-table td[data-wide], .approval-table td[colspan] { flex: 1 1 100%; }
+	.approval-table td[colspan].text-center { text-align: center; }
+	.approval-table .route-step { white-space: normal; }
+	.approval-table .decide-form { min-width: 0; }
+	.approval-table .decide-buttons { justify-content: stretch; }
+	.approval-table .decide-buttons .btn, .approval-table td[data-label="操作"] form .btn { flex: 1; width: 100%; }
+	.approval-table td[data-label="操作"] > div { justify-content: stretch !important; }
+	.approval-table td[data-label="操作"] > div > form { flex: 1; }
+	.approval-table td[data-label="操作"].text-center { text-align: left; }
+	/* 残業事前申請のグラフは、その申請のカードの下にくっつける */
+	.approval-table tr:has(+ tr.ot-chart-row) { margin-bottom: 0; border-bottom: 0; border-radius: 10px 10px 0 0; }
+	.approval-table tr.ot-chart-row { border-top: 0; border-radius: 0 0 10px 10px; padding-top: 0; }
+	.approval-table tr.ot-chart-row td { padding: 4px 0 0 !important; background: transparent; }
+}
 </style>
 </head>
 <body>
@@ -77,7 +102,7 @@
 	</c:if>
 
 	<h2 class="table-title">残業事前申請（承認待ち）</h2>
-	<table class="table">
+	<table class="table approval-table">
 		<thead>
 			<tr>
 				<th>社員ID</th>
@@ -95,21 +120,22 @@
 		<tbody>
 			<c:forEach var="req" items="${pendingOvertimeRequests}">
 				<tr>
-					<td><c:out value="${req.employeeId}" /></td>
-					<td><c:out value="${req.employeeName}" /></td>
-					<td><c:out value="${req.targetDate}" /></td>
-					<td><c:out value="${not empty req.plannedStartTime ? req.plannedStartTime : '09:00'}" /></td>
-					<td><c:out value="${not empty req.plannedEndTime ? req.plannedEndTime : '18:00'}" /></td>
-					<td><c:out value="${req.plannedOvertimeBreakdown}" /></td>
-					<td><c:if test="${not empty req.projectName}"><span style="font-size: 0.85rem; color: #4a5568;">[<c:out value="${req.projectName}" /><c:if test="${not empty req.category}"> ・ <c:out value="${req.category}" /></c:if>]</span><br></c:if><c:out value="${req.reason}" /></td>
-					<td><c:out value="${req.createdAt}" /></td>
-					<td>
+					<td data-label="社員ID"><c:out value="${req.employeeId}" /></td>
+					<td data-label="氏名"><c:out value="${req.employeeName}" /></td>
+					<td data-label="対象日"><c:out value="${req.targetDate}" /></td>
+					<td data-label="予定出勤時刻"><c:out value="${not empty req.plannedStartTime ? req.plannedStartTime : '09:00'}" /></td>
+					<td data-label="予定退勤時刻"><c:out value="${not empty req.plannedEndTime ? req.plannedEndTime : '18:00'}" /></td>
+					<td data-label="時間外内訳"><c:out value="${req.plannedOvertimeBreakdown}" /></td>
+					<td data-label="申請理由" data-wide><c:if test="${not empty req.projectName}"><span style="font-size: 0.85rem; color: #4a5568;">[<c:out value="${req.projectName}" /><c:if test="${not empty req.category}"> ・ <c:out value="${req.category}" /></c:if>]</span><br></c:if><c:out value="${req.reason}" /></td>
+					<td data-label="申請日時"><c:out value="${req.createdAt}" /></td>
+					<td data-label="承認ルート" data-wide>
 						<c:forEach var="step" items="${overtimeRoutes[req.id]}" varStatus="st">
 							<div class="route-step"><c:out value="${step.label}" /><c:if test="${not empty step.decidedAtShort}"> <span class="route-at"><c:out value="${step.decidedAtShort}" /></span></c:if><c:if test="${not empty step.comment}"><span class="route-comment">「<c:out value="${step.comment}" />」</span></c:if></div>
 						</c:forEach>
 					</td>
-					<td>
+					<td data-label="操作" data-wide>
 						<form action="${pageContext.request.contextPath}/overtimeRequestExecute.do" method="post" class="decide-form">
+							<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 							<input type="hidden" name="requestId" value="${req.id}">
 							<input type="text" name="comment" maxlength="255" class="form-input decide-comment" placeholder="理由（任意）"
 								aria-label="<c:out value='${req.employeeName}' /> ${req.targetDate} の承認・却下の理由（任意）">
@@ -140,6 +166,7 @@
 	--%>
 	<h2 class="table-title">残業の実績確認（確認待ち）</h2>
 	<form action="${pageContext.request.contextPath}/overtimeActualConfirm.do" method="post" id="actual-check-form">
+	<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 	<c:if test="${not empty pendingActualChecks}">
 		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
 			<label style="display: inline-flex; gap: 4px; align-items: center;"><input type="checkbox" id="actual-check-all"> すべて選ぶ</label>
@@ -147,7 +174,7 @@
 			<span style="font-size: 0.85rem; color: #4a5568;">実績が事前申請どおり（または残業なし）の日です。確認した日が時間外申請書の実績報告の承認欄に入ります。</span>
 		</div>
 	</c:if>
-	<table class="table">
+	<table class="table approval-table">
 		<thead>
 			<tr>
 				<th style="width: 2.5rem;"></th>
@@ -167,18 +194,18 @@
 				<tr>
 					<td><input type="checkbox" name="requestId" value="${ar.id}" class="actual-check-row" data-employee="${ar.employeeId}"
 						aria-label="<c:out value='${ac.employeeName}' /> ${ar.targetDate} の実績を選ぶ"></td>
-					<td><c:out value="${ar.employeeId}" /></td>
-					<td><c:out value="${ac.employeeName}" />
+					<td data-label="社員ID"><c:out value="${ar.employeeId}" /></td>
+					<td data-label="氏名"><c:out value="${ac.employeeName}" />
 						<button type="button" class="btn btn-secondary actual-check-person" data-employee="${ar.employeeId}"
 							style="padding: 0 6px; font-size: 0.75rem; margin-left: 4px;" title="この人の確認待ちをすべて選ぶ">この人を全部選ぶ</button></td>
-					<td><c:out value="${ar.targetDate}" /></td>
-					<td><c:out value="${not empty ar.plannedStartTime ? ar.plannedStartTime : '09:00'}" />〜<c:out value="${not empty ar.plannedEndTime ? ar.plannedEndTime : '18:00'}" /><br>
+					<td data-label="対象日"><c:out value="${ar.targetDate}" /></td>
+					<td data-label="申請（予定）"><c:out value="${not empty ar.plannedStartTime ? ar.plannedStartTime : '09:00'}" />〜<c:out value="${not empty ar.plannedEndTime ? ar.plannedEndTime : '18:00'}" /><br>
 						<span style="font-size: 0.85rem;"><c:out value="${ar.plannedOvertimeBreakdown}" /></span></td>
-					<td><c:out value="${ac.actualStart}" />〜<c:out value="${ac.actualEnd}" /><br>
+					<td data-label="実績"><c:out value="${ac.actualStart}" />〜<c:out value="${ac.actualEnd}" /><br>
 						<span style="font-size: 0.85rem;">時間外 <c:out value="${ac.actualOvertime}" /></span></td>
-					<td><c:out value="${ar.projectName}" /><c:if test="${not empty ar.category}"><br><span style="font-size: 0.85rem; color: #4a5568;"><c:out value="${ar.category}" /></span></c:if></td>
-					<td style="font-size: 0.85rem;"><c:out value="${ac.route}" /></td>
-					<td class="text-center">
+					<td data-label="PJ名・摘要" data-wide><c:out value="${ar.projectName}" /><c:if test="${not empty ar.category}"><br><span style="font-size: 0.85rem; color: #4a5568;"><c:out value="${ar.category}" /></span></c:if></td>
+					<td data-label="確認の進み" data-wide style="font-size: 0.85rem;"><c:out value="${ac.route}" /></td>
+					<td data-label="操作" data-wide class="text-center">
 						<input type="text" name="comment_${ar.id}" maxlength="255" class="form-input decide-comment" placeholder="コメント（任意）"
 							aria-label="<c:out value='${ac.employeeName}' /> ${ar.targetDate} の実績確認のコメント（任意）">
 						<button type="submit" class="btn btn-primary" name="requestId" value="${ar.id}" formnovalidate
@@ -218,7 +245,7 @@
 	</script>
 
 	<h2 class="table-title">休暇申請（承認待ち）</h2>
-	<table class="table">
+	<table class="table approval-table">
 		<thead>
 			<tr>
 				<th>社員ID</th>
@@ -234,25 +261,27 @@
 		<tbody>
 			<c:forEach var="req" items="${pendingLeaveRequests}">
 				<tr>
-					<td><c:out value="${req.employeeId}" /></td>
-					<td><c:out value="${req.employeeName}" /></td>
-					<td><c:out value="${req.targetDate}" /></td>
-					<td><c:out value="${req.abstractName}" /></td>
-					<td><c:out value="${req.reason}" /></td>
-					<td><c:out value="${req.createdAt}" /></td>
-					<td>
+					<td data-label="社員ID"><c:out value="${req.employeeId}" /></td>
+					<td data-label="氏名"><c:out value="${req.employeeName}" /></td>
+					<td data-label="対象日"><c:out value="${req.targetDate}" /></td>
+					<td data-label="区分"><c:out value="${req.abstractName}" /></td>
+					<td data-label="理由" data-wide><c:out value="${req.reason}" /></td>
+					<td data-label="申請日時"><c:out value="${req.createdAt}" /></td>
+					<td data-label="承認ルート" data-wide>
 						<c:forEach var="step" items="${leaveRoutes[req.id]}" varStatus="st">
 							<c:out value="${step.label}" /><c:if test="${!st.last}"> → </c:if>
 						</c:forEach>
 					</td>
-					<td>
+					<td data-label="操作" data-wide>
 						<div style="display: flex; gap: 0.5rem; justify-content: center;">
 							<form action="${pageContext.request.contextPath}/leaveRequestExecute.do" method="post">
+								<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 								<input type="hidden" name="requestId" value="${req.id}">
 								<input type="hidden" name="decision" value="approve">
 								<button type="submit" class="btn btn-primary">承認</button>
 							</form>
 							<form action="${pageContext.request.contextPath}/leaveRequestExecute.do" method="post">
+								<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 								<input type="hidden" name="requestId" value="${req.id}">
 								<input type="hidden" name="decision" value="reject">
 								<button type="submit" class="btn btn-danger">却下</button>
@@ -285,7 +314,7 @@
 		</div>
 	</div>
 
-	<table class="table" id="approval-table">
+	<table class="table approval-table" id="approval-table">
 		<thead>
 			<tr>
 				<th>社員ID</th>
@@ -304,8 +333,8 @@
 			<c:forEach var="item" items="${pendingItems}">
 				<tr data-employee-id="${item.employeeId}"
 					data-reason="${item.abstractName == '有給' ? 'leave' : (item.overtimeMinutes > 0 ? 'overtime' : '')}">
-					<td><c:out value="${item.employeeId}" /></td>
-					<td>
+					<td data-label="社員ID"><c:out value="${item.employeeId}" /></td>
+					<td data-label="氏名">
 						<c:url value="/kintaiDisplay.do" var="memberKintaiUrl">
 							<c:param name="id" value="${item.employeeId}" />
 							<c:param name="year" value="${fn:substring(item.date, 0, 4)}" />
@@ -313,18 +342,19 @@
 						</c:url>
 						<a href="${memberKintaiUrl}" title="この月の勤怠表を開く"><c:out value="${item.employeeName}" /></a>
 					</td>
-					<td><c:out value="${item.date}" /></td>
-					<td><c:out value="${item.week}" /></td>
-					<td><c:out value="${item.startTime}" /></td>
-					<td><c:out value="${item.endTime}" /></td>
-					<td><c:out value="${item.abstractName}" /></td>
-					<td>
+					<td data-label="日付"><c:out value="${item.date}" /></td>
+					<td data-label="曜日"><c:out value="${item.week}" /></td>
+					<td data-label="出勤"><c:out value="${item.startTime}" /></td>
+					<td data-label="退勤"><c:out value="${item.endTime}" /></td>
+					<td data-label="勤務区分"><c:out value="${item.abstractName}" /></td>
+					<td data-label="理由" data-wide>
 						<c:if test="${item.abstractName == '有給'}">有給取得</c:if>
 						<c:if test="${item.overtimeMinutes > 0}">時間外 (${item.overtimeMinutes}分)</c:if>
 					</td>
-					<td><c:out value="${item.memo}" /></td>
-					<td>
+					<td data-label="備考" data-wide><c:out value="${item.memo}" /></td>
+					<td data-label="操作" data-wide>
 						<form action="${pageContext.request.contextPath}/approvalExecute.do" method="post" class="decide-form">
+							<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 							<input type="hidden" name="employeeId" value="${item.employeeId}">
 							<input type="hidden" name="date" value="${item.date}">
 							<input type="text" name="comment" maxlength="255" class="form-input decide-comment" placeholder="理由（任意）"
@@ -348,7 +378,7 @@
 	<%-- 自分は承認したが、まだ申請中（後の段の承認待ち）の申請。いまどの段で止まっているかを見る（操作はない） --%>
 	<h2 class="table-title">自分が承認した申請の進み（申請中）</h2>
 	<p style="font-size: 0.9rem; color: #4a5568; margin: 0 0 0.5rem;">あなたは承認済みで、後の段の承認を待っている申請です。いまの段は「承認待ち」と出ます。</p>
-	<table class="table">
+	<table class="table approval-table">
 		<thead>
 			<tr>
 				<th>種類</th>
@@ -363,14 +393,14 @@
 		<tbody>
 			<c:forEach var="req" items="${approvedInProgressOvertime}">
 				<tr>
-					<td>残業事前申請</td>
-					<td><c:out value="${req.employeeId}" /></td>
-					<td><c:out value="${req.employeeName}" /></td>
-					<td><c:out value="${req.targetDate}" /></td>
-					<td><c:out value="${not empty req.plannedStartTime ? req.plannedStartTime : '09:00'}" />〜<c:out value="${not empty req.plannedEndTime ? req.plannedEndTime : '18:00'}" />
+					<td data-label="種類">残業事前申請</td>
+					<td data-label="社員ID"><c:out value="${req.employeeId}" /></td>
+					<td data-label="氏名"><c:out value="${req.employeeName}" /></td>
+					<td data-label="対象日"><c:out value="${req.targetDate}" /></td>
+					<td data-label="内容"><c:out value="${not empty req.plannedStartTime ? req.plannedStartTime : '09:00'}" />〜<c:out value="${not empty req.plannedEndTime ? req.plannedEndTime : '18:00'}" />
 						<br><span style="font-size: 0.85rem;"><c:out value="${req.plannedOvertimeBreakdown}" /></span></td>
-					<td><c:out value="${req.createdAt}" /></td>
-					<td style="font-size: 0.85rem;">
+					<td data-label="申請日時"><c:out value="${req.createdAt}" /></td>
+					<td data-label="承認の進み・理由" data-wide style="font-size: 0.85rem;">
 						<c:forEach var="step" items="${approvedOvertimeRoutes[req.id]}">
 							<div class="route-step"><c:choose><c:when test="${step.decided}"><c:out value="${step.label}" /></c:when><c:otherwise><c:out value="${step.level}" />. <c:forEach var="cand" items="${step.candidates}" varStatus="cs"><c:if test="${!cs.first}">／</c:if><c:out value="${cand.approverName}" /></c:forEach> <b style="color: ${step.level == req.currentLevel ? '#c05600' : '#a0aec0'};">${step.level == req.currentLevel ? '承認待ち' : '未処理'}</b></c:otherwise></c:choose><c:if test="${not empty step.decidedAtShort}"> <span class="route-at"><c:out value="${step.decidedAtShort}" /></span></c:if><c:if test="${not empty step.comment}"><span class="route-comment">「<c:out value="${step.comment}" />」</span></c:if></div>
 						</c:forEach>
@@ -379,13 +409,13 @@
 			</c:forEach>
 			<c:forEach var="req" items="${approvedInProgressLeave}">
 				<tr>
-					<td>休暇申請</td>
-					<td><c:out value="${req.employeeId}" /></td>
-					<td><c:out value="${req.employeeName}" /></td>
-					<td><c:out value="${req.targetDate}" /></td>
-					<td><c:out value="${req.abstractName}" /></td>
-					<td><c:out value="${req.createdAt}" /></td>
-					<td style="font-size: 0.85rem;">
+					<td data-label="種類">休暇申請</td>
+					<td data-label="社員ID"><c:out value="${req.employeeId}" /></td>
+					<td data-label="氏名"><c:out value="${req.employeeName}" /></td>
+					<td data-label="対象日"><c:out value="${req.targetDate}" /></td>
+					<td data-label="内容"><c:out value="${req.abstractName}" /></td>
+					<td data-label="申請日時"><c:out value="${req.createdAt}" /></td>
+					<td data-label="承認の進み・理由" data-wide style="font-size: 0.85rem;">
 						<c:forEach var="step" items="${approvedLeaveRoutes[req.id]}">
 							<div class="route-step"><c:choose><c:when test="${step.decided}"><c:out value="${step.label}" /></c:when><c:otherwise><c:out value="${step.level}" />. <c:forEach var="cand" items="${step.candidates}" varStatus="cs"><c:if test="${!cs.first}">／</c:if><c:out value="${cand.approverName}" /></c:forEach> <b style="color: ${step.level == req.currentLevel ? '#c05600' : '#a0aec0'};">${step.level == req.currentLevel ? '承認待ち' : '未処理'}</b></c:otherwise></c:choose><c:if test="${not empty step.decidedAtShort}"> <span class="route-at"><c:out value="${step.decidedAtShort}" /></span></c:if><c:if test="${not empty step.comment}"><span class="route-comment">「<c:out value="${step.comment}" />」</span></c:if></div>
 						</c:forEach>

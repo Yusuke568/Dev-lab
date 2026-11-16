@@ -32,8 +32,8 @@ public class GrantLeaveByYearAction implements Action {
                     ? "付与した社員はいません。勤続年数に合う付与ルール（マスタ管理の「有給付与ルール」）があるか確かめてください。"
                     : count + "人に、勤続年数に応じた有給休暇を付与しました。");
         } catch (RuntimeException e) {
-            e.printStackTrace();
-            PaidLeaveFlash.error(request, "一括付与できませんでした。（" + e.getMessage() + "）");
+            PaidLeaveFlash.error(request, com.example.shared.error.UserMessages.of(e,
+                    "一括付与できませんでした。時間をおいてもう一度お試しください。"));
         }
         return new View("/paidLeaveAdmin.do", true);
     }

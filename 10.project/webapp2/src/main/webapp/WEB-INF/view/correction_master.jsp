@@ -30,6 +30,7 @@
 		<h2>新規登録</h2>
 		<form action="${pageContext.request.contextPath}/correctionMasterRegister.do" method="post"
 			style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;">
+			<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 			<div class="form-group">
 				<label class="form-label">補正名称</label>
 				<input type="text" name="name" class="form-input" placeholder="例: A社基準補正" required>

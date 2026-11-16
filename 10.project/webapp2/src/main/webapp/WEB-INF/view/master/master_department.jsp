@@ -73,6 +73,7 @@
 					<td class="text-center"><c:out value="${d.memberCount}" /></td>
 					<td class="text-center">
 						<form id="d${d.id}" action="${pageContext.request.contextPath}/masterDepartment.do" method="post">
+							<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 							<input type="hidden" name="id" value="${d.id}">
 							<button type="submit" class="btn btn-primary">保存</button>
 							<button type="submit" name="op" value="delete" formnovalidate class="btn btn-danger" data-confirm="<c:out value='部署「${d.name}」を削除しますか？'/>" onclick="return confirm(this.dataset.confirm)">削除</button>
@@ -111,6 +112,7 @@
 				<td></td>
 				<td class="text-center">
 					<form id="dNew" action="${pageContext.request.contextPath}/masterDepartment.do" method="post">
+						<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 						<button type="submit" class="btn btn-secondary">追加</button>
 					</form>
 				</td>
@@ -152,6 +154,7 @@
 					</td>
 					<td class="text-center">
 						<form id="s${s.id}" action="${pageContext.request.contextPath}/masterDepartment.do" method="post">
+							<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 							<input type="hidden" name="mode" value="assign">
 							<input type="hidden" name="staffId" value="${s.id}">
 							<button type="submit" class="btn btn-primary">保存</button>

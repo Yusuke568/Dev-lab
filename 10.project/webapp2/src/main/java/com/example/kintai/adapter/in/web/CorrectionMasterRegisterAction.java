@@ -30,7 +30,8 @@ public class CorrectionMasterRegisterAction implements Action {
 
             registerCorrectionMasterUseCase.register(name, correctionUsTime, correctionMidTime);
         } catch (Exception e) {
-            request.getSession().setAttribute("correctionMasterErrorMessage", e.getMessage());
+            request.getSession().setAttribute("correctionMasterErrorMessage", com.example.shared.error.UserMessages.of(e,
+                    "補正CDを登録できませんでした。入力内容を確かめて、もう一度お試しください。"));
         }
 
         return new View("/correctionMasterList.do", true);

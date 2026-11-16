@@ -30,7 +30,8 @@ public class LeaveRequestExecuteAction implements Action {
 
             leaveRequestUseCase.decide(requestId, "approve".equals(decision), decidedBy);
         } catch (Exception e) {
-            request.getSession().setAttribute("approvalErrorMessage", e.getMessage());
+            request.getSession().setAttribute("approvalErrorMessage", com.example.shared.error.UserMessages.of(e,
+                    "承認・却下できませんでした。時間をおいてもう一度お試しください。続く場合は管理者に連絡してください。"));
         }
 
         return new View("/approvalList.do", true);

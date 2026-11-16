@@ -43,6 +43,7 @@
 					</td>
 					<td class="text-center">
 						<form id="j${jc.id}" action="${pageContext.request.contextPath}/masterJobClass.do" method="post">
+							<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 							<input type="hidden" name="id" value="${jc.id}">
 							<button type="submit" class="btn btn-primary">保存</button>
 							<button type="submit" name="op" value="delete" formnovalidate class="btn btn-danger" data-confirm="<c:out value='役職「${jc.name}」を削除しますか？'/>" onclick="return confirm(this.dataset.confirm)">削除</button>
@@ -63,6 +64,7 @@
 				</td>
 				<td class="text-center">
 					<form id="jNew" action="${pageContext.request.contextPath}/masterJobClass.do" method="post">
+						<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 						<button type="submit" class="btn btn-secondary">追加</button>
 					</form>
 				</td>

@@ -6,6 +6,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="csrf-token" content="<c:out value='${sessionScope.csrfToken}' />">
 <title>承認設定</title>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 <style>
@@ -163,6 +164,6 @@
 
 <%-- 画面に表示するデータ（MasterApprovalSettingsAction が作る） --%>
 <script type="application/json" id="settings-data">${settingsJson}</script>
-<script src="${pageContext.request.contextPath}/resources/js/master/approval-settings.js?v=20261119"></script><%-- 中身を変えたら v を変える（ブラウザに古い版が残らないように） --%>
+<script src="${pageContext.request.contextPath}/resources/js/master/approval-settings.js?v=20261114csrf"></script><%-- 中身を変えたら v を変える（ブラウザに古い版が残らないように） --%>
 </body>
 </html>

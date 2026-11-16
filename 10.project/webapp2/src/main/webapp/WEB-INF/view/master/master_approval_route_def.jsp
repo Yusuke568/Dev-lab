@@ -76,6 +76,7 @@
 								<a class="btn btn-secondary" href="${pageContext.request.contextPath}/masterApprovalRouteDef.do?edit=${r.id}#route-form">編集</a>
 								<form action="${pageContext.request.contextPath}/masterApprovalRouteDef.do" method="post" style="display: inline;"
 									onsubmit="return confirm('承認ルート「<c:out value='${r.name}' />」を削除しますか？\n割り当てていた社員・部署は、組織図で承認ルートが決まるようになります。');">
+									<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 									<input type="hidden" name="mode" value="delete">
 									<input type="hidden" name="id" value="${r.id}">
 									<button type="submit" class="btn btn-danger">削除</button>
@@ -92,6 +93,7 @@
 	<div class="card route-form" id="route-form">
 		<h2><c:choose><c:when test="${not empty editing}">ルートを編集：<c:out value="${editing.name}" /></c:when><c:otherwise>新しいルート</c:otherwise></c:choose></h2>
 		<form action="${pageContext.request.contextPath}/masterApprovalRouteDef.do" method="post" id="route-edit-form">
+			<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 			<c:if test="${not empty editing}"><input type="hidden" name="id" value="${editing.id}"></c:if>
 			<div class="form-row">
 				<div class="form-group">

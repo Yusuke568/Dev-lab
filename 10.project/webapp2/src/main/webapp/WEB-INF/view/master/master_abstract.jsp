@@ -50,6 +50,7 @@
 					</td>
 					<td class="text-center">
 						<form id="a${a.id}" action="${pageContext.request.contextPath}/masterAbstract.do" method="post">
+							<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 							<input type="hidden" name="id" value="${a.id}">
 							<button type="submit" class="btn btn-primary">保存</button>
 							<button type="submit" name="op" value="delete" formnovalidate class="btn btn-danger" data-confirm="<c:out value='区分「${a.name}」を削除しますか？'/>" onclick="return confirm(this.dataset.confirm)">削除</button>
@@ -73,6 +74,7 @@
 				</td>
 				<td class="text-center">
 					<form id="aNew" action="${pageContext.request.contextPath}/masterAbstract.do" method="post">
+						<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 						<input type="hidden" name="mode" value="new">
 						<button type="submit" class="btn btn-secondary">追加</button>
 					</form>

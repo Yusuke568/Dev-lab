@@ -36,7 +36,8 @@ public class DefaultCorrectionSaveAction implements Action {
                     ? "いつもの補正CDを外しました。"
                     : "いつもの補正CDを保存しました。勤務区分が未設定の日に入力を始めると、この補正CDが入ります。");
         } catch (RuntimeException e) {
-            session.setAttribute("kintaiErrorMessage", "いつもの補正CDを保存できませんでした: " + e.getMessage());
+            session.setAttribute("kintaiErrorMessage", com.example.shared.error.UserMessages.of(e,
+                    "いつもの補正CDを保存できませんでした。時間をおいてもう一度お試しください。"));
         }
         String year = request.getParameter("year");
         String month = request.getParameter("month");

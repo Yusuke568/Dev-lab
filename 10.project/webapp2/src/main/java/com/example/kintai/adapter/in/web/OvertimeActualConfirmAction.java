@@ -61,7 +61,9 @@ public class OvertimeActualConfirmAction implements Action {
             }
         } catch (RuntimeException e) {
             LOG.log(Level.WARNING, "残業の実績を確認できませんでした（承認者 " + approverId + "）", e);
-            session.setAttribute("approvalErrorMessage", "残業の実績を確認できませんでした: " + e.getMessage());
+            String found = com.example.shared.error.UserMessages.find(e);
+            session.setAttribute("approvalErrorMessage", found != null ? found
+                    : "残業の実績を確認できませんでした。時間をおいてもう一度お試しください。");
         }
         return new View("/approvalList.do", true);
     }

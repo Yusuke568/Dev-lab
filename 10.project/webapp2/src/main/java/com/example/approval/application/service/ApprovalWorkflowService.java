@@ -120,7 +120,8 @@ public class ApprovalWorkflowService {
                 ResolvedRoute route = resolver.resolve(staffId, deptId, requestType, org);
                 result.put(staffId, new RoutePreview(route.getLevels(), route.getSource(), route.isAutoApproved(), null));
             } catch (RuntimeException e) {
-                result.put(staffId, new RoutePreview(List.of(), null, false, e.getMessage()));
+                result.put(staffId, new RoutePreview(List.of(), null, false,
+                        com.example.shared.error.UserMessages.of(e, "承認ルートを調べられませんでした。")));
             }
         });
         return result;

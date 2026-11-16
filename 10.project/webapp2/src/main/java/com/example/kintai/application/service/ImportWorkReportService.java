@@ -147,12 +147,8 @@ public class ImportWorkReportService implements ImportWorkReportUseCase {
         return value != null && !value.isBlank();
     }
 
+    /** スキップした理由。業務のメッセージがなければ、詳しい内容はログに残して決まった文言にする */
     private String rootMessage(Throwable e) {
-        Throwable current = e;
-        while (current.getCause() != null && current.getCause() != current) {
-            current = current.getCause();
-        }
-        String message = current.getMessage();
-        return (message == null || message.isBlank()) ? current.getClass().getSimpleName() : message;
+        return com.example.shared.error.UserMessages.of(e, "保存できませんでした");
     }
 }

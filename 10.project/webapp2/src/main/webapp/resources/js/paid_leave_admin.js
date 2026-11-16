@@ -33,6 +33,13 @@ function postUpdate(id, days) {
     daysInput.value = days;
     form.appendChild(daysInput);
 
+    const csrf = document.querySelector('meta[name="csrf-token"]');
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = '_csrf';
+    csrfInput.value = csrf ? csrf.content : '';
+    form.appendChild(csrfInput);
+
     document.body.appendChild(form);
     form.submit();
 }

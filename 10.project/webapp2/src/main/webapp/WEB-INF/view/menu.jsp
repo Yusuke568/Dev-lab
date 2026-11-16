@@ -156,6 +156,7 @@
 			<h3>勤怠管理</h3>
 			<form action="${pageContext.request.contextPath}/kintaiDisplay.do"
 				method="post">
+				<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 				<input type="hidden" name="id" value="${sessionScope.loginUser}" />
 				<div class="form-group" style="text-align: left; padding: 0.5rem 0;">
 					<label class="form-label" style="display: inline;">社員ID: </label>

@@ -48,10 +48,12 @@ function updatePaidLeavePreview() {
 }
 
 function postRecords(records) {
+  const csrf = document.querySelector('meta[name="csrf-token"]');
   return fetch(contextPath + "/kintaiUpdateApi.do", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "X-CSRF-Token": csrf ? csrf.content : "",
     },
     body: JSON.stringify(records),
   });

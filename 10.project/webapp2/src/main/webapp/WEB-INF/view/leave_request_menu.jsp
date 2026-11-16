@@ -32,6 +32,7 @@
 		<h2>新規申請</h2>
 		<form action="${pageContext.request.contextPath}/leaveRequestSubmit.do" method="post"
 			style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;">
+			<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 			<div class="form-group">
 				<label class="form-label">対象日</label>
 				<input type="date" id="targetDate" name="targetDate" class="form-input" required>

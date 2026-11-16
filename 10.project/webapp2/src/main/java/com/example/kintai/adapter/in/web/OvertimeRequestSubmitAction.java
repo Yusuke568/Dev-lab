@@ -163,11 +163,9 @@ public class OvertimeRequestSubmitAction implements Action {
      * DB の障害などは原因をたどって見つけた入力系のメッセージを、なければ定型文を出す（理由が空で何も表示されないことをなくす）。
      */
     private static String messageOf(Throwable e) {
-        for (Throwable t = e; t != null; t = t.getCause()) {
-            if ((t instanceof IllegalArgumentException || t instanceof IllegalStateException)
-                    && t.getMessage() != null && !t.getMessage().isBlank()) {
-                return t.getMessage();
-            }
+        String found = com.example.shared.error.UserMessages.find(e);
+        if (found != null) {
+            return found;
         }
         return "申請を保存できませんでした。時間をおいてもう一度申請してください。続く場合は管理者に連絡してください。";
     }

@@ -57,7 +57,8 @@ public abstract class MasterActionSupport implements Action {
             } catch (NumberFormatException e) {
                 session.setAttribute(ERROR, "数値の項目に正しい値を入力してください。");
             } catch (Exception e) {
-                session.setAttribute(ERROR, e.getMessage());
+                session.setAttribute(ERROR, com.example.shared.error.UserMessages.of(e,
+                        "保存できませんでした。入力内容を確かめて、もう一度お試しください。"));
             }
             return new View(redirectPath(request), true);
         }

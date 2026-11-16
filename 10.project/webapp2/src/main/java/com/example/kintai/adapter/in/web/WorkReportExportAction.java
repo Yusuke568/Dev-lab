@@ -64,7 +64,8 @@ public class WorkReportExportAction implements Action {
         } catch (Exception e) {
             e.printStackTrace();
             if (session != null) {
-                session.setAttribute("kintaiErrorMessage", "作業報告書の出力に失敗しました: " + e.getMessage());
+                session.setAttribute("kintaiErrorMessage", com.example.shared.error.UserMessages.of(e,
+                        "作業報告書を出力できませんでした。時間をおいてもう一度お試しください。"));
             }
             YearMonth fallback = (year > 0 && month > 0) ? YearMonth.of(year, month) : YearMonth.now();
             return new View("/kintaiDisplay.do?id=" + employeeId

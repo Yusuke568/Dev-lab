@@ -69,11 +69,9 @@ public class SubordinateOvertimeFormAction implements Action {
             response.getOutputStream().write(bytes);
             response.getOutputStream().flush();
             return null;
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            session.setAttribute("subordinateMessage", e.getMessage());
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "時間外申請書を出せませんでした（社員ID " + staffId + "、" + month + "）", e);
-            session.setAttribute("subordinateMessage", "時間外申請書を出せませんでした: " + e.getMessage());
+            session.setAttribute("subordinateMessage", com.example.shared.error.UserMessages.of(e,
+                    "時間外申請書を出せませんでした（社員ID " + staffId + "、" + month + "）。時間をおいてもう一度お試しください。"));
         }
         return new View(back, true);
     }

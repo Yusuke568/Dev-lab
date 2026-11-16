@@ -71,6 +71,7 @@
 			<div class="bi-box">
 				<h3>1. 作業報告書を選ぶ</h3>
 				<form action="${pageContext.request.contextPath}/workReportBulkImport.do" method="post" enctype="multipart/form-data" class="bi-upload">
+					<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 					<input type="hidden" name="op" value="upload">
 					<input type="file" name="files" accept=".xlsm" multiple required aria-label="作業報告書（複数選べます）">
 					<button type="submit" class="btn btn-primary">読み込む</button>
@@ -83,6 +84,7 @@
 					<h3>2. 取り込む社員を確かめる</h3>
 					<form action="${pageContext.request.contextPath}/workReportBulkImport.do" method="post"
 						onsubmit="return confirm('選んだ社員に取り込みます。同じ日・同じ週の勤怠と週次作業報告は、ファイルの内容で上書きされます。よろしいですか？');">
+						<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 						<input type="hidden" name="op" value="import">
 						<div style="overflow-x: auto;">
 						<table class="bi-table">
@@ -122,6 +124,7 @@
 						</div>
 					</form>
 					<form action="${pageContext.request.contextPath}/workReportBulkImport.do" method="post" style="margin-top: 8px;">
+						<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 						<input type="hidden" name="op" value="clear">
 						<button type="submit" class="btn btn-secondary">読み込んだファイルを捨てる</button>
 					</form>

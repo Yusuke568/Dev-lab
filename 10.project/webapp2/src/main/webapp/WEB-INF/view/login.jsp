@@ -23,6 +23,7 @@
 		</div>
 		<form action="${pageContext.request.contextPath}/loginExecute.do"
 			method="post" style="margin-top: 2rem;">
+			<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 			<div class="form-group">
 				<label for="username" class="form-label">ユーザー名</label>
 				<input type="text" id="username" name="username" placeholder="ユーザー名"

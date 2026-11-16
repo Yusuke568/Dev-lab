@@ -41,7 +41,8 @@ public class OvertimeRequestWithdrawAction implements Action {
         } catch (NumberFormatException | NullPointerException e) {
             session.setAttribute("overtimeRequestErrorMessage", "取り下げる申請が分かりません。画面を読み込み直してください。");
         } catch (RuntimeException e) {
-            session.setAttribute("overtimeRequestErrorMessage", e.getMessage());
+            session.setAttribute("overtimeRequestErrorMessage", com.example.shared.error.UserMessages.of(e,
+                    "取り下げられませんでした。時間をおいてもう一度お試しください。"));
         }
         return new View("/overtimeRequestMenu.do", true);
     }

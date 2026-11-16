@@ -20,6 +20,7 @@
 		</div>
 
 		<form action="${pageContext.request.contextPath}/shainDeleteExecute.do" method="post">
+			<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 			<input type="hidden" name="id"
 				value="<c:out value="${shain.id}"/>">
 

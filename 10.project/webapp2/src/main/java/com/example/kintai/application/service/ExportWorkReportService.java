@@ -92,8 +92,9 @@ public class ExportWorkReportService implements ExportWorkReportUseCase {
             String path = workReportArchivePort.archive(employeeId.getValue(), monthlyData.getEmployeeName(), yearMonth, content);
             return new ExportedWorkReport(content, path, null);
         } catch (Exception e) {
-            e.printStackTrace();
-            return new ExportedWorkReport(content, null, e.getMessage() != null ? e.getMessage() : e.toString());
+            // フォルダ名などを画面に出さないよう、詳しい内容はログに残す
+            return new ExportedWorkReport(content, null, com.example.shared.error.UserMessages.of(e,
+                    "書き込みに失敗しました。管理者に連絡してください"));
         }
     }
 }

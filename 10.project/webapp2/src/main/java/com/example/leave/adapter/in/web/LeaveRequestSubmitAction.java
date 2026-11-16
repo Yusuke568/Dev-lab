@@ -35,7 +35,8 @@ public class LeaveRequestSubmitAction implements Action {
             Integer departmentId = departmentParam == null || departmentParam.isBlank() ? null : Integer.valueOf(departmentParam);
             leaveRequestUseCase.submit(employeeId, date, abstractId, request.getParameter("reason"), departmentId);
         } catch (Exception e) {
-            session.setAttribute("leaveRequestErrorMessage", e.getMessage());
+            session.setAttribute("leaveRequestErrorMessage", com.example.shared.error.UserMessages.of(e,
+                    "申請できませんでした。入力内容を確かめて、もう一度お試しください。"));
         }
 
         return new View("/leaveRequestMenu.do", true);

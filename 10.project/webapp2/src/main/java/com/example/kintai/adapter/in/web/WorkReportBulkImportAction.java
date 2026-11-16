@@ -205,12 +205,8 @@ public class WorkReportBulkImportAction implements Action {
         }
     }
 
+    /** 画面に出す理由。業務のメッセージがなければ、詳しい内容はログに残して決まった文言にする */
     private static String rootMessage(Throwable e) {
-        Throwable current = e;
-        while (current.getCause() != null && current.getCause() != current) {
-            current = current.getCause();
-        }
-        String message = current.getMessage();
-        return message == null || message.isBlank() ? current.getClass().getSimpleName() : message;
+        return com.example.shared.error.UserMessages.of(e, "ファイルの形式か内容を確かめてください");
     }
 }

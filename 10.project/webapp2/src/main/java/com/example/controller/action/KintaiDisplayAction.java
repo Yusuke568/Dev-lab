@@ -285,7 +285,7 @@ public class KintaiDisplayAction implements Action {
         } catch (Exception e) {
             // エラーハンドリングを強化することが望ましい
             e.printStackTrace();
-            request.setAttribute("errorMessage", "勤怠惁E��の表示中にエラーが発生しました: " + e.getMessage());
+            request.setAttribute("errorMessage", com.example.shared.error.UserMessages.of(e, "勤怠表を表示できませんでした。"));
             return new View("/WEB-INF/view/error.jsp");
         }
     }

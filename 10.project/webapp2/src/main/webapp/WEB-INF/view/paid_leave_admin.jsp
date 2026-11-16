@@ -5,6 +5,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<meta name="csrf-token" content="<c:out value='${sessionScope.csrfToken}' />">
 <title>有給休暇管理</title>
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/style.css">
@@ -38,6 +39,7 @@
 				<strong>実行するたびに足されます。</strong>年に1回だけ実行してください。足される日数は下の一覧の「一括付与で足す日数」で確かめられます。</p>
 			<form action="${pageContext.request.contextPath}/grantLeaveByYear.do" method="post" class="leave-grant-form"
 				onsubmit="return confirm('${grantPreviewCount}人に、勤続年数に応じた有給休暇を付与します。\n実行するたびに足されます。実行しますか？');">
+				<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 				<button type="submit" class="btn btn-primary">一括付与を実行</button>
 			</form>
 		</div>
@@ -47,6 +49,7 @@
 			<h2>✨ 選択して一括付与</h2>
 			<p>チェックを入れた社員に、指定した日数の有給休暇を付与します。</p>
 			<form action="${pageContext.request.contextPath}/grantLeaveSelected.do" method="post" id="grant-selected-form" class="leave-grant-form selected-grant">
+				<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 				<input type="number" name="days" min="1" required
 					placeholder="付与日数" class="form-input">
 				<button type="submit" class="btn btn-primary">選択者に付与</button>
@@ -97,6 +100,6 @@
 	</table>
 </div>
 
-<script src="${pageContext.request.contextPath}/resources/js/paid_leave_admin.js" type="module"></script>
+<script src="${pageContext.request.contextPath}/resources/js/paid_leave_admin.js?v=20261114csrf" type="module"></script>
 </body>
 </html>

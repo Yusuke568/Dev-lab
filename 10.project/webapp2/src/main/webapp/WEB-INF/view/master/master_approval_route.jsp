@@ -35,6 +35,7 @@
 					<td><input type="number" name="maxLevels" form="r${s.requestTypeCode}" class="form-input" min="1" max="10" value="${s.maxLevels}" style="width: 6rem;" required> 段</td>
 					<td class="text-center">
 						<form id="r${s.requestTypeCode}" action="${pageContext.request.contextPath}/masterApprovalRoute.do" method="post">
+							<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 							<input type="hidden" name="requestType" value="${s.requestTypeCode}">
 							<button type="submit" class="btn btn-primary">保存</button>
 						</form>

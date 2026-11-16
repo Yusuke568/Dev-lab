@@ -33,7 +33,8 @@ public class UpdateLeaveAction implements Action {
             } catch (NumberFormatException e) {
                 PaidLeaveFlash.error(request, "有給休暇残日数は数字で入れてください。");
             } catch (RuntimeException e) {
-                PaidLeaveFlash.error(request, e.getMessage());
+                PaidLeaveFlash.error(request, com.example.shared.error.UserMessages.of(e,
+                        "有給休暇の残日数を更新できませんでした。時間をおいてもう一度お試しください。"));
             }
         }
 

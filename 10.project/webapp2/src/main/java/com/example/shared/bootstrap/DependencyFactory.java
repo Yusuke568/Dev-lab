@@ -134,9 +134,23 @@ public class DependencyFactory {
 
     // --- Actions ---
     private final Map<String, Action> actionMap = new ConcurrentHashMap<>();
+    /** ログインの失敗の回数（メモリに持つので、ログインと管理者の解除で同じものを使う） */
+    private final com.example.auth.domain.service.LoginAttemptLimiter loginAttemptLimiter =
+            new com.example.auth.domain.service.LoginAttemptLimiter(java.time.Clock.systemDefaultZone());
     /** アクション名 → 必要な機能（どれか1つあれば使える） */
     private final Map<String, java.util.Set<Feature>> featureMap = new ConcurrentHashMap<>();
     private static final java.util.Set<String> PUBLIC_ACTIONS = java.util.Set.of("Login", "LoginExecute", "Logout");
+    /**
+     * データを変えるので POST でしか受け付けないアクション（GET のリンクや画像タグで実行させない）。
+     * GET では画面を出し、POST で保存するアクション（マスタ管理・お知らせ・社員の登録など）はここに入れず、
+     * アクションの中で POST かどうかを見分ける。
+     */
+    private static final java.util.Set<String> POST_ONLY_ACTIONS = java.util.Set.of(
+            "DefaultCorrectionSave", "ShainDeleteExecute",
+            "UpdateLeave", "GrantLeaveSelected",
+            "ApprovalExecute", "OvertimeActualConfirm", "OvertimeRequestExecute", "LeaveRequestExecute",
+            "CorrectionMasterRegister", "WorkReportImport", "WeeklyWorkReportSave", "KintaiUpdateApi",
+            "OvertimeRequestSubmit", "LeaveRequestSubmit", "LoginUnlockExecute");
 
     public DependencyFactory() {
         // --- 依存関係の最下層 (Adapters) からインスタンスを生成 ---
@@ -267,7 +281,9 @@ public class DependencyFactory {
     private void initializeActions() {
         // Auth Actions
         actionMap.put("Login", new com.example.auth.adapter.in.web.LoginAction());
-        actionMap.put("LoginExecute", new com.example.auth.adapter.in.web.LoginExecuteAction(this.authenticateUseCase, this.getShainByIdUseCase, this.getUserFeaturesUseCase));
+        actionMap.put("LoginExecute", new com.example.auth.adapter.in.web.LoginExecuteAction(this.authenticateUseCase, this.getShainByIdUseCase, this.getUserFeaturesUseCase,
+                this.loginAttemptLimiter));
+        actionMap.put("LoginUnlockExecute", new com.example.auth.adapter.in.web.LoginUnlockExecuteAction(this.loginAttemptLimiter));
         actionMap.put("Logout", new com.example.auth.adapter.in.web.LogoutAction());
         actionMap.put("PasswordChange", new com.example.auth.adapter.in.web.PasswordChangeAction());
         actionMap.put("PasswordChangeExecute", new com.example.auth.adapter.in.web.PasswordChangeExecuteAction(this.changeOwnPasswordUseCase));
@@ -290,7 +306,8 @@ public class DependencyFactory {
                 this.attendancePersistenceAdapter));
 
         // Shain Actions (New Context)
-        actionMap.put("ShainList", new com.example.shain.adapter.in.web.ShainListAction(this.getShainListUseCase, this.getAllClassmastersUseCase));
+        actionMap.put("ShainList", new com.example.shain.adapter.in.web.ShainListAction(this.getShainListUseCase, this.getAllClassmastersUseCase,
+                this.loginAttemptLimiter));
         com.example.shain.adapter.in.web.ShainUpdateFormAction shainUpdateFormAction =
                 new com.example.shain.adapter.in.web.ShainUpdateFormAction(this.getShainByIdUseCase, this.getAllClassmastersUseCase, this.masterMaintenanceUseCase);
         actionMap.put("ShainUpdateForm", shainUpdateFormAction);
@@ -391,7 +408,7 @@ public class DependencyFactory {
                 "LeaveRequestExecute");
         requireFeature(Feature.SHAIN_ADMIN, "ShainList", "ShainUpdateForm", "ShainUpdateExecute", "ShainInsertForm",
                 "ShainInsertExecute", "ShainDeleteForm", "ShainDeleteExecute", "SearchShainApi", "ShainIdCheckApi",
-                "PasswordResetForm", "PasswordResetExecute");
+                "PasswordResetForm", "PasswordResetExecute", "LoginUnlockExecute");
         requireFeature(Feature.WEEKLY_REPORT_ADMIN, "WorkReportBulkImport");
         requireFeature(Feature.PAID_LEAVE_ADMIN, "PaidLeaveAdmin", "UpdateLeave", "GrantLeaveByYear", "GrantLeaveSelected");
         // マスタはマスタごとに権限を分ける。マスタ管理のトップは、どれか1つのマスタを使えれば開ける
@@ -424,6 +441,11 @@ public class DependencyFactory {
     /** ログインしなくても使えるアクションか。 */
     public boolean isPublicAction(String actionName) {
         return PUBLIC_ACTIONS.contains(actionName);
+    }
+
+    /** POST でしか受け付けないアクションか。 */
+    public boolean isPostOnlyAction(String actionName) {
+        return POST_ONLY_ACTIONS.contains(actionName);
     }
 
     /** アクションに必要な機能（どれか1つあればよい）。ログインしていれば誰でも使えるアクションは null。 */

@@ -25,4 +25,21 @@
         <url-pattern>*.do</url-pattern>
     </servlet-mapping>
 
+    <!--
+        思わぬエラーのときも Tomcat の標準のエラー画面（例外の中身やスタックトレースが出る）を出さず、
+        アプリのエラー画面を出す。詳しい内容はサーバーのログ（catalina.out）に残る。
+    -->
+    <error-page>
+        <error-code>404</error-code>
+        <location>/WEB-INF/view/error.jsp</location>
+    </error-page>
+    <error-page>
+        <error-code>500</error-code>
+        <location>/WEB-INF/view/error.jsp</location>
+    </error-page>
+    <error-page>
+        <exception-type>java.lang.Throwable</exception-type>
+        <location>/WEB-INF/view/error.jsp</location>
+    </error-page>
+
 </web-app>

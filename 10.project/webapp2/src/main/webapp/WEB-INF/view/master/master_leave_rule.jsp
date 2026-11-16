@@ -35,11 +35,13 @@
 					<td class="text-center">
 						<div style="display: flex; gap: 0.5rem; justify-content: center;">
 							<form id="l${r.yearsOfService}" action="${pageContext.request.contextPath}/masterLeaveRule.do" method="post">
+								<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 								<input type="hidden" name="yearsOfService" value="${r.yearsOfService}">
 								<button type="submit" class="btn btn-primary">保存</button>
 							</form>
 							<form action="${pageContext.request.contextPath}/masterLeaveRule.do" method="post"
 								onsubmit="return confirm('勤続${r.yearsOfService}年のルールを削除しますか？');">
+								<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 								<input type="hidden" name="mode" value="delete">
 								<input type="hidden" name="yearsOfService" value="${r.yearsOfService}">
 								<button type="submit" class="btn btn-danger">削除</button>
@@ -53,6 +55,7 @@
 				<td><input type="number" name="grantDays" form="lNew" class="form-input" min="0" placeholder="日数" style="width: 6rem;" required> 日</td>
 				<td class="text-center">
 					<form id="lNew" action="${pageContext.request.contextPath}/masterLeaveRule.do" method="post">
+						<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 						<button type="submit" class="btn btn-secondary">追加</button>
 					</form>
 				</td>

@@ -29,6 +29,56 @@
 			</div>
 		</div>
 
+		<c:if test="${not empty message}">
+			<div class="status-item status-info" style="margin: 1rem 0;">✓ <c:out value="${message}" /></div>
+		</c:if>
+		<c:if test="${not empty errorMessage}">
+			<div class="error-message" style="margin: 1rem 0;"><c:out value="${errorMessage}" /></div>
+		</c:if>
+
+		<%-- ログインに続けて失敗して止まっているユーザー名・接続元。止まっているときだけ出す --%>
+		<c:if test="${not empty loginLocks}">
+			<section class="login-locks" style="margin: 1rem 0 1.5rem;">
+				<h2 style="font-size: 1.1rem; margin-bottom: 0.25rem;">🔒 ログインを止めている社員・接続元</h2>
+				<p style="color: #6c757d; font-size: 0.9rem; margin-bottom: 0.5rem;">
+					ログインに続けて失敗したため、一時的にログインできなくしています。時間がたてば自動で解除されます。
+					本人からの問い合わせなどで急ぐときは「解除」を押してください。
+				</p>
+				<table class="table">
+					<thead>
+						<tr>
+							<th>種類</th>
+							<th>ユーザー名・接続元</th>
+							<th>解除まで</th>
+							<th>操作</th>
+						</tr>
+					</thead>
+					<tbody>
+						<c:forEach var="lock" items="${loginLocks}">
+							<tr>
+								<td>${lock.kindName == 'ACCOUNT' ? 'ユーザー名' : '接続元（IPアドレス）'}</td>
+								<td>
+									<c:out value="${lock.value}" />
+									<c:if test="${lock.kindName == 'ACCOUNT' and not empty shainNames[lock.value]}">
+										（<c:out value="${shainNames[lock.value]}" />）
+									</c:if>
+								</td>
+								<td>あと約 ${lock.remainingMinutes} 分</td>
+								<td>
+									<form action="${pageContext.request.contextPath}/loginUnlockExecute.do" method="post" style="display: inline;">
+										<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
+										<input type="hidden" name="kind" value="<c:out value='${lock.kindName}' />">
+										<input type="hidden" name="value" value="<c:out value='${lock.value}' />">
+										<button type="submit" class="btn btn-secondary">解除</button>
+									</form>
+								</td>
+							</tr>
+						</c:forEach>
+					</tbody>
+				</table>
+			</section>
+		</c:if>
+
 		<div class="search-container" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
 			<input type="text" id="searchInput" class="form-control" placeholder="名前で社員を検索...">
 			<select id="jobClassFilter" class="form-input">

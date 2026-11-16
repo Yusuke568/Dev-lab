@@ -39,6 +39,7 @@
 
 	<h2>登録する</h2>
 	<form class="holiday-form" action="${pageContext.request.contextPath}/masterCompanyHoliday.do" method="post">
+		<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 		<div class="form-group">
 			<label class="form-label" for="from">日付（開始）</label>
 			<input type="date" id="from" name="from" class="form-input" required>
@@ -79,6 +80,7 @@
 							<td class="text-center">
 								<form action="${pageContext.request.contextPath}/masterCompanyHoliday.do" method="post"
 									onsubmit="return confirm('<c:out value="${h.date}" /> を会社休日から外しますか？');">
+									<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 									<input type="hidden" name="mode" value="delete">
 									<input type="hidden" name="date" value="${h.date}">
 									<button type="submit" class="btn btn-danger">外す</button>

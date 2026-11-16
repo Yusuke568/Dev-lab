@@ -35,6 +35,11 @@
       else if (k === "className") e.className = v;
       else e.setAttribute(k, v === true ? "" : v);
     });
+    // POST のフォームには、CSRF 対策のトークンを必ず入れる
+    if (tag === "form" && String((attrs || {}).method).toLowerCase() === "post") {
+      const csrf = document.querySelector('meta[name="csrf-token"]');
+      e.appendChild(hidden("_csrf", csrf ? csrf.content : ""));
+    }
     children.flat().forEach((c) => {
       if (c === null || c === undefined || c === false) return;
       e.appendChild(typeof c === "string" ? document.createTextNode(c) : c);

@@ -18,10 +18,13 @@
 			<c:when test="${not empty errorMessage}">
 				<p style="font-size: 1.1rem; color: #6c757d;"><c:out value="${errorMessage}" /></p>
 			</c:when>
+			<c:when test="${requestScope['javax.servlet.error.status_code'] == 404}">
+				<p style="font-size: 1.1rem; color: #6c757d;">お探しのページが見つかりませんでした。</p>
+			</c:when>
 			<c:otherwise>
-				<p style="font-size: 1.1rem; color: #6c757d;">
-			申し訳ありませんが、予期せぬエラーが発生しました。<br>
-			管理者にお問い合わせいただくか、時間をおいて再度お試しください。
+				<p style="font-size: 1.1rem; color: #6c757d;">
+			申し訳ありませんが、予期せぬエラーが発生しました。<br>
+			管理者にお問い合わせいただくか、時間をおいて再度お試しください。
 		</p>
 			</c:otherwise>
 		</c:choose>

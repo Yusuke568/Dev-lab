@@ -58,7 +58,7 @@ public class OvertimeFormXlsxExportAdapter implements OvertimeFormExportPort {
                 return out.toByteArray();
             }
         } catch (IOException e) {
-            throw new IllegalStateException("時間外申請書を作れませんでした: " + e.getMessage(), e);
+            throw new IllegalStateException("時間外申請書を作れませんでした。管理者に連絡してください。", e);
         }
     }
 

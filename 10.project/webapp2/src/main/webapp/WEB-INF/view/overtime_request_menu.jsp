@@ -78,6 +78,7 @@
 		<h2>新規申請</h2>
 		<form action="${pageContext.request.contextPath}/overtimeRequestSubmit.do" method="post"
 			style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;">
+			<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 			<div class="form-group" id="ot-single-date">
 				<label class="form-label" for="targetDate">対象日</label>
 				<input type="date" id="targetDate" name="targetDate" class="form-input" value="<c:out value='${not empty form ? form.targetDate : prefillDate}' />" required>
@@ -246,6 +247,7 @@
 							<%-- 承認される前なら取り下げられる。取り下げた日はもう一度申請できる --%>
 							<form action="${pageContext.request.contextPath}/overtimeRequestWithdraw.do" method="post" style="display: inline;"
 								onsubmit="return confirm('${req.targetDate} の残業事前申請を取り下げますか？\n取り下げたあと、内容を直して申請し直せます。');">
+								<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 								<input type="hidden" name="requestId" value="${req.id}">
 								<button type="submit" class="btn btn-danger">取り下げる</button>
 							</form>

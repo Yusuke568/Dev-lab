@@ -118,6 +118,28 @@ public class FrontController extends HttpServlet {
             return false;
         }
 
+        // CSRF 対策：データを変える操作は POST だけにし、POST はすべてセッションのトークンと照合する
+        CsrfToken.getOrCreate(session); // 対策を入れる前からログインしていた人にもトークンを用意する
+        boolean post = "POST".equalsIgnoreCase(request.getMethod());
+        if (!post && factory.isPostOnlyAction(actionName)) {
+            forwardError(request, response, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
+                    "この操作は画面のボタンから行ってください。");
+            return false;
+        }
+        if (post) {
+            if (isTooLargeUpload(request)) {
+                forwardError(request, response, HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE,
+                        "ファイルが大きすぎます（1ファイル10MB、合計100MBまで）。");
+                return false;
+            }
+            if (!CsrfToken.isValid(request)) {
+                forwardError(request, response, HttpServletResponse.SC_FORBIDDEN,
+                        "画面を開いてから時間がたったか、ほかのサイトから送られた操作のため、受け付けませんでした。"
+                                + "画面を読み込み直してから、もう一度操作してください。");
+                return false;
+            }
+        }
+
         // 管理者が初期化した人などは、パスワードを変更するまでほかの画面を使えない（ログアウトは可）
         boolean mustChangePassword = Boolean.TRUE.equals(session.getAttribute("mustChangePassword"));
         if (!ForcedPasswordChangePolicy.isAllowed(actionName, mustChangePassword)) {
@@ -138,9 +160,38 @@ public class FrontController extends HttpServlet {
         String label = required.size() == 1 ? required.iterator().next().getLabel()
                 : required.stream().allMatch(Feature::isMaster) ? Feature.MASTER_GROUP
                 : required.stream().map(Feature::getLabel).collect(java.util.stream.Collectors.joining("・"));
-        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-        request.setAttribute("errorMessage", "「" + label + "」を使う権限がありません。");
-        request.getRequestDispatcher("/WEB-INF/view/error.jsp").forward(request, response);
+        forwardError(request, response, HttpServletResponse.SC_FORBIDDEN, "「" + label + "」を使う権限がありません。");
         return false;
+    }
+
+    private void forwardError(HttpServletRequest request, HttpServletResponse response, int status, String message)
+            throws ServletException, IOException {
+        response.setStatus(status);
+        // JavaScript から JSON を送る保存（勤怠・週次作業報告）には、画面に出せるよう理由を文字で返す
+        String contentType = request.getContentType();
+        if (contentType != null && contentType.toLowerCase().startsWith("application/json")) {
+            response.setContentType("text/plain; charset=UTF-8");
+            response.getWriter().write(message);
+            return;
+        }
+        request.setAttribute("errorMessage", message);
+        request.getRequestDispatcher("/WEB-INF/view/error.jsp").forward(request, response);
+    }
+
+    /**
+     * ファイルのアップロードが大きさの上限を超えているか。
+     * 超えているとフォームの項目（トークンも）が読めないので、トークンの照合より先に見分ける。
+     */
+    private boolean isTooLargeUpload(HttpServletRequest request) throws IOException, ServletException {
+        String contentType = request.getContentType();
+        if (contentType == null || !contentType.toLowerCase().startsWith("multipart/")) {
+            return false;
+        }
+        try {
+            request.getParts();
+            return false;
+        } catch (IllegalStateException e) {
+            return true;
+        }
     }
 }

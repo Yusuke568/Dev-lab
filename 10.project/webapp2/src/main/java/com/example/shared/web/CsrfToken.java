@@ -16,6 +16,8 @@ public final class CsrfToken {
 
     public static final String SESSION_KEY = "csrfToken";
     public static final String PARAMETER = "_csrf";
+    /** JavaScript の fetch で JSON を送るときは、このヘッダーでトークンを送る。 */
+    public static final String HEADER = "X-CSRF-Token";
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -49,7 +51,10 @@ public final class CsrfToken {
             return false;
         }
         Object expected = session.getAttribute(SESSION_KEY);
-        String actual = request.getParameter(PARAMETER);
+        String actual = request.getHeader(HEADER);
+        if (actual == null || actual.isEmpty()) {
+            actual = request.getParameter(PARAMETER);
+        }
         if (!(expected instanceof String) || actual == null) {
             return false;
         }

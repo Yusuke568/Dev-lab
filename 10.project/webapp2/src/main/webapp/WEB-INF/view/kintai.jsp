@@ -8,6 +8,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="csrf-token" content="<c:out value='${sessionScope.csrfToken}' />">
 <title>勤怠管理システム</title>
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/style.css">
@@ -1491,9 +1492,10 @@ body.kintai-calendar-view .table-responsive {
 		data-staff-id="${staffId}"
 		data-default-correction-id="${defaultCorrectionId}"
 		data-proxy-mode="${proxyMode ? 'true' : 'false'}"
-		data-work-types-json='${workTypesJson}'
-		data-break-periods='${breakPeriodsJson}'
-		data-outside-week-days='${outsideWeekDaysJson}'
+		<%-- JSON は HTML エスケープしてから属性に入れる（マスタの名前に ' や " があっても属性が切れないように） --%>
+		data-work-types-json="${fn:escapeXml(workTypesJson)}"
+		data-break-periods="${fn:escapeXml(breakPeriodsJson)}"
+		data-outside-week-days="${fn:escapeXml(outsideWeekDaysJson)}"
 		data-year="${attendanceData.yearMonth.year}"
 		data-month="${attendanceData.yearMonth.monthValue}">
 		<div class="kintai-header">
@@ -1550,6 +1552,7 @@ body.kintai-calendar-view .table-responsive {
 						<c:if test="${not proxyMode}">
 							<form action="${pageContext.request.contextPath}/defaultCorrectionSave.do" method="post" class="default-correction-form"
 								title="勤務区分が未設定の日に時刻を入れる・出勤ボタンを押すと、補正CDが空ならこの補正CDが入ります">
+								<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 								<input type="hidden" name="year" value="${attendanceData.yearMonth.year}">
 								<input type="hidden" name="month" value="${attendanceData.yearMonth.monthValue}">
 								<label for="default-correction">⏱️ いつもの補正CD</label>
@@ -1569,6 +1572,7 @@ body.kintai-calendar-view .table-responsive {
 						<a href="${workReportExportUrl}" class="btn btn-secondary" title="前年12月〜当年12月のうち、データのある月をまとめて1つのファイルに出力します">📊 作業報告書(Excel)出力</a>
 						<form id="work-report-import-form" action="${pageContext.request.contextPath}/workReportImport.do"
 							method="post" enctype="multipart/form-data" style="display: inline;">
+							<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
 							<input type="file" id="work-report-import-file" name="workReportFile" accept=".xlsm"
 								style="display: none;" onchange="const f = document.getElementById('work-report-import-form'); f.requestSubmit ? f.requestSubmit() : f.submit();">
 							<button type="button" class="btn btn-secondary"
@@ -2021,7 +2025,7 @@ body.kintai-calendar-view .table-responsive {
 	</select>
 
 	<script
-		src="${pageContext.request.contextPath}/resources/js/kintai/kintai.js?v=20261114d"
+		src="${pageContext.request.contextPath}/resources/js/kintai/kintai.js?v=20261116csrf"
 		type="module">
 	</script>
 	<%-- カレンダー表示と入力ポップアップ。kintai.js の後に読み込む --%>
@@ -2233,7 +2237,10 @@ body.kintai-calendar-view .table-responsive {
 	    const staffId = document.getElementById("kintai-app-root").dataset.staffId;
 	    return fetch(contextPath + "/weeklyWorkReportSave.do?staffId=" + encodeURIComponent(staffId), {
 	        method: "POST",
-	        headers: { "Content-Type": "application/json" },
+	        headers: {
+	            "Content-Type": "application/json",
+	            "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+	        },
 	        body: JSON.stringify(reports)
 	    }).then((res) => {
 	        if (!res.ok) throw new Error("save failed");

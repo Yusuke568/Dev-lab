@@ -150,7 +150,7 @@ public class DependencyFactory {
             "UpdateLeave", "GrantLeaveSelected",
             "ApprovalExecute", "OvertimeActualConfirm", "OvertimeRequestExecute", "LeaveRequestExecute",
             "CorrectionMasterRegister", "WorkReportImport", "WeeklyWorkReportSave", "KintaiUpdateApi",
-            "OvertimeRequestSubmit", "LeaveRequestSubmit", "LoginUnlockExecute");
+            "OvertimeRequestSubmit", "LeaveRequestSubmit", "LoginUnlockExecute", "SubordinateWorkReportExport");
 
     public DependencyFactory() {
         // --- 依存関係の最下層 (Adapters) からインスタンスを生成 ---
@@ -347,6 +347,8 @@ public class DependencyFactory {
                         this.overtimeRequestPersistenceAdapter, this.attendancePersistenceAdapter, this.attendancePersistenceAdapter,
                         new com.example.kintai.adapter.out.export.OvertimeFormXlsxExportAdapter())
                         .withActualCheck(this.overtimeActualCheckPort)));
+        actionMap.put("SubordinateWorkReportExport", new com.example.kintai.adapter.in.web.SubordinateWorkReportExportAction(
+                this.attendanceAccessUseCase, this.exportWorkReportUseCase));
         actionMap.put("NoticeManage", new com.example.notice.adapter.in.web.NoticeManageAction(this.noticeUseCase));
 
         // Correction Master Actions
@@ -404,7 +406,7 @@ public class DependencyFactory {
                 "WeeklyWorkReportSave");
         requireFeature(Feature.OVERTIME_REQUEST, "OvertimeRequestMenu", "OvertimeRequestSubmit", "OvertimeRequestWithdraw");
         requireFeature(Feature.LEAVE_REQUEST, "LeaveRequestMenu", "LeaveRequestSubmit");
-        requireFeature(Feature.APPROVAL, "ApprovalList", "ApprovalExecute", "ApprovalHistory", "OvertimeRequestExecute", "OvertimeActualConfirm", "SubordinateAttendance", "SubordinateOvertimeForm", "NoticeManage",
+        requireFeature(Feature.APPROVAL, "ApprovalList", "ApprovalExecute", "ApprovalHistory", "OvertimeRequestExecute", "OvertimeActualConfirm", "SubordinateAttendance", "SubordinateOvertimeForm", "SubordinateWorkReportExport", "NoticeManage",
                 "LeaveRequestExecute");
         requireFeature(Feature.SHAIN_ADMIN, "ShainList", "ShainUpdateForm", "ShainUpdateExecute", "ShainInsertForm",
                 "ShainInsertExecute", "ShainDeleteForm", "ShainDeleteExecute", "SearchShainApi", "ShainIdCheckApi",

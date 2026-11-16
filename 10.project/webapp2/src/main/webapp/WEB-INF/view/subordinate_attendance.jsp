@@ -185,7 +185,25 @@
 	.sum-table td > .req-chips { flex-direction: row; justify-content: flex-end; }
 	.sum-table td.sum-open .btn { display: block; text-align: center; }
 }
+/* 作業報告書をまとめて出す */
+.bulk-export {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 14px;
+	margin: 0 0 1rem;
+	padding: 10px 12px;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	background: #f8fafc;
+}
+.bulk-export .btn { margin: 0; }
+.bulk-all { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; cursor: pointer; }
+.bulk-all input, .bulk-export-row { width: 18px; height: 18px; margin: 0; cursor: pointer; }
+.bulk-count { font-size: 0.85rem; color: #4a5568; }
+.sum-table td.sum-staff .bulk-export-row { float: left; margin: 2px 8px 0 0; }
 @media (max-width: 600px) {
+	.bulk-export .btn { flex: 1 1 100%; white-space: normal; }
 	.subordinate-list .btn {
 		flex: 1 1 100%;
 		margin: 0;
@@ -211,6 +229,18 @@
 			</div>
 			<button type="submit" class="btn btn-secondary">切り替え</button>
 		</form>
+
+		<%-- 選んだ社員の作業報告書（.xlsm）を1つの ZIP にまとめて出す。チェックは各行の form 属性でこのフォームに入る --%>
+		<c:if test="${not empty subordinates}">
+			<form id="bulk-export-form" class="bulk-export" method="post" action="${pageContext.request.contextPath}/subordinateWorkReportExport.do">
+				<input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
+				<input type="hidden" name="year" value="${targetYear}">
+				<input type="hidden" name="month" value="${targetMonth}">
+				<label class="bulk-all"><input type="checkbox" id="bulk-export-all"> すべて選ぶ</label>
+				<button type="submit" class="btn btn-primary" id="bulk-export-submit">📦 選んだ社員の作業報告書（${targetMonth}月）をまとめて出す</button>
+				<span class="bulk-count" id="bulk-export-count" aria-live="polite">0人を選択中</span>
+			</form>
+		</c:if>
 
 		<c:choose>
 			<c:when test="${empty subordinates}">
@@ -246,6 +276,8 @@
 						<c:forEach var="v" items="${summaries}">
 							<tr>
 								<td class="sum-staff">
+									<input type="checkbox" name="id" value="<c:out value='${v.staffId}' />" form="bulk-export-form" class="bulk-export-row"
+										aria-label="<c:out value='${v.name}' /> の作業報告書を出す">
 									<div class="name"><c:out value="${v.name}" /><c:if test="${v.staffId == sessionScope.loginUser}"><span class="self-tag">自分</span></c:if></div>
 									<div class="meta">社員ID <c:out value="${v.staffId}" /> ・ <c:out value="${v.departmentName}" /></div>
 								</td>
@@ -327,7 +359,9 @@
 				<ul class="subordinate-list">
 					<c:forEach var="s" items="${subordinates}">
 						<li>
-							<div>
+							<input type="checkbox" name="id" value="<c:out value='${s.staffId}' />" form="bulk-export-form" class="bulk-export-row"
+								aria-label="<c:out value='${s.name}' /> の作業報告書を出す">
+							<div style="flex: 1;">
 								<div class="name"><c:out value="${s.name}" /><c:if test="${s.staffId == sessionScope.loginUser}"><span class="self-tag">自分</span></c:if></div>
 								<div class="meta">社員ID <c:out value="${s.staffId}" /> ・ <c:out value="${s.departmentName}" /></div>
 							</div>
@@ -347,5 +381,28 @@
 			<a href="${pageContext.request.contextPath}/menu.do" class="btn btn-secondary">‹ メニューに戻る</a>
 		</div>
 	</div>
+<script>
+(function () {
+	const form = document.getElementById("bulk-export-form");
+	if (!form) return;
+	const all = document.getElementById("bulk-export-all");
+	const count = document.getElementById("bulk-export-count");
+	const rows = () => Array.from(document.querySelectorAll(".bulk-export-row"));
+	const update = () => {
+		const n = rows().filter((c) => c.checked).length;
+		count.textContent = n + "人を選択中";
+		all.checked = n > 0 && n === rows().length;
+	};
+	all.addEventListener("change", () => { rows().forEach((c) => { c.checked = all.checked; }); update(); });
+	rows().forEach((c) => c.addEventListener("change", update));
+	form.addEventListener("submit", (e) => {
+		if (!rows().some((c) => c.checked)) {
+			e.preventDefault();
+			alert("作業報告書を出す社員を選んでください。");
+		}
+	});
+	update();
+})();
+</script>
 </body>
 </html>

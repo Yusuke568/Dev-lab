@@ -422,39 +422,50 @@ function setWorkTypeIfUnset() {
 }
 
 // -------- 自分の時刻テンプレート --------
-// 出勤・退勤の組を1つ、この端末のブラウザ（localStorage）に社員ごとに覚える。DB には保存しないので、
-// 別の端末・別のブラウザでは登録し直しが必要。代理入力のときは出さない（本人の端末の設定ではないため）。
+// 出勤・退勤の組を1つ、社員ごとに DB（staff_table）に保存する。端末が変わっても同じものが出る。
+// 画面を開いたときの値は #kintai-app-root の data-time-template（"HH:mm-HH:mm"、未登録は空）から読む。
+// 登録・削除は fetch で保存し、画面は読み込み直さない（ポップアップや表の未保存の入力を消さないため）。
+// 代理入力のときは出さない（他人の勤怠を開いているときに自分の設定を変えないため）。
 
 const TIME_RE = /^\d{2}:\d{2}$/;
 
-function templateKey() {
-  return "kintaiTimeTemplate:" + ((root && root.dataset.staffId) || "");
-}
-
 function templateEnabled() {
-  return !!root && root.dataset.proxyMode !== "true" && !!root.dataset.staffId;
+  return !!root && root.dataset.proxyMode !== "true";
 }
 
-/** 登録済みのテンプレート（{from, to}）。未登録・読めないときは null */
+/** 登録済みのテンプレート（{from, to}）。未登録なら null */
+let timeTemplate = parseTemplate(root ? root.dataset.timeTemplate : "");
+
+function parseTemplate(value) {
+  const [from, to] = String(value || "").split("-");
+  return TIME_RE.test(from || "") && TIME_RE.test(to || "") ? { from, to } : null;
+}
+
 function loadTemplate() {
-  if (!templateEnabled()) return null;
-  try {
-    const t = JSON.parse(localStorage.getItem(templateKey()) || "null");
-    return t && TIME_RE.test(t.from) && TIME_RE.test(t.to) ? t : null;
-  } catch (e) {
-    return null;
-  }
+  return templateEnabled() ? timeTemplate : null;
 }
 
-/** 保存できたら true（プライベートブラウズなどで保存できないこともある） */
-function saveTemplate(t) {
+/** DB に保存する（t が null なら登録を消す）。保存できなければ、画面に出す文言で reject する */
+async function saveTemplate(t) {
+  const csrf = document.querySelector('meta[name="csrf-token"]');
+  let res;
   try {
-    if (t) localStorage.setItem(templateKey(), JSON.stringify(t));
-    else localStorage.removeItem(templateKey());
-    return true;
+    res = await fetch((document.body.dataset.contextPath || "") + "/timeTemplateSave.do", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf ? csrf.content : "" },
+      body: JSON.stringify(t ? { start: t.from, end: t.to } : {}),
+    });
   } catch (e) {
-    return false;
+    throw new Error("通信できませんでした。電波の良いところでもう一度お試しください。");
   }
+  if (!res.ok) {
+    const type = res.headers.get("Content-Type") || "";
+    const text = type.startsWith("text/plain") ? (await res.text()).trim() : "";
+    throw new Error(text || (res.status === 403
+      ? "画面を開いてから時間がたったため、保存できませんでした。画面を読み込み直してください（入力中の内容は先に保存してください）。"
+      : "時刻テンプレートを保存できませんでした。"));
+  }
+  timeTemplate = t;
 }
 
 /** ボタンの文字。退勤が出勤以前なら翌日とみなす（表の入力と同じ） */
@@ -496,8 +507,29 @@ function renderDialogTemplate(message) {
     slot.append(fill, edit);
   } else {
     const add = makeButton("＋ 時刻を登録", registerTemplateFromDialog, "dd-tpl-add");
-    add.title = "いま入っている出勤・退勤を、自分のテンプレートとしてこの端末に覚えます";
+    add.title = "いま入っている出勤・退勤を、自分の時刻テンプレートとして登録します（どの端末でも使えます）";
     slot.append(add);
+  }
+}
+
+/** 保存中は二重に押せないようにし、終わったらボタンを描き直して結果を出す */
+let templateSaving = false;
+
+async function runTemplateSave(t, doneMessage) {
+  if (templateSaving) return;
+  templateSaving = true;
+  dialog.querySelectorAll(".dd-tpl button, .dd-tpl-edit button").forEach((b) => { b.disabled = true; });
+  $("dd-tpl-msg").textContent = "保存しています…";
+  try {
+    await saveTemplate(t);
+    renderDialogTemplate(doneMessage);
+  } catch (e) {
+    const editOpen = !$("dd-tpl-edit").hidden;
+    renderDialogTemplate(e.message);
+    $("dd-tpl-edit").hidden = !editOpen;
+  } finally {
+    templateSaving = false;
+    dialog.querySelectorAll(".dd-tpl-edit button").forEach((b) => { b.disabled = false; });
   }
 }
 
@@ -505,21 +537,19 @@ function registerTemplateFromDialog() {
   const from = $("dd-from").value;
   const to = $("dd-to").value;
   if (!TIME_RE.test(from) || !TIME_RE.test(to)) {
+    const editOpen = !$("dd-tpl-edit").hidden;
     renderDialogTemplate("先に出勤・退勤の時刻を入れてから登録してください。");
+    $("dd-tpl-edit").hidden = !editOpen;
     return;
   }
   const t = { from, to };
-  if (!saveTemplate(t)) {
-    renderDialogTemplate("このブラウザでは登録できませんでした（プライベートブラウズなど）。");
-    return;
-  }
-  renderDialogTemplate(templateLabel(t).slice(1) + " を登録しました（この端末だけに覚えます）。");
+  runTemplateSave(t, templateLabel(t).slice(1) + " を登録しました。");
 }
 
 function setupDialogTemplate() {
   dialog.querySelector("[data-tpl='save']").addEventListener("click", registerTemplateFromDialog);
   dialog.querySelector("[data-tpl='delete']").addEventListener("click", () => {
-    renderDialogTemplate(saveTemplate(null) ? "時刻テンプレートを消しました。" : "消せませんでした。");
+    runTemplateSave(null, "時刻テンプレートを消しました。");
   });
   dialog.querySelector("[data-tpl='close']").addEventListener("click", () => {
     $("dd-tpl-edit").hidden = true;

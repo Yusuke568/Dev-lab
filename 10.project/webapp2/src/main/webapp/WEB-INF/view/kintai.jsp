@@ -1525,6 +1525,7 @@ body.kintai-calendar-view .table-responsive {
 	<div id="kintai-app-root" class="card" style="max-width: 98%; margin: 0 auto;"
 		data-staff-id="${staffId}"
 		data-default-correction-id="${defaultCorrectionId}"
+		data-time-template="${fn:escapeXml(timeTemplate)}"
 		data-proxy-mode="${proxyMode ? 'true' : 'false'}"
 		<%-- JSON は HTML エスケープしてから属性に入れる（マスタの名前に ' や " があっても属性が切れないように） --%>
 		data-work-types-json="${fn:escapeXml(workTypesJson)}"
@@ -2079,7 +2080,7 @@ body.kintai-calendar-view .table-responsive {
 	</script>
 	<%-- カレンダー表示と入力ポップアップ。kintai.js の後に読み込む --%>
 	<script
-		src="${pageContext.request.contextPath}/resources/js/kintai/month-calendar.js?v=20261118a"
+		src="${pageContext.request.contextPath}/resources/js/kintai/month-calendar.js?v=20261118b"
 		type="module">
 	</script>
 

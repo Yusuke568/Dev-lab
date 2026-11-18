@@ -48,6 +48,7 @@ public class KintaiDisplayAction implements Action {
 
     /** いつもの補正CD。null なら出さない */
     private com.example.kintai.domain.port.out.DefaultCorrectionPort defaultCorrectionPort;
+    private com.example.kintai.domain.port.out.TimeTemplatePort timeTemplatePort;
 
     /** 承認者の「承認・確認待ち」の件数（画面右上のバッジ）。null なら出さない */
     private com.example.kintai.application.service.ApprovalBadgeService approvalBadgeService;
@@ -118,6 +119,11 @@ public class KintaiDisplayAction implements Action {
 
     public KintaiDisplayAction withDefaultCorrection(com.example.kintai.domain.port.out.DefaultCorrectionPort port) {
         this.defaultCorrectionPort = port;
+        return this;
+    }
+
+    public KintaiDisplayAction withTimeTemplate(com.example.kintai.domain.port.out.TimeTemplatePort port) {
+        this.timeTemplatePort = port;
         return this;
     }
 
@@ -231,6 +237,15 @@ public class KintaiDisplayAction implements Action {
             if (defaultCorrectionPort != null) {
                 try {
                     request.setAttribute("defaultCorrectionId", defaultCorrectionPort.findDefaultCorrectionId(idParam));
+                } catch (RuntimeException e) {
+                    e.printStackTrace(); // 列がない（マイグレーション前）などでも勤怠は開けるようにする
+                }
+            }
+            // 自分の時刻テンプレート（"HH:mm-HH:mm"）。代理入力では出さないので本人のときだけ読む
+            if (timeTemplatePort != null && !proxyMode) {
+                try {
+                    String[] t = timeTemplatePort.findTimeTemplate(loginUser);
+                    if (t != null) request.setAttribute("timeTemplate", t[0] + "-" + t[1]);
                 } catch (RuntimeException e) {
                     e.printStackTrace(); // 列がない（マイグレーション前）などでも勤怠は開けるようにする
                 }

@@ -146,7 +146,7 @@ public class DependencyFactory {
      * アクションの中で POST かどうかを見分ける。
      */
     private static final java.util.Set<String> POST_ONLY_ACTIONS = java.util.Set.of(
-            "DefaultCorrectionSave", "ShainDeleteExecute",
+            "DefaultCorrectionSave", "TimeTemplateSave", "ShainDeleteExecute",
             "UpdateLeave", "GrantLeaveSelected",
             "ApprovalExecute", "OvertimeActualConfirm", "OvertimeRequestExecute", "LeaveRequestExecute",
             "CorrectionMasterRegister", "WorkReportImport", "WeeklyWorkReportSave", "KintaiUpdateApi",
@@ -300,8 +300,11 @@ public class DependencyFactory {
                 new com.example.kintai.application.service.HolidayService(this.attendancePersistenceAdapter),
                 this.noticeUseCase).withWeeklyOvertime(this.weeklyOvertimeService)
                 .withDefaultCorrection(this.attendancePersistenceAdapter)
+                .withTimeTemplate(this.attendancePersistenceAdapter)
                 .withApprovalBadge(approvalBadgeService)
                 .withApprovalComments(this.approvalHistoryPersistenceAdapter, this.approvalWorkflowService));
+        actionMap.put("TimeTemplateSave", new com.example.kintai.adapter.in.web.TimeTemplateSaveAction(
+                this.attendancePersistenceAdapter));
         actionMap.put("DefaultCorrectionSave", new com.example.kintai.adapter.in.web.DefaultCorrectionSaveAction(
                 this.attendancePersistenceAdapter));
 
@@ -402,7 +405,7 @@ public class DependencyFactory {
      * アクションごとに必要な機能。ここに無いアクションは、ログインしていれば誰でも使える。
      */
     private void initializeFeatureMap() {
-        requireFeature(Feature.ATTENDANCE, "KintaiDisplay", "KintaiUpdateApi", "DefaultCorrectionSave", "WorkReportExport", "WorkReportImport",
+        requireFeature(Feature.ATTENDANCE, "KintaiDisplay", "KintaiUpdateApi", "DefaultCorrectionSave", "TimeTemplateSave", "WorkReportExport", "WorkReportImport",
                 "WeeklyWorkReportSave");
         requireFeature(Feature.OVERTIME_REQUEST, "OvertimeRequestMenu", "OvertimeRequestSubmit", "OvertimeRequestWithdraw");
         requireFeature(Feature.LEAVE_REQUEST, "LeaveRequestMenu", "LeaveRequestSubmit");

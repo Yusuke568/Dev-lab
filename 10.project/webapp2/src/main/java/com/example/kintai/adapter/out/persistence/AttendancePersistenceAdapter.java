@@ -31,7 +31,45 @@ import java.util.stream.Collectors;
 public class AttendancePersistenceAdapter implements LoadAttendanceRecordPort, SaveAttendanceRecordPort, LoadPendingApprovalsPort,
         com.example.kintai.domain.port.out.SubordinatePort, com.example.kintai.domain.port.out.LoadAttendancePeriodPort,
         com.example.kintai.domain.port.out.CompanyHolidayPort, com.example.kintai.domain.port.out.ReportDepartmentNamePort,
-        com.example.kintai.domain.port.out.DefaultCorrectionPort {
+        com.example.kintai.domain.port.out.DefaultCorrectionPort, com.example.kintai.domain.port.out.TimeTemplatePort {
+
+    @Override
+    public String[] findTimeTemplate(String staffId) {
+        String sql = "SELECT to_char(template_start_time, 'HH24:MI'), to_char(template_end_time, 'HH24:MI') "
+                + "FROM staff_table WHERE id = ?";
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, Integer.parseInt(staffId));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                String start = rs.getString(1);
+                String end = rs.getString(2);
+                return start != null && end != null ? new String[] { start, end } : null;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load time template of: " + staffId, e);
+        }
+    }
+
+    @Override
+    public void saveTimeTemplate(String staffId, String start, String end) {
+        boolean clear = start == null || end == null;
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "UPDATE staff_table SET template_start_time = ?, template_end_time = ? WHERE id = ?")) {
+            if (clear) {
+                ps.setNull(1, java.sql.Types.TIME);
+                ps.setNull(2, java.sql.Types.TIME);
+            } else {
+                ps.setObject(1, java.time.LocalTime.parse(start));
+                ps.setObject(2, java.time.LocalTime.parse(end));
+            }
+            ps.setInt(3, Integer.parseInt(staffId));
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to save time template of: " + staffId, e);
+        }
+    }
 
     @Override
     public Integer findDefaultCorrectionId(String staffId) {

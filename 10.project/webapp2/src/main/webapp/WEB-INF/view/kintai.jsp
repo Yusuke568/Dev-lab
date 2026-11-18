@@ -1258,7 +1258,31 @@ body.kintai-calendar-view .table-responsive {
 .dd-quick .btn {
     padding: 4px 10px;
     font-size: 0.8rem;
+    margin: 4px 0; /* 横の間隔は gap で取る（スマホ幅で1行に収める） */
 }
+/* 自分の時刻テンプレート（month-calendar.js）。span の中のボタンも 1 つずつ折り返すよう display: contents */
+.dd-tpl { display: contents; }
+.dd-quick .dd-tpl-change {
+    padding: 4px 7px;
+}
+.dd-quick .dd-tpl-add { border-style: dashed; }
+.dd-tpl-edit {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+.dd-tpl-edit[hidden] { display: none; }
+.dd-tpl-edit .btn {
+    padding: 4px 10px;
+    font-size: 0.75rem;
+}
+.dd-tpl-msg {
+    margin: 0 0 6px;
+    font-size: 0.75rem;
+    color: #4a5568;
+}
+.dd-tpl-msg:empty { display: none; }
 .dd-worktime {
     font-size: 0.85rem;
     color: #1a3d6d;
@@ -2030,7 +2054,7 @@ body.kintai-calendar-view .table-responsive {
 	</script>
 	<%-- カレンダー表示と入力ポップアップ。kintai.js の後に読み込む --%>
 	<script
-		src="${pageContext.request.contextPath}/resources/js/kintai/month-calendar.js?v=20261114d"
+		src="${pageContext.request.contextPath}/resources/js/kintai/month-calendar.js?v=20261118a"
 		type="module">
 	</script>
 

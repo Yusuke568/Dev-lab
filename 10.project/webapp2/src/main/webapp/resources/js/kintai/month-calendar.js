@@ -327,8 +327,15 @@ function buildDialog() {
         </div>
         <div class="dd-quick">
           <button type="button" class="btn btn-secondary" data-fill="09:00-18:00">9:00〜18:00</button>
+          <span class="dd-tpl" id="dd-tpl"></span>
           <button type="button" class="btn btn-secondary" data-fill="clear">時刻を消す</button>
         </div>
+        <div class="dd-tpl-edit" id="dd-tpl-edit" hidden>
+          <button type="button" class="btn btn-secondary" data-tpl="save">今の時刻で登録し直す</button>
+          <button type="button" class="btn btn-secondary" data-tpl="delete">登録を消す</button>
+          <button type="button" class="btn btn-secondary" data-tpl="close">やめる</button>
+        </div>
+        <p class="dd-tpl-msg" id="dd-tpl-msg" role="status"></p>
         <div class="dd-worktime" id="dd-worktime" aria-live="polite"></div>
         <label class="dd-label">勤務区分<span id="dd-status-slot"></span></label>
         <details class="dd-more" id="dd-more">
@@ -378,7 +385,8 @@ function buildDialog() {
     if (cell) cell.focus();
   });
 
-  dialog.querySelectorAll("[data-fill]").forEach((btn) => btn.addEventListener("click", () => {
+  setupDialogTemplate();
+  dialog.querySelectorAll(".dd-quick > [data-fill]").forEach((btn) => btn.addEventListener("click", () => {
     if (btn.dataset.fill === "clear") {
       $("dd-from").value = "";
       $("dd-to").value = "";
@@ -411,6 +419,123 @@ function setWorkTypeIfUnset() {
   if (!select || select.value !== "") return;
   const work = workTypes.find((w) => w.name === "出勤");
   if (work) select.value = String(work.id);
+}
+
+// -------- 自分の時刻テンプレート --------
+// 出勤・退勤の組を1つ、この端末のブラウザ（localStorage）に社員ごとに覚える。DB には保存しないので、
+// 別の端末・別のブラウザでは登録し直しが必要。代理入力のときは出さない（本人の端末の設定ではないため）。
+
+const TIME_RE = /^\d{2}:\d{2}$/;
+
+function templateKey() {
+  return "kintaiTimeTemplate:" + ((root && root.dataset.staffId) || "");
+}
+
+function templateEnabled() {
+  return !!root && root.dataset.proxyMode !== "true" && !!root.dataset.staffId;
+}
+
+/** 登録済みのテンプレート（{from, to}）。未登録・読めないときは null */
+function loadTemplate() {
+  if (!templateEnabled()) return null;
+  try {
+    const t = JSON.parse(localStorage.getItem(templateKey()) || "null");
+    return t && TIME_RE.test(t.from) && TIME_RE.test(t.to) ? t : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+/** 保存できたら true（プライベートブラウズなどで保存できないこともある） */
+function saveTemplate(t) {
+  try {
+    if (t) localStorage.setItem(templateKey(), JSON.stringify(t));
+    else localStorage.removeItem(templateKey());
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+/** ボタンの文字。退勤が出勤以前なら翌日とみなす（表の入力と同じ） */
+function templateLabel(t) {
+  return "★" + shortTime(t.from) + "〜" + (t.to <= t.from ? "翌" : "") + shortTime(t.to);
+}
+
+function makeButton(text, onClick, extraClass) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "btn btn-secondary" + (extraClass ? " " + extraClass : "");
+  btn.textContent = text;
+  btn.addEventListener("click", onClick);
+  return btn;
+}
+
+/** 入力ポップアップの「9:00〜18:00」の隣に、テンプレートのボタン（未登録なら登録ボタン）を出す */
+function renderDialogTemplate(message) {
+  const slot = $("dd-tpl");
+  slot.replaceChildren();
+  $("dd-tpl-edit").hidden = true;
+  $("dd-tpl-msg").textContent = message || "";
+  if (!templateEnabled()) return;
+  const t = loadTemplate();
+  if (t) {
+    const fill = makeButton(templateLabel(t), () => {
+      $("dd-from").value = t.from;
+      $("dd-to").value = t.to;
+      setWorkTypeIfUnset();
+      updateDialogPreview();
+    }, "dd-tpl-fill");
+    fill.title = "自分の時刻テンプレートを入れる";
+    const edit = makeButton("✎", () => {
+      $("dd-tpl-edit").hidden = !$("dd-tpl-edit").hidden;
+      $("dd-tpl-msg").textContent = "";
+    }, "dd-tpl-change");
+    edit.setAttribute("aria-label", "時刻テンプレートを変更");
+    edit.setAttribute("aria-controls", "dd-tpl-edit");
+    slot.append(fill, edit);
+  } else {
+    const add = makeButton("＋ 時刻を登録", registerTemplateFromDialog, "dd-tpl-add");
+    add.title = "いま入っている出勤・退勤を、自分のテンプレートとしてこの端末に覚えます";
+    slot.append(add);
+  }
+}
+
+function registerTemplateFromDialog() {
+  const from = $("dd-from").value;
+  const to = $("dd-to").value;
+  if (!TIME_RE.test(from) || !TIME_RE.test(to)) {
+    renderDialogTemplate("先に出勤・退勤の時刻を入れてから登録してください。");
+    return;
+  }
+  const t = { from, to };
+  if (!saveTemplate(t)) {
+    renderDialogTemplate("このブラウザでは登録できませんでした（プライベートブラウズなど）。");
+    return;
+  }
+  renderDialogTemplate(templateLabel(t).slice(1) + " を登録しました（この端末だけに覚えます）。");
+}
+
+function setupDialogTemplate() {
+  dialog.querySelector("[data-tpl='save']").addEventListener("click", registerTemplateFromDialog);
+  dialog.querySelector("[data-tpl='delete']").addEventListener("click", () => {
+    renderDialogTemplate(saveTemplate(null) ? "時刻テンプレートを消しました。" : "消せませんでした。");
+  });
+  dialog.querySelector("[data-tpl='close']").addEventListener("click", () => {
+    $("dd-tpl-edit").hidden = true;
+  });
+}
+
+/** 一括入力の「9:00〜18:00」の隣にも、登録済みならテンプレートのボタンを出す（登録は日ごとの入力画面で行う） */
+function renderBulkTemplate() {
+  const slot = $("bk-tpl");
+  slot.replaceChildren();
+  const t = loadTemplate();
+  if (!t) return;
+  slot.append(makeButton(templateLabel(t), () => {
+    $("bk-start").value = t.from;
+    $("bk-end").value = t.to;
+  }, "dd-tpl-fill"));
 }
 
 /**
@@ -472,6 +597,7 @@ function loadDay(date) {
   const row = rowOf(date);
   if (!row) return;
   currentDate = date;
+  renderDialogTemplate("");
   const { m, d, dow } = dateParts(row);
   const v = readRow(row);
 
@@ -658,6 +784,7 @@ function buildBulkDialog() {
         </div>
         <div class="dd-quick">
           <button type="button" class="btn btn-secondary" data-fill="09:00-18:00">9:00〜18:00</button>
+          <span class="dd-tpl" id="bk-tpl"></span>
         </div>
         <label class="dd-label">勤務区分<span id="bk-status-slot"></span></label>
         <label class="dd-label">補正CD<span id="bk-correction-slot"></span></label>
@@ -809,6 +936,7 @@ function openBulk() {
   cloneBulkSelect("bulk-correction", "bk-correction", "bk-correction-slot");
   $("bk-message").textContent = "";
   $("bk-message").className = "inline-message";
+  renderBulkTemplate();
   if (typeof bulkDialog.showModal === "function") bulkDialog.showModal();
   else bulkDialog.setAttribute("open", "");
 }

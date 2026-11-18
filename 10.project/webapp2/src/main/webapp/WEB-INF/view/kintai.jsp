@@ -443,6 +443,16 @@
 .wwr-title {
     margin-top: 0;
 }
+.wwr-copy-prev {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin: -0.25rem 0 0.75rem;
+}
+.wwr-copy-prev[hidden] {
+    display: none;
+}
 .wwr-grid {
     display: grid;
     grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
@@ -1934,6 +1944,21 @@ body.kintai-calendar-view .table-responsive {
 			<c:set var="summary" value="${weeklyWorkSummaries[loop.index]}" />
 			<div class="card weekly-report-block" data-week-end="${week.weekEndDate}">
 				<h4 class="wwr-title">第${loop.index + 1}週 <c:out value="${week.weekLabel}" /></h4>
+				<%--
+					前週の内容を転記：客先名・PJ名・工程名/作業名・作業進捗・作業内容と状況がすべて空の週だけ出す（JSで出し入れ）。
+					写すのは客先名・PJ名・工程名/作業名・作業進捗だけ。入力欄に入れるだけで、保存は「週次報告を保存」で行う。
+					前週は、第2週以降は画面の1つ前の週、第1週は前月の週（保存済みの内容。data-prev-*）。
+				--%>
+				<div class="wwr-copy-prev" hidden
+					<c:if test="${loop.index == 0 and not empty weekBeforeFirstReport}">
+						data-prev-client="<c:out value='${weekBeforeFirstReport.clientName}' />"
+						data-prev-project="<c:out value='${weekBeforeFirstReport.projectName}' />"
+						data-prev-process="<c:out value='${weekBeforeFirstReport.processName}' />"
+						data-prev-status="<c:out value='${weekBeforeFirstReport.progressStatus}' />"
+					</c:if>>
+					<button type="button" class="btn btn-secondary wwr-copy-prev-btn" onclick="copyPreviousWeekReport(this)">前週の内容を転記</button>
+					<span class="wwr-limit">客先名・PJ名・工程名/作業名・作業進捗を前週から写します（作業内容と状況は写しません）</span>
+				</div>
 				<div class="wwr-grid">
 					<%--
 						作業報告書の左2列（作業件名、工程名・作業名／作業進捗、作業内容と状況）は、
@@ -2224,6 +2249,85 @@ body.kintai-calendar-view .table-responsive {
 	document.addEventListener("DOMContentLoaded", () => {
 	    const card = document.getElementById("weekly-report-card");
 	    if (card) card.addEventListener("input", (e) => { if (e.target.matches("input, textarea, select")) wwrDirty = true; });
+	});
+
+	// ---- 週次作業報告：前週の内容を転記 ----
+
+	/** 転記ボタンを出すかを決める欄（客先名・PJ名・工程名/作業名・作業進捗・作業内容と状況）がすべて空か */
+	function wwrIsCopyTargetEmpty(block) {
+	    return Array.from(block.querySelectorAll(".wwr-client, .wwr-project, .wwr-process-line, .wwr-status, .wwr-detail-line"))
+	        .every((input) => input.value.trim() === "");
+	}
+
+	/** 対象の欄がすべて空の週だけ「前週の内容を転記」を出す */
+	function updateCopyPrevButton(block) {
+	    const box = block && block.querySelector(".wwr-copy-prev");
+	    if (box) box.hidden = !wwrIsCopyTargetEmpty(block);
+	}
+
+	/**
+	 * 前週の客先名・PJ名・工程名/作業名・作業進捗。
+	 * 第2週以降は画面の1つ前の週（保存前の入力も含む）、第1週は前月の週（保存済みの内容）。
+	 */
+	function wwrPreviousWeekValues(block) {
+	    const blocks = Array.from(document.querySelectorAll(".weekly-report-block"));
+	    const index = blocks.indexOf(block);
+	    if (index > 0) {
+	        const prev = blocks[index - 1];
+	        return {
+	            client: prev.querySelector(".wwr-client").value,
+	            project: prev.querySelector(".wwr-project").value,
+	            processLines: Array.from(prev.querySelectorAll(".wwr-process-line")).map((input) => input.value),
+	            status: prev.querySelector(".wwr-status").value
+	        };
+	    }
+	    const data = block.querySelector(".wwr-copy-prev").dataset;
+	    return {
+	        client: data.prevClient || "",
+	        project: data.prevProject || "",
+	        processLines: (data.prevProcess || "").split(/\r?\n/),
+	        status: data.prevStatus || ""
+	    };
+	}
+
+	/** 「前週の内容を転記」：前週の内容を入力欄に入れる（保存は「週次報告を保存」で行う） */
+	function copyPreviousWeekReport(button) {
+	    const block = button.closest(".weekly-report-block");
+	    const message = document.getElementById("wwr-message");
+	    // 入力のある週は上書きしない（ボタンは隠れているはずだが念のため）
+	    if (!wwrIsCopyTargetEmpty(block)) {
+	        updateCopyPrevButton(block);
+	        return;
+	    }
+	    const prev = wwrPreviousWeekValues(block);
+	    const hasContent = [prev.client, prev.project, prev.status].concat(prev.processLines)
+	        .some((value) => value.trim() !== "");
+	    if (!hasContent) {
+	        message.className = "inline-message error";
+	        message.textContent = "前週に転記できる内容（客先名・PJ名・工程名/作業名・作業進捗）がありません。";
+	        return;
+	    }
+	    const put = (input, value) => {
+	        const max = Number(input.maxLength);
+	        input.value = max > 0 ? Array.from(value).slice(0, max).join("") : value;
+	    };
+	    put(block.querySelector(".wwr-client"), prev.client);
+	    put(block.querySelector(".wwr-project"), prev.project);
+	    put(block.querySelector(".wwr-status"), prev.status);
+	    block.querySelectorAll(".wwr-process-line").forEach((input, i) => put(input, prev.processLines[i] || ""));
+	    wwrDirty = true;
+	    updateCopyPrevButton(block);
+	    message.className = "inline-message success";
+	    message.textContent = "前週の内容を写しました。作業内容と状況を入力して「週次報告を保存」を押してください。";
+	}
+
+	document.addEventListener("DOMContentLoaded", () => {
+	    document.querySelectorAll(".weekly-report-block").forEach((block) => {
+	        updateCopyPrevButton(block);
+	        block.addEventListener("input", () => updateCopyPrevButton(block));
+	        // 複数行の貼り付けは input が起きないので、貼り付けの後にも確かめる
+	        block.addEventListener("paste", () => setTimeout(() => updateCopyPrevButton(block), 0));
+	    });
 	});
 
 	/** 週次作業報告を保存する。保存できたら true の Promise */

@@ -247,6 +247,8 @@ public class KintaiDisplayAction implements Action {
             // 週次作業報告（作業報告書Excel出力の「作業件名」「作業進捗」「本人所感」欄に対応）
             List<WeeklyWorkReport> weeklyWorkReports = getWeeklyWorkReportsUseCase.getWeeklyWorkReports(employeeId, yearMonth);
             request.setAttribute("weeklyWorkReports", weeklyWorkReports);
+            // 第1週の「前週の内容を転記」用：第1週の前の週（前月の週。保存済みの内容）
+            request.setAttribute("weekBeforeFirstReport", findWeekBeforeFirst(employeeId, yearMonth, weeklyWorkReports));
             // 各週の「累計/残業時間」（作業報告書Excelでは数式で計算される欄。画面では確認用に表示する）
             request.setAttribute("weeklyWorkSummaries", getWeeklyWorkSummariesUseCase.getWeeklyWorkSummaries(employeeId, yearMonth));
             // 週40時間：月の最初と最後の週の、表にない日（前月・翌月）の勤務。画面の時間外の計算に使う
@@ -288,6 +290,25 @@ public class KintaiDisplayAction implements Action {
             request.setAttribute("errorMessage", com.example.shared.error.UserMessages.of(e, "勤怠表を表示できませんでした。"));
             return new View("/WEB-INF/view/error.jsp");
         }
+    }
+
+    /**
+     * 第1週の前の週（終わりの水曜日が第1週の7日前）の週次作業報告。前月の週の中から探す。
+     * 読めなかったときは null（転記ボタンが「前週に内容がない」と出すだけで、画面は開ける）。
+     */
+    private WeeklyWorkReport findWeekBeforeFirst(EmployeeId employeeId, YearMonth yearMonth,
+                                                 List<WeeklyWorkReport> weeklyWorkReports) {
+        if (weeklyWorkReports.isEmpty()) return null;
+        try {
+            LocalDate target = weeklyWorkReports.get(0).getWeekEndDate().minusDays(7);
+            for (WeeklyWorkReport report : getWeeklyWorkReportsUseCase.getWeeklyWorkReports(employeeId, yearMonth.minusMonths(1))) {
+                if (report.getWeekEndDate().equals(target)) return report;
+            }
+        } catch (RuntimeException e) {
+            java.util.logging.Logger.getLogger(KintaiDisplayAction.class.getName())
+                    .log(java.util.logging.Level.WARNING, "前月の週次作業報告を読めませんでした", e);
+        }
+        return null;
     }
 
     /**

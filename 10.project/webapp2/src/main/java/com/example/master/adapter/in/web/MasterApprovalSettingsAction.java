@@ -113,6 +113,13 @@ public class MasterApprovalSettingsAction extends MasterActionSupport {
             typeLabels.put(s.getRequestType().name(), s.getRequestType().getLabel());
         }
         data.put("maxLevels", levels);
+        java.time.LocalDate approvalStart = null;
+        try {
+            approvalStart = masterUseCase.getAttendanceApprovalStartDate();
+        } catch (RuntimeException e) {
+            e.printStackTrace(); // マイグレーション前などで読めなくても、ほかの設定は開けるようにする
+        }
+        data.put("approvalStartDate", approvalStart == null ? "" : approvalStart.toString());
         data.put("requestTypes", typeLabels);
 
         List<Map<String, Object>> routeList = new ArrayList<>();
@@ -203,6 +210,19 @@ public class MasterApprovalSettingsAction extends MasterActionSupport {
                     }
                 }
                 return "組織図でたどる段数を保存しました。";
+            }
+            case "approvalStart": {
+                require(request, Feature.MASTER_APPROVAL_ROUTE);
+                String value = request.getParameter("approvalStartDate");
+                java.time.LocalDate date;
+                try {
+                    date = value == null || value.isBlank() ? null : java.time.LocalDate.parse(value.trim());
+                } catch (java.time.format.DateTimeParseException e) {
+                    throw new IllegalArgumentException("運用開始日は日付で入れてください（例：2026-11-01）。");
+                }
+                masterUseCase.saveAttendanceApprovalStartDate(date);
+                return date == null ? "勤怠の承認の運用開始日を未設定にしました（すべての日が承認の対象になります）。"
+                        : "勤怠の承認の運用開始日を " + date + " にしました。";
             }
             case "route": {
                 require(request, Feature.MASTER_APPROVAL_ROUTE);

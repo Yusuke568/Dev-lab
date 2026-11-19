@@ -164,6 +164,6 @@
 
 <%-- 画面に表示するデータ（MasterApprovalSettingsAction が作る） --%>
 <script type="application/json" id="settings-data">${settingsJson}</script>
-<script src="${pageContext.request.contextPath}/resources/js/master/approval-settings.js?v=20261114csrf"></script><%-- 中身を変えたら v を変える（ブラウザに古い版が残らないように） --%>
+<script src="${pageContext.request.contextPath}/resources/js/master/approval-settings.js?v=20261125start"></script><%-- 中身を変えたら v を変える（ブラウザに古い版が残らないように） --%>
 </body>
 </html>

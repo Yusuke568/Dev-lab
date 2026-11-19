@@ -29,8 +29,6 @@ import java.util.Optional;
 public class UpdateAttendanceService implements UpdateAttendanceUseCase {
 
     private static final int STATUS_DRAFT = 0;
-    private static final int STATUS_PENDING_APPROVAL = 1;
-    private static final int STATUS_APPROVED = 2;
 
     private final SaveAttendanceRecordPort saveAttendanceRecordPort;
     private final LoadAttendanceRecordPort loadAttendanceRecordPort;
@@ -44,6 +42,25 @@ public class UpdateAttendanceService implements UpdateAttendanceUseCase {
     public UpdateAttendanceService withActualCheck(OvertimeActualCheckService service) {
         this.actualCheck = service;
         return this;
+    }
+
+    /** 勤怠の承認の運用開始日。null なら全期間を承認の対象にする */
+    private com.example.kintai.domain.port.out.AttendanceApprovalStartPort approvalStartPort;
+
+    public UpdateAttendanceService withApprovalStart(com.example.kintai.domain.port.out.AttendanceApprovalStartPort port) {
+        this.approvalStartPort = port;
+        return this;
+    }
+
+    /** 承認の運用開始日。読めなければ全期間を対象にする（承認を飛ばす方に倒さない） */
+    private LocalDate approvalStartDate() {
+        if (approvalStartPort == null) return null;
+        try {
+            return approvalStartPort.attendanceApprovalStartDate().orElse(null);
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     /** 週40時間の時間外（休日出勤の日の分）を計算し直す。null なら日ごとの計算だけ */
@@ -81,6 +98,7 @@ public class UpdateAttendanceService implements UpdateAttendanceUseCase {
 
         transactionManager.executeInTransaction(() -> {
             List<WorkType> workTypes = workTypePort.findAll();
+            LocalDate approvalStart = approvalStartDate();
             // 勤務区分ごとの有給消費日数（有給 1 日、半休 0.5 日、それ以外 0 日。適用マスタで設定）
             java.util.Map<Integer, Double> paidLeaveUse = new java.util.HashMap<>();
             for (WorkType wt : workTypes) {
@@ -173,13 +191,9 @@ public class UpdateAttendanceService implements UpdateAttendanceUseCase {
                 boolean isPaidLeave = newUse > 0; // 有給・半休は承認待ちにする
                 boolean needsApproval = isPaidLeave || (isOvertime && !hasApprovedOvertimeRequest);
 
-                if (cmd.isTemporary()) {
-                    record.setApprovalStatus(STATUS_DRAFT);
-                } else if (needsApproval) {
-                    record.setApprovalStatus(STATUS_PENDING_APPROVAL);
-                } else {
-                    record.setApprovalStatus(STATUS_APPROVED);
-                }
+                // 運用開始日より前の日と、承認済みで内容が変わらない日は承認待ちに戻さない（作業報告書の取り込み直しなど）
+                record.setApprovalStatus(com.example.kintai.domain.service.AttendanceApprovalPolicy.decide(
+                        cmd.isTemporary(), needsApproval, date, approvalStart, oldRecord.orElse(null), record));
 
                 saveAttendanceRecordPort.save(record);
             }
@@ -197,7 +211,7 @@ public class UpdateAttendanceService implements UpdateAttendanceUseCase {
                 for (String key : weeks) {
                     String[] parts = key.split("/");
                     LocalDate weekStart = LocalDate.parse(parts[1]);
-                    recalculateHolidayOvertime(new EmployeeId(parts[0]), weekStart, paidLeaveUse);
+                    recalculateHolidayOvertime(new EmployeeId(parts[0]), weekStart, paidLeaveUse, approvalStart);
                     // 週の休日出勤の日は時間外が変わることがあるので、実績の確認もし直す
                     for (int i = 0; i < 7; i++) {
                         LocalDate d = weekStart.plusDays(i);
@@ -244,7 +258,8 @@ public class UpdateAttendanceService implements UpdateAttendanceUseCase {
      * 週の休日出勤の日の時間外を、週40時間の決まりで計算し直して保存する。
      * 提出済み（一時保存でない）の日は、時間外が変われば承認の要否も決め直す。
      */
-    private void recalculateHolidayOvertime(EmployeeId employeeId, LocalDate weekStart, java.util.Map<Integer, Double> paidLeaveUse) {
+    private void recalculateHolidayOvertime(EmployeeId employeeId, LocalDate weekStart, java.util.Map<Integer, Double> paidLeaveUse,
+                                            LocalDate approvalStart) {
         java.util.Map<Integer, Integer> credits = new java.util.HashMap<>();
         paidLeaveUse.forEach((id, days) -> credits.put(id, (int) Math.round(days * WeeklyOvertimeCalculator.DAILY_MINUTES)));
         java.util.Map<LocalDate, Integer> overtime = WeeklyOvertimeCalculator.holidayOvertime(
@@ -261,7 +276,9 @@ public class UpdateAttendanceService implements UpdateAttendanceUseCase {
                 boolean hasApprovedOvertimeRequest = minutes > 0
                         && overtimeRequestPort.findByEmployeeAndDate(employeeId, date).map(r -> r.isApproved()).orElse(false);
                 boolean needsApproval = isPaidLeave || (minutes > 0 && !hasApprovedOvertimeRequest);
-                record.setApprovalStatus(needsApproval ? STATUS_PENDING_APPROVAL : STATUS_APPROVED);
+                // 時間外が変わった日なので「内容が同じなら承認済みのまま」は使わない。運用開始日より前なら承認済み
+                record.setApprovalStatus(com.example.kintai.domain.service.AttendanceApprovalPolicy.decide(
+                        false, needsApproval, date, approvalStart, null, record));
             }
             saveAttendanceRecordPort.save(record);
         });

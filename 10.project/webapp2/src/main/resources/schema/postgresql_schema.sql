@@ -416,3 +416,17 @@ ALTER TABLE overtime_actual_step ADD COLUMN IF NOT EXISTS comment varchar(255);
 ALTER TABLE kintai_approval_history ADD COLUMN IF NOT EXISTS comment varchar(255);
 COMMENT ON COLUMN overtime_actual_step.comment IS '実績を確認したときのコメント（任意）';
 COMMENT ON COLUMN kintai_approval_history.comment IS '承認・却下の理由（任意）';
+
+-- ----------------------------------------------------------------------------
+-- アプリ全体の設定（migrations/20261125_attendance_approval_start.sql と同じ）
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS app_setting (
+    setting_key    varchar(50) PRIMARY KEY,
+    setting_value  varchar(255)
+);
+COMMENT ON TABLE app_setting IS 'アプリ全体の設定（キーと値）';
+
+-- 初期値：2026年11月から承認の運用を始めた（10月以前は導入時に SQL でまとめて承認済み）
+INSERT INTO app_setting (setting_key, setting_value)
+VALUES ('ATTENDANCE_APPROVAL_START_DATE', '2026-11-01')
+ON CONFLICT (setting_key) DO NOTHING;

@@ -302,6 +302,19 @@
       el("p", { className: "as-lead", style: "margin-top:0;", text: "承認ルートを割り当てていない社員は、所属部署の承認者を1段目として、上位部署の承認者へこの段数まで回ります（承認者のいない部署・本人は飛ばします）。" }),
       levelsForm));
 
+    // 勤怠の承認の運用開始日
+    const startForm = el("form", { method: "post", action: ACTION, className: "as-levels-form" },
+      hidden("mode", "approvalStart"), hidden("tab", "org"),
+      el("div", {},
+        el("label", { for: "approval-start", text: "運用開始日" }), el("br"),
+        el("input", { type: "date", id: "approval-start", name: "approvalStartDate", className: "form-input",
+          value: D.approvalStartDate || "", disabled: !D.canRoute })),
+      D.canRoute ? el("button", { type: "submit", className: "btn btn-primary", text: "運用開始日を保存" }) : null);
+    panel.appendChild(el("div", { className: "as-box" },
+      el("h3", { style: "margin-top:0;", text: "勤怠の承認の運用開始日" }),
+      el("p", { className: "as-lead", style: "margin-top:0;", text: "この日より前の勤怠は、有給や事前申請のない時間外があっても承認待ちにしません（作業報告書を取り込み直しても承認済みのままです）。空にすると、すべての日が承認の対象になります。" }),
+      startForm));
+
     // 部署
     panel.appendChild(el("div", { className: "as-toolbar" },
       el("h3", { text: "部署と承認者" }),

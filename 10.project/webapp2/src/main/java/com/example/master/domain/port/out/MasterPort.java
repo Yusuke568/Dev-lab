@@ -96,6 +96,16 @@ public interface MasterPort {
     List<ApprovalRouteSetting> findApprovalRouteSettings();
     void saveApprovalRouteSetting(RequestType requestType, int maxLevels);
 
+    /** 勤怠の承認の運用開始日。未設定なら null */
+    default java.time.LocalDate findAttendanceApprovalStartDate() {
+        return null;
+    }
+
+    /** 勤怠の承認の運用開始日を保存する。null なら未設定に戻す（全期間を承認の対象にする） */
+    default void saveAttendanceApprovalStartDate(java.time.LocalDate date) {
+        throw new UnsupportedOperationException();
+    }
+
     // --- 会社休日（日付ごとに1件） ---
     List<com.example.master.domain.model.CompanyHoliday> findCompanyHolidays(int year);
     /** 同じ日付があれば名前を更新する。 */

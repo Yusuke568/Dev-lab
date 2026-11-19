@@ -243,7 +243,8 @@ public class DependencyFactory {
                 this.workTypePort,
                 this.overtimeRequestPersistenceAdapter,
                 this.weeklyOvertimeService
-        ).withActualCheck(this.overtimeActualCheckService);
+        ).withActualCheck(this.overtimeActualCheckService)
+                .withApprovalStart(masterPersistenceAdapter);
         this.importWorkReportUseCase = new com.example.kintai.application.service.ImportWorkReportService(
                 this.workReportImportPort,
                 this.updateAttendanceUseCase,

@@ -360,6 +360,16 @@ public class MasterMaintenanceService implements MasterMaintenanceUseCase {
         masterPort.saveApprovalRouteSetting(requestType, maxLevels);
     }
 
+    @Override
+    public java.time.LocalDate getAttendanceApprovalStartDate() {
+        return masterPort.findAttendanceApprovalStartDate();
+    }
+
+    @Override
+    public void saveAttendanceApprovalStartDate(java.time.LocalDate date) {
+        masterPort.saveAttendanceApprovalStartDate(date);
+    }
+
     // ------------------------------------------------------------------ 会社休日
 
     @Override

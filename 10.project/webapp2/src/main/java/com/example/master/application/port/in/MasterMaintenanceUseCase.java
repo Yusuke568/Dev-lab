@@ -97,6 +97,15 @@ public interface MasterMaintenanceUseCase {
     List<ApprovalRouteSetting> getApprovalRouteSettings();
     void saveApprovalRouteSetting(RequestType requestType, int maxLevels);
 
+    /** 勤怠の承認の運用開始日。この日より前の勤怠は承認待ちにしない。未設定なら null */
+    default java.time.LocalDate getAttendanceApprovalStartDate() {
+        return null;
+    }
+
+    default void saveAttendanceApprovalStartDate(java.time.LocalDate date) {
+        throw new UnsupportedOperationException();
+    }
+
     List<com.example.master.domain.model.CompanyHoliday> getCompanyHolidays(int year);
     /**
      * 開始日〜終了日（終了日が null なら開始日だけ）を会社休日にする。

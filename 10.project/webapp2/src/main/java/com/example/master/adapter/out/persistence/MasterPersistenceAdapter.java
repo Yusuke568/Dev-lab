@@ -33,7 +33,10 @@ import java.util.Set;
  * 旧スキーマから移行した DB では、class_master.id が varchar、abstract_master のフラグが integer の場合がある。
  * どちらでも動くよう、それらの値は型を決めずに（Types.OTHER で）渡し、比較は文字列にそろえて行う。
  */
-public class MasterPersistenceAdapter implements MasterPort, OrganizationPort {
+public class MasterPersistenceAdapter implements MasterPort, OrganizationPort,
+        com.example.kintai.domain.port.out.AttendanceApprovalStartPort {
+
+    private static final String APPROVAL_START_KEY = "ATTENDANCE_APPROVAL_START_DATE";
 
     // ------------------------------------------------------------------ 役職
 
@@ -690,6 +693,42 @@ public class MasterPersistenceAdapter implements MasterPort, OrganizationPort {
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to save approval route setting.", e);
+        }
+    }
+
+    // ------------------------------------------------------------------ 勤怠の承認の運用開始日
+
+    @Override
+    public java.time.LocalDate findAttendanceApprovalStartDate() {
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement("SELECT setting_value FROM app_setting WHERE setting_key = ?")) {
+            ps.setString(1, APPROVAL_START_KEY);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                String value = rs.getString(1);
+                return value == null || value.isBlank() ? null : java.time.LocalDate.parse(value.trim());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load attendance approval start date.", e);
+        }
+    }
+
+    @Override
+    public java.util.Optional<java.time.LocalDate> attendanceApprovalStartDate() {
+        return java.util.Optional.ofNullable(findAttendanceApprovalStartDate());
+    }
+
+    @Override
+    public void saveAttendanceApprovalStartDate(java.time.LocalDate date) {
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "INSERT INTO app_setting (setting_key, setting_value) VALUES (?, ?) "
+                     + "ON CONFLICT (setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value")) {
+            ps.setString(1, APPROVAL_START_KEY);
+            ps.setString(2, date == null ? null : date.toString());
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to save attendance approval start date.", e);
         }
     }
 

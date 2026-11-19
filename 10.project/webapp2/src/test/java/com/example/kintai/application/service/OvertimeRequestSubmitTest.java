@@ -214,6 +214,18 @@ class OvertimeRequestSubmitTest {
     }
 
     @Test
+    void 申請の時間が予定時刻から出した時間より多いときは差を補正等として内訳に出す() {
+        // 18:00〜22:00 は残業 3:30。勤怠の時間外（4:00）に合わせて申請の時間が 4:00 になっている申請
+        OvertimeRequest r = new OvertimeRequest(1, "147", null, LocalDate.of(2026, 11, 6), 240, "18:00", "22:00",
+                "対応", OvertimeRequest.STATUS_APPROVED, null, null, null);
+        assertEquals("残業03:30 / 補正等00:30", r.getPlannedOvertimeBreakdown());
+        // 合っていればこれまでどおり
+        OvertimeRequest same = new OvertimeRequest(2, "147", null, LocalDate.of(2026, 11, 6), 210, "18:00", "22:00",
+                "対応", OvertimeRequest.STATUS_APPROVED, null, null, null);
+        assertEquals("残業03:30", same.getPlannedOvertimeBreakdown());
+    }
+
+    @Test
     void 休日の内訳は休出と表示する() {
         OvertimeRequest r = new OvertimeRequest(1, "126", null, LocalDate.of(2026, 11, 7), 180, "09:00", "12:00",
                 "休日対応", OvertimeRequest.STATUS_PENDING, null, null, null);

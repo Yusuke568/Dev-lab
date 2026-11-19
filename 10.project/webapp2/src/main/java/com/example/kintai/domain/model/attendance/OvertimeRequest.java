@@ -166,7 +166,18 @@ public class OvertimeRequest {
         }
         if (correctionMinutes > 0) parts.add("補正" + formatMinutes(correctionMinutes));
         if (correctionMidMinutes > 0) parts.add("補正(深夜)" + formatMinutes(correctionMidMinutes));
-        return parts.isEmpty() ? formatMinutes(plannedOvertimeMinutes) : String.join(" / ", parts);
+        if (parts.isEmpty()) {
+            return formatMinutes(plannedOvertimeMinutes);
+        }
+        // 申請の時間は、勤怠の時間外のほうが多ければその時間にしている（申請したときの決まり）。
+        // 予定時刻から出した内訳と合わないときは、差を「補正等」として足し、内訳の合計を申請の時間にそろえる
+        int listed = early + late + correctionMinutes + correctionMidMinutes;
+        if (!isWeekendOrNationalHoliday(targetDate) && plannedOvertimeMinutes > listed) {
+            parts.add("補正等" + formatMinutes(plannedOvertimeMinutes - listed));
+        } else if (!isWeekendOrNationalHoliday(targetDate) && plannedOvertimeMinutes < listed) {
+            parts.add("計" + formatMinutes(plannedOvertimeMinutes));
+        }
+        return String.join(" / ", parts);
     }
 
     /**

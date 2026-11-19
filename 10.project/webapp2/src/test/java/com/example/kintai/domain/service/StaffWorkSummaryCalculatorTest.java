@@ -117,4 +117,38 @@ class StaffWorkSummaryCalculatorTest {
         assertEquals(80, s.monthOvertimePercent());
         assertEquals(7, s.yearOvertimePercent()); // 36時間 ÷ 540時間
     }
+
+    @Test
+    void 日曜の勤務は法定休出として時間外と別に数え_月100時間は足して見る() {
+        // 11/8 は日曜（法定休日）。総勤務8時間は時間外0で、法定休出8時間
+        Summary s = summarize(List.of(work("2026-11-02", 10, 2), work("2026-11-08", 8, 0)), List.of());
+        assertEquals(120, s.month().overtimeMinutes());
+        assertEquals(480, s.month().legalHolidayMinutes());
+        assertEquals(480, s.year().legalHolidayMinutes());
+        assertEquals(600, s.monthCombinedMinutes());
+        assertEquals(10, s.monthCombinedPercent()); // 10時間 ÷ 100時間
+        assertEquals(480, s.legalHolidayByMonth()[10]);
+    }
+
+    @Test
+    void 時間外と法定休出の2から6か月の平均は一番高いものを出す() {
+        // 10月：時間外90時間。11月：時間外70時間＋日曜（11/8）の法定休出20時間 → 2か月平均90時間で80時間超
+        Summary s = summarize(List.of(work("2026-10-05", 98, 90), work("2026-11-02", 78, 70), work("2026-11-08", 20, 0)),
+                List.of());
+        assertEquals(2, s.maxAverage().months());
+        assertEquals(90 * 60, s.maxAverage().minutes());
+        assertEquals(113, s.averagePercent());
+    }
+
+    @Test
+    void 平均には前年の月も入る_年間の集計には入らない() {
+        // 2026年2月を表示：2025年12月の時間外60時間は平均に入るが、年間には入らない
+        Summary s = StaffWorkSummaryCalculator.summarize(YearMonth.of(2026, 2),
+                List.of(work("2025-12-01", 68, 60), work("2026-02-02", 68, 60)), List.of(), LEAVE,
+                StaffWorkSummaryCalculator::isWeekend, null);
+        assertEquals(60 * 60, s.year().overtimeMinutes());
+        assertEquals(60 * 60, s.combinedLast6()[3]);  // 9月〜2月の4番目が12月
+        assertEquals(40 * 60, s.maxAverage().minutes()); // 12月〜2月の3か月平均（60+0+60）÷3
+        assertEquals(3, s.maxAverage().months());
+    }
 }

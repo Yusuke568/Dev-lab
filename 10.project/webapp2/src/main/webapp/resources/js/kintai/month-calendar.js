@@ -8,7 +8,7 @@
  * 「決定」で行の入力欄に書き戻して input / change イベントを送る。これで未保存の印・時間の再計算・
  * 有給残日数・保存（kintai.js）は表で入力したときと同じように動く。
  */
-import { calculateTotalWorkMinutes, calculateOvertime, isNextDayEnd, getMinutes, localDateString, holidayOvertimeByDate, overtimeRequestOf, shortHm } from "./utils.js?v=20261126sun";
+import { calculateTotalWorkMinutes, calculateOvertime, isNextDayEnd, getMinutes, localDateString, holidayOvertimeByDate, overtimeRequestOf, shortHm, isSundayText } from "./utils.js?v=20261126sun";
 
 const VIEW_KEY = "kintaiView";
 const WEEK_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
@@ -179,6 +179,7 @@ function buildCalendar() {
   legend.innerHTML =
     '<span><i class="mc-dot dirty"></i>未保存</span>' +
     '<span><b class="mc-ot-key ng">⚠️未申請</b>残業の事前申請がまだ（✖却下）</span>' +
+    '<span><b class="mc-legal-key">法定休出</b>日曜の勤務（時間外に含めない）</span>' +
     '<span><b class="mc-ot-key wait">⏳申請中</b>承認待ち</span>' +
     '<span><b class="mc-ot-key ok">✅承認済</b>残業 承認済み</span>' +
     '<span><b class="mc-ot-key plan">✅予定2:00</b>点線はまだ実績のない日の申請</span>' +
@@ -247,6 +248,13 @@ function renderDay(row) {
       + (req.cls !== "ng" ? '<span class="mc-ot-text">予定</span>' + shortHm(req.planned) : "") + "</span>";
     html += diffHtml; // 出退勤を入れたのに時間外が予定より少ない日
   }
+  // 日曜（法定休日）の勤務は時間外ではなく「法定休出」として別に出す
+  const legal = isSundayText(row.dataset.date) && v.kintaifrom && v.kintaito
+    ? calculateTotalWorkMinutes(v.kintaifrom, v.kintaito, addMinutesOf(v)) : 0;
+  if (legal > 0) {
+    html += '<span class="mc-legal" title="日曜（法定休日）の勤務。時間外には含めず法定休出として別に数えます"><b>法定休出</b>'
+      + formatShortHm(legal) + "</span>";
+  }
   cell.innerHTML = html;
 
   // 読み上げ用の説明
@@ -255,6 +263,7 @@ function renderDay(row) {
   if (type) parts.push(type);
   if (v.kintaifrom) parts.push("出勤 " + v.kintaifrom);
   if (v.kintaito) parts.push("退勤 " + (nextDay ? "翌日 " : "") + v.kintaito);
+  if (legal > 0) parts.push("法定休出 " + formatShortHm(legal));
   if (ot.state) parts.push("時間外 " + formatShortHm(ot.minutes) + "、残業の事前申請 " + ot.label);
   else if (req) parts.push("残業の事前申請 " + req.label + (req.cls !== "ng" ? "、予定 " + shortHm(req.planned) : ""));
   else if (mark) parts.push(mark.label);

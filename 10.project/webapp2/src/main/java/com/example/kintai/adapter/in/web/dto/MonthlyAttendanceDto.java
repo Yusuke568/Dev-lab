@@ -84,6 +84,34 @@ public class MonthlyAttendanceDto {
     /** 有給休暇の残日数（保存済みの勤怠に基づく）。分からなければ null */
     private Double paidLeaveDays;
 
+    /** 当月の法定休出（日曜の勤務）の時間。時間外ではないが、36協定の月100時間未満は時間外と足して見る */
+    private long legalHolidayMinutes;
+
+    /** 時間外＋法定休出の上限（36協定：月100時間未満） */
+    public static final long COMBINED_LIMIT_MINUTES = 100 * 60;
+
+    public long getLegalHolidayMinutes() {
+        return legalHolidayMinutes;
+    }
+
+    public void setLegalHolidayMinutes(long legalHolidayMinutes) {
+        this.legalHolidayMinutes = legalHolidayMinutes;
+    }
+
+    public String getLegalHolidayFormatted() {
+        return formatMinutes(legalHolidayMinutes);
+    }
+
+    /** 当月の時間外＋法定休出 */
+    public String getCombinedOvertimeFormatted() {
+        return formatMinutes(totalOvertimeMinutes + legalHolidayMinutes);
+    }
+
+    /** 時間外＋法定休出が月100時間未満か */
+    public boolean isCombinedOvertimeWithinLimit() {
+        return totalOvertimeMinutes + legalHolidayMinutes < COMBINED_LIMIT_MINUTES;
+    }
+
     public Double getPaidLeaveDays() {
         return paidLeaveDays;
     }

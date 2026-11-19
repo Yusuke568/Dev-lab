@@ -1,6 +1,6 @@
 import {
   collectAttendanceRecords, collectRowRecord, getMinutes, calculateTotalWorkMinutes, calculateOvertime,
-  localDateString, currentTimeString, getTimeInput, isNextDayEnd, holidayOvertimeByDate,
+  localDateString, currentTimeString, getTimeInput, isNextDayEnd, holidayOvertimeByDate, isSundayText,
   overtimeRequestOf, overtimeRequestUrl, shortHm
 } from "./utils.js?v=20261126sun";
 
@@ -478,7 +478,9 @@ function updateOvertimePerRow() {
       const overtime = holidayOvertime.has(row.dataset.date)
         ? holidayOvertime.get(row.dataset.date)
         : calculateOvertime(start, end, addMinutes);
-      setOvertimeCell(row, overtimeCell, overtime, true);
+      // 日曜（法定休日）の勤務は時間外ではなく「法定休出」として別に出す
+      const legal = isSundayText(row.dataset.date) ? calculateTotalWorkMinutes(start, end, addMinutes) : 0;
+      setOvertimeCell(row, overtimeCell, overtime, true, legal);
     } else {
       workTimeCell.textContent = "";
       setOvertimeCell(row, overtimeCell, 0, false);
@@ -490,7 +492,7 @@ function updateOvertimePerRow() {
  * 勤怠表の時間外の欄：時間外と、残業事前申請のアイコン（✅承認済・⏳申請中・✖却下と予定の時間）、
  * 実績が予定と違う日の「⚠️ 予定超過」「⚠️ 予定より少ない」と「申請し直す」。文字は textContent で入れる。
  */
-function setOvertimeCell(row, cell, overtime, hasActual) {
+function setOvertimeCell(row, cell, overtime, hasActual, legalMinutes = 0) {
   let actual = cell.querySelector(".ot-actual");
   let slot = cell.querySelector(".ot-req-slot");
   if (!actual || !slot) {
@@ -503,6 +505,13 @@ function setOvertimeCell(row, cell, overtime, hasActual) {
   }
   actual.textContent = overtime > 0 ? formatHm(overtime) : "ー";
   slot.textContent = "";
+  if (legalMinutes > 0) {
+    const legal = document.createElement("span");
+    legal.className = "ot-legal";
+    legal.title = "日曜（法定休日）の勤務です。時間外には含めず、法定休出として別に数えます（36協定の月100時間未満の確認では時間外と足します）。";
+    legal.textContent = "法定休出 " + formatHm(legalMinutes);
+    slot.appendChild(legal);
+  }
   const req = overtimeRequestOf(row, overtime, hasActual);
   if (!req) return;
   const badge = document.createElement("span");

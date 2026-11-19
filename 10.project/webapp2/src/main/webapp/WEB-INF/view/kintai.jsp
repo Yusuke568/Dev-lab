@@ -1097,6 +1097,32 @@ body.kintai-calendar-view .table-responsive {
 .ot-req.wait { background: #fefcbf; color: #744210; border: 1px solid #d69e2e; }
 .ot-req.ng { background: #fff5f5; color: #c50000; border: 1px solid #c50000; }
 .ot-req.over { background: #fffaf0; color: #c05621; border: 1px solid #dd6b20; }
+/* 日曜（法定休日）の勤務。時間外ではなく法定休出として別に数える（36協定の月100時間未満には足す） */
+.ot-legal, .legal-chip {
+	display: inline-block;
+	padding: 0 6px;
+	border-radius: 999px;
+	background: #f3e8ff;
+	color: #553c9a;
+	border: 1px solid #9f7aea;
+	font-size: 0.75rem;
+	font-weight: 700;
+	white-space: nowrap;
+}
+.ot-legal { margin-top: 2px; }
+.law-note { font-size: 0.8rem; color: #718096; }
+.mc-legal {
+	display: block;
+	margin-top: 2px;
+	padding: 1px 4px;
+	border-radius: 4px;
+	background: #f3e8ff;
+	color: #553c9a;
+	border: 1px solid #9f7aea;
+	font-size: 0.7rem;
+	line-height: 1.2;
+}
+.mc-legal b { display: block; font-size: 0.64rem; }
 .ot-req-link { display: inline-block; margin-top: 2px; margin-left: 4px; font-size: 0.75rem; white-space: nowrap; }
 .mc-day.ot-ng {
     border: 2px solid #c50000;
@@ -1113,6 +1139,7 @@ body.kintai-calendar-view .table-responsive {
     font-size: 0.68rem;
 }
 .mc-ot-key.ng { background: #c50000; color: #ffffff; }
+.mc-legal-key { display: inline-block; padding: 0 4px; margin-right: 4px; border-radius: 4px; background: #f3e8ff; color: #553c9a; border: 1px solid #9f7aea; font-size: 0.7rem; }
 .mc-ot-key.wait { background: #fefcbf; color: #744210; border: 1px solid #d69e2e; }
 .mc-ot-key.ok { background: #e6fffa; color: #22543d; border: 1px solid #38a169; }
 .mc-ot-key.plan { background: #ffffff; color: #22543d; border: 1px dashed #38a169; }
@@ -1658,6 +1685,22 @@ body.kintai-calendar-view .table-responsive {
 								</c:choose>
 							</td>
 						</tr>
+						<%-- 日曜（法定休日）の勤務は時間外ではないが、36協定の月100時間未満は時間外と足して見る --%>
+						<tr>
+							<th>当月法定休出</th>
+							<td><span class="legal-chip">法定休出</span> <c:out value="${attendanceData.legalHolidayFormatted}" /></td>
+							<td><span class="law-note">日曜の勤務（時間外に含めない）</span></td>
+						</tr>
+						<tr>
+							<th>時間外＋法定休出</th>
+							<td><c:out value="${attendanceData.combinedOvertimeFormatted}" /></td>
+							<td>
+								<c:choose>
+									<c:when test="${attendanceData.combinedOvertimeWithinLimit}">〇 月100H未満</c:when>
+									<c:otherwise><span style="color: red; font-weight: bold;">× 月100H未満</span></c:otherwise>
+								</c:choose>
+							</td>
+						</tr>
 					</table>
 					<div class="law-check-notes">
 						<p>※チェック結果がOKではない場合、内容を必ず確認すること。</p>
@@ -1739,7 +1782,7 @@ body.kintai-calendar-view .table-responsive {
 					class="btn btn-secondary">📍 今日の行へ</button>
 			</div>
 			</c:if>
-			<div id="overtime-summary">時間外労働: <c:out value="${attendanceData.totalOvertimeFormatted}" />（保存済みデータに基づく。未保存の変更は反映されません）</div>
+			<div id="overtime-summary">時間外労働: <c:out value="${attendanceData.totalOvertimeFormatted}" /><c:if test="${attendanceData.legalHolidayMinutes > 0}"> ／ <span class="legal-chip">法定休出</span> <c:out value="${attendanceData.legalHolidayFormatted}" /></c:if>（保存済みデータに基づく。未保存の変更は反映されません）</div>
 		</div>
 
 		<%-- カレンダー表示のときは隠し、カレンダーの「一括入力」ボタンから開く画面で入力する（month-calendar.js） --%>

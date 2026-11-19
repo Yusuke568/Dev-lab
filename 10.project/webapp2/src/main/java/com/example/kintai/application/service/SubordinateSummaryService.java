@@ -53,7 +53,9 @@ public class SubordinateSummaryService {
         java.util.function.Predicate<LocalDate> isHoliday = d -> StaffWorkSummaryCalculator.isWeekend(d)
                 || JapaneseHolidayCalendar.isHoliday(d) || companyHolidays.containsKey(d);
 
-        var days = subordinatePort.findAttendanceRows(ids, yearStart, end);
+        // 2〜6か月の平均（時間外＋法定休出）のため、表示する月の5か月前から読む（年の集計は1月から数える）
+        LocalDate from = month.minusMonths(5).atDay(1);
+        var days = subordinatePort.findAttendanceRows(ids, from.isBefore(yearStart) ? from : yearStart, end);
         var requests = subordinatePort.findOvertimeRequestRows(ids, month.atDay(1), end);
         var remaining = subordinatePort.findPaidLeaveRemaining(ids);
         for (String id : ids) {

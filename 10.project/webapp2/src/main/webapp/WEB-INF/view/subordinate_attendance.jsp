@@ -94,6 +94,7 @@
 .meter.stack span { border-radius: 0; }
 .meter.stack span:first-child { border-radius: 4px 0 0 4px; }
 .meter.stack .plan-approved { background: #8fb8ea !important; }
+.meter.stack .legal { background: #9f7aea !important; }
 .meter.stack .plan-pending {
 	background: repeating-linear-gradient(135deg, #8fb8ea 0 3px, #ffffff 3px 6px) !important;
 }
@@ -118,12 +119,21 @@
 	width: 140px;
 	border-bottom: 1px solid #cbd5e0;
 }
-.mini-bars .bar {
+/* 1か月分の縦の棒。時間外の上に法定休出（日曜の勤務）を別の色で重ねる */
+.mini-bars .bar-col {
 	flex: 1 1 0;
 	max-width: 14px;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+}
+.mini-bars .bar {
 	background: #a9c7ee;
 	border-radius: 2px 2px 0 0;
 }
+.mini-bars .bar-legal + .bar { border-radius: 0; }
+.mini-bars .bar-legal { background: #9f7aea; border-radius: 2px 2px 0 0; }
 .mini-bars .bar.current { background: #2a78d6; }
 .mini-bars .bar.over { background: #d64545; }
 .mini-bars .limit {
@@ -255,6 +265,7 @@
 					<span><i style="background: #2a78d6;"></i>時間外の実績</span>
 					<span><i style="background: #8fb8ea;"></i>承認済みの予定</span>
 					<span><i style="background: repeating-linear-gradient(135deg, #8fb8ea 0 3px, #ffffff 3px 6px); border: 1px solid #8fb8ea;"></i>申請中の予定</span>
+					<span><i style="background: #9f7aea;"></i>法定休出（日曜の勤務。時間外に含めない）</span>
 					<span>（予定は、まだ時間外の実績がない日の残業事前申請の時間）</span>
 				</div>
 				<div class="sum-wrap">
@@ -264,6 +275,7 @@
 							<th>社員</th>
 							<th>当月の時間外<br>実績＋予定</th>
 							<th>年間の時間外</th>
+							<th>時間外＋法定休出<br>月100H未満 / 平均80H</th>
 							<th>月ごとの時間外</th>
 							<th>総勤務時間<br>当月 / 年間</th>
 							<th>出勤日数<br>当月 / 年間</th>
@@ -296,6 +308,18 @@
 										<div class="sum-num"><b>${v.yearOvertime}</b> / ${yearLimitHours}:00<c:if test="${v.yearLevel == 'warn'}"><span class="badge-lv warn">⚠ 注意</span></c:if><c:if test="${v.yearLevel == 'over'}"><span class="badge-lv over">⛔ 超過</span></c:if></div>
 										<div class="meter ${v.yearLevel}" role="img" aria-label="上限の${v.yearOvertimePercent}%"><span style="width: ${v.yearBarPercent}%"></span></div>
 										<div class="sum-sub">上限の ${v.yearOvertimePercent}%</div>
+										<c:if test="${v.hasLegal}"><div class="sum-sub">別に法定休出 ${v.yearLegal}</div></c:if>
+									</div>
+								</td>
+								<%-- 36協定の「時間外＋法定休日労働」：月100時間未満、2〜6か月の平均80時間以内 --%>
+								<td data-label="時間外＋法定休出">
+									<div class="cell">
+										<div class="sum-num"><b>${v.monthCombined}</b> / 100:00<c:if test="${v.monthCombinedLevel == 'warn'}"><span class="badge-lv warn">⚠ 注意</span></c:if><c:if test="${v.monthCombinedLevel == 'over'}"><span class="badge-lv over">⛔ 超過</span></c:if></div>
+										<div class="meter stack ${v.monthCombinedLevel}" role="img" aria-label="時間外${v.monthOvertime}、法定休出${v.monthLegal}。月100時間の${v.monthCombinedPercent}%"><span style="width: ${v.combinedOvertimeBar}%"></span><span class="legal" style="width: ${v.combinedLegalBar}%"></span></div>
+										<div class="sum-sub">うち法定休出 ${v.monthLegal}</div>
+										<div class="sum-num" style="margin-top: 4px;">平均 <b>${v.average}</b> / 80:00<c:if test="${v.averageLevel == 'warn'}"><span class="badge-lv warn">⚠ 注意</span></c:if><c:if test="${v.averageLevel == 'over'}"><span class="badge-lv over">⛔ 超過</span></c:if></div>
+										<div class="meter ${v.averageLevel}" role="img" aria-label="2〜6か月の平均のうち一番高い${v.averageMonths}か月平均。80時間の${v.averagePercent}%"><span style="width: ${v.averageBarPercent}%"></span></div>
+										<div class="sum-sub">${v.averageMonths}か月平均が最も高い</div>
 									</div>
 								</td>
 								<td data-label="月ごとの時間外">
@@ -303,7 +327,7 @@
 										<div class="mini-bars" role="img" aria-label="1月〜${targetMonth}月の時間外。点線は${monthLimitHours}時間">
 											<span class="limit" style="bottom: ${v.monthLimitLinePercent}%"></span>
 											<c:forEach var="b" items="${v.monthBars}">
-												<span class="bar${b.current ? ' current' : ''}${b.overLimit ? ' over' : ''}" style="height: ${b.heightPercent}%" title="${b.label} ${b.value}"></span>
+												<span class="bar-col" title="${b.label} 時間外 ${b.value}${b.hasLegal ? ' ／ 法定休出 ' : ''}${b.hasLegal ? b.legalValue : ''}"><c:if test="${b.legalHeightPercent > 0}"><span class="bar-legal" style="height: ${b.legalHeightPercent}%"></span></c:if><span class="bar${b.current ? ' current' : ''}${b.overLimit ? ' over' : ''}" style="height: ${b.heightPercent}%"></span></span>
 											</c:forEach>
 										</div>
 										<div class="mini-labels"><span>1月</span><span>${targetMonth}月</span></div>

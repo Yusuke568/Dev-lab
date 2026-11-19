@@ -71,6 +71,11 @@ public class GetMonthlyAttendanceService implements GetMonthlyAttendanceUseCase 
         MonthlyAttendanceDto dto = new MonthlyAttendanceDto(command.getYearMonth(), dailyDtos, totalWorkHours, totalWorkMinutes,
                 totalOvertimeMinutes, annualOvertimeMinutes, employee.getName());
         dto.setPaidLeaveDays(employee.getPaidLeaveDays());
+        // 法定休出（日曜の勤務）：時間外ではないが、36協定の月100時間未満は時間外と足して見るので別に出す
+        dto.setLegalHolidayMinutes(records.stream()
+                .filter(r -> com.example.kintai.domain.service.WeeklyOvertimeCalculator.isLegalHoliday(r.getWorkDate()))
+                .mapToLong(r -> r.calculateWorkDuration().toMinutes())
+                .sum());
         return dto;
         }
 

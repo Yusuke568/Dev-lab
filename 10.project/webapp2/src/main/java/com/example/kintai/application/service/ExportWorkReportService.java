@@ -29,6 +29,27 @@ public class ExportWorkReportService implements ExportWorkReportUseCase {
     /** 「所属：」欄の所属名称を調べる。null なら様式のまま */
     private com.example.kintai.domain.port.out.ReportDepartmentNamePort reportDepartmentNamePort;
 
+    /** 作業報告書のファイル名の形。null なら既定の形 */
+    private com.example.kintai.domain.port.out.WorkReportFileNamePort fileNamePort;
+
+    public ExportWorkReportService withFileName(com.example.kintai.domain.port.out.WorkReportFileNamePort port) {
+        this.fileNamePort = port;
+        return this;
+    }
+
+    /** マスタで決めた形のファイル名（拡張子を除く）。形が読めなければ既定の形にする */
+    private String fileName(EmployeeId employeeId, String employeeName, YearMonth yearMonth) {
+        String pattern = null;
+        if (fileNamePort != null) {
+            try {
+                pattern = fileNamePort.workReportFileNamePattern().orElse(null);
+            } catch (RuntimeException e) {
+                e.printStackTrace(); // マイグレーション前などで読めなくても出力は続ける
+            }
+        }
+        return com.example.kintai.domain.service.WorkReportFileName.render(pattern, yearMonth, employeeId.getValue(), employeeName);
+    }
+
     public ExportWorkReportService withDepartmentName(com.example.kintai.domain.port.out.ReportDepartmentNamePort port) {
         this.reportDepartmentNamePort = port;
         return this;
@@ -84,17 +105,19 @@ public class ExportWorkReportService implements ExportWorkReportUseCase {
             content = workReportExportPort.generateYear(year, monthlyData.getEmployeeName(), departmentName, workTypes, months);
         }
 
+        String fileName = fileName(employeeId, monthlyData.getEmployeeName(), yearMonth);
         // サーバーの所定フォルダにも置く。置けなくてもダウンロードは止めない
         if (workReportArchivePort == null || !workReportArchivePort.isEnabled()) {
-            return new ExportedWorkReport(content, null, null);
+            return new ExportedWorkReport(content, null, null, fileName);
         }
         try {
-            String path = workReportArchivePort.archive(employeeId.getValue(), monthlyData.getEmployeeName(), yearMonth, content);
-            return new ExportedWorkReport(content, path, null);
+            String path = workReportArchivePort.archive(employeeId.getValue(), monthlyData.getEmployeeName(), yearMonth, content,
+                    fileName);
+            return new ExportedWorkReport(content, path, null, fileName);
         } catch (Exception e) {
             // フォルダ名などを画面に出さないよう、詳しい内容はログに残す
             return new ExportedWorkReport(content, null, com.example.shared.error.UserMessages.of(e,
-                    "書き込みに失敗しました。管理者に連絡してください"));
+                    "書き込みに失敗しました。管理者に連絡してください"), fileName);
         }
     }
 }

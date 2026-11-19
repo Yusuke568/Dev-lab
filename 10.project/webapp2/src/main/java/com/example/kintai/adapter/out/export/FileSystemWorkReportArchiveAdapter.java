@@ -91,6 +91,12 @@ public class FileSystemWorkReportArchiveAdapter implements WorkReportArchivePort
 
     @Override
     public String archive(String staffId, String staffName, YearMonth yearMonth, byte[] content) throws IOException {
+        return archive(staffId, staffName, yearMonth, content, null);
+    }
+
+    @Override
+    public String archive(String staffId, String staffName, YearMonth yearMonth, byte[] content, String fileBaseName)
+            throws IOException {
         if (!isEnabled()) {
             throw new IllegalStateException("作業報告書の置き場所が設定されていません。");
         }
@@ -98,8 +104,10 @@ public class FileSystemWorkReportArchiveAdapter implements WorkReportArchivePort
                 .resolve(String.format("%02d", yearMonth.getMonthValue()));
         createDirectories(monthDir);
 
-        String baseName = String.format("作業報告書_%d%02d_%s_%s", yearMonth.getYear(), yearMonth.getMonthValue(),
-                safe(staffId), safe(staffName));
+        // マスタで決めたファイル名があれば使う（年・月のフォルダの中に置く）
+        String baseName = fileBaseName != null && !fileBaseName.isBlank() ? safe(fileBaseName)
+                : String.format("作業報告書_%d%02d_%s_%s", yearMonth.getYear(), yearMonth.getMonthValue(),
+                        safe(staffId), safe(staffName));
         Path target = monthDir.resolve(baseName + ".xlsm");
 
         if (Files.exists(target)) {

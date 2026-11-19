@@ -430,3 +430,8 @@ COMMENT ON TABLE app_setting IS 'アプリ全体の設定（キーと値）';
 INSERT INTO app_setting (setting_key, setting_value)
 VALUES ('ATTENDANCE_APPROVAL_START_DATE', '2026-11-01')
 ON CONFLICT (setting_key) DO NOTHING;
+
+-- 作業報告書のファイル名の形（migrations/20261126_work_report_file_name.sql と同じ）
+INSERT INTO app_setting (setting_key, setting_value)
+VALUES ('WORK_REPORT_FILE_NAME', '作業報告書{年}（{氏名}）_41')
+ON CONFLICT (setting_key) DO NOTHING;

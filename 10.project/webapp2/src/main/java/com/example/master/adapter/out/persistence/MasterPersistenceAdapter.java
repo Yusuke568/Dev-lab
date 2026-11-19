@@ -34,7 +34,10 @@ import java.util.Set;
  * どちらでも動くよう、それらの値は型を決めずに（Types.OTHER で）渡し、比較は文字列にそろえて行う。
  */
 public class MasterPersistenceAdapter implements MasterPort, OrganizationPort,
-        com.example.kintai.domain.port.out.AttendanceApprovalStartPort {
+        com.example.kintai.domain.port.out.AttendanceApprovalStartPort,
+        com.example.kintai.domain.port.out.WorkReportFileNamePort {
+
+    private static final String WORK_REPORT_FILE_NAME_KEY = "WORK_REPORT_FILE_NAME";
 
     private static final String APPROVAL_START_KEY = "ATTENDANCE_APPROVAL_START_DATE";
 
@@ -693,6 +696,41 @@ public class MasterPersistenceAdapter implements MasterPort, OrganizationPort,
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to save approval route setting.", e);
+        }
+    }
+
+    // ------------------------------------------------------------------ 作業報告書のファイル名（app_setting）
+
+    @Override
+    public String findWorkReportFileNamePattern() {
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement("SELECT setting_value FROM app_setting WHERE setting_key = ?")) {
+            ps.setString(1, WORK_REPORT_FILE_NAME_KEY);
+            try (ResultSet rs = ps.executeQuery()) {
+                String value = rs.next() ? rs.getString(1) : null;
+                return value == null || value.isBlank() ? null : value.trim();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load work report file name.", e);
+        }
+    }
+
+    @Override
+    public java.util.Optional<String> workReportFileNamePattern() {
+        return java.util.Optional.ofNullable(findWorkReportFileNamePattern());
+    }
+
+    @Override
+    public void saveWorkReportFileNamePattern(String pattern) {
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "INSERT INTO app_setting (setting_key, setting_value) VALUES (?, ?) "
+                     + "ON CONFLICT (setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value")) {
+            ps.setString(1, WORK_REPORT_FILE_NAME_KEY);
+            ps.setString(2, pattern);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to save work report file name.", e);
         }
     }
 

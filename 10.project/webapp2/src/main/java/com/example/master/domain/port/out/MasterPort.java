@@ -96,6 +96,15 @@ public interface MasterPort {
     List<ApprovalRouteSetting> findApprovalRouteSettings();
     void saveApprovalRouteSetting(RequestType requestType, int maxLevels);
 
+    /** 作業報告書のファイル名の形。未設定なら null */
+    default String findWorkReportFileNamePattern() {
+        return null;
+    }
+
+    default void saveWorkReportFileNamePattern(String pattern) {
+        throw new UnsupportedOperationException();
+    }
+
     /** 勤怠の承認の運用開始日。未設定なら null */
     default java.time.LocalDate findAttendanceApprovalStartDate() {
         return null;

@@ -18,4 +18,12 @@ public interface WorkReportArchivePort {
      * @return 置いたファイルの場所（画面やログに出す用）
      */
     String archive(String staffId, String staffName, YearMonth yearMonth, byte[] content) throws IOException;
+
+    /**
+     * ファイル名（拡張子を除く）を決めて置く。fileBaseName が null なら今までの名前にする。
+     */
+    default String archive(String staffId, String staffName, YearMonth yearMonth, byte[] content, String fileBaseName)
+            throws IOException {
+        return archive(staffId, staffName, yearMonth, content);
+    }
 }

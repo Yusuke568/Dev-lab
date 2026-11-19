@@ -22,12 +22,21 @@ public interface ExportWorkReportUseCase {
         private final byte[] content;
         private final String archivedPath;
         private final String archiveError;
+        private final String fileName;
 
         public ExportedWorkReport(byte[] content, String archivedPath, String archiveError) {
+            this(content, archivedPath, archiveError, null);
+        }
+
+        public ExportedWorkReport(byte[] content, String archivedPath, String archiveError, String fileName) {
             this.content = content;
             this.archivedPath = archivedPath;
             this.archiveError = archiveError;
+            this.fileName = fileName;
         }
+
+        /** ダウンロード・サーバーのフォルダに置くファイル名（拡張子 .xlsm を除く。マスタで決めた形）。なければ null */
+        public String getFileName() { return fileName; }
 
         public byte[] getContent() { return content; }
 

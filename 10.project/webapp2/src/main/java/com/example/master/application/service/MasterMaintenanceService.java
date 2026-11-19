@@ -361,6 +361,16 @@ public class MasterMaintenanceService implements MasterMaintenanceUseCase {
     }
 
     @Override
+    public String getWorkReportFileNamePattern() {
+        return masterPort.findWorkReportFileNamePattern();
+    }
+
+    @Override
+    public void saveWorkReportFileNamePattern(String pattern) {
+        masterPort.saveWorkReportFileNamePattern(com.example.kintai.domain.service.WorkReportFileName.validate(pattern));
+    }
+
+    @Override
     public java.time.LocalDate getAttendanceApprovalStartDate() {
         return masterPort.findAttendanceApprovalStartDate();
     }

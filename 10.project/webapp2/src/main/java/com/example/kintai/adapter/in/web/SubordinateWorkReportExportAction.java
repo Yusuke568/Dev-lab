@@ -96,7 +96,8 @@ public class SubordinateWorkReportExportAction implements Action {
                 try {
                     ExportWorkReportUseCase.ExportedWorkReport exported =
                             exportWorkReportUseCase.exportMonth(new EmployeeId(id), month);
-                    files.put(fileName(month, staff, files.keySet()), exported.getContent());
+                    files.put(exported.getFileName() != null ? unique(exported.getFileName(), files.keySet())
+                            : fileName(month, staff, files.keySet()), exported.getContent());
                     if (exported.getArchiveError() != null) {
                         problems.add(staff.getName() + "（社員ID " + id + "）：サーバーのフォルダに置けませんでした（" + exported.getArchiveError() + "）。");
                     }
@@ -136,6 +137,15 @@ public class SubordinateWorkReportExportAction implements Action {
         String candidate = base + ".xlsm";
         for (int i = 2; used.contains(candidate); i++) {
             candidate = base + "(" + i + ").xlsm";
+        }
+        return candidate;
+    }
+
+    /** マスタで決めた形のファイル名に .xlsm を付ける。同じ名前（同姓同名など）が続けば番号を付ける */
+    static String unique(String baseName, Set<String> used) {
+        String candidate = baseName + ".xlsm";
+        for (int i = 2; used.contains(candidate); i++) {
+            candidate = baseName + "(" + i + ").xlsm";
         }
         return candidate;
     }

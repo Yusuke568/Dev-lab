@@ -54,6 +54,12 @@
 			<p>出勤・有給・休日などの勤務区分を設定します。</p>
 		</a>
 		</c:if>
+		<c:if test="${sessionScope.can.MASTER_ABSTRACT}">
+		<a class="master-link" href="${pageContext.request.contextPath}/masterWorkReport.do">
+			<h3>📄 作業報告書の設定</h3>
+			<p>作業報告書（Excel）のファイル名の形（年・氏名・様式のバージョンなど）を決めます。</p>
+		</a>
+		</c:if>
 		<c:if test="${sessionScope.can.MASTER_LEAVE_RULE}">
 		<a class="master-link" href="${pageContext.request.contextPath}/masterLeaveRule.do">
 			<h3>🏖️ 有給付与ルール</h3>

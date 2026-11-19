@@ -97,6 +97,15 @@ public interface MasterMaintenanceUseCase {
     List<ApprovalRouteSetting> getApprovalRouteSettings();
     void saveApprovalRouteSetting(RequestType requestType, int maxLevels);
 
+    /** 作業報告書のファイル名の形（{年}{月}{氏名}{社員ID} を差し込める）。未設定なら null */
+    default String getWorkReportFileNamePattern() {
+        return null;
+    }
+
+    default void saveWorkReportFileNamePattern(String pattern) {
+        throw new UnsupportedOperationException();
+    }
+
     /** 勤怠の承認の運用開始日。この日より前の勤怠は承認待ちにしない。未設定なら null */
     default java.time.LocalDate getAttendanceApprovalStartDate() {
         return null;

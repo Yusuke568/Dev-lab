@@ -51,7 +51,9 @@ public class WorkReportExportAction implements Action {
                         "作業報告書はダウンロードしましたが、サーバーのフォルダに置けませんでした: " + exported.getArchiveError());
             }
 
-            String fileName = String.format("作業報告書%d%02d.xlsm", year, month);
+            // ファイル名はマスタ（作業報告書の設定）で決めた形
+            String fileName = exported.getFileName() != null ? exported.getFileName() + ".xlsm"
+                    : String.format("作業報告書%d%02d.xlsm", year, month);
             String asciiFallbackFileName = String.format("work_report_%d%02d.xlsm", year, month);
             String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replace("+", "%20");
 

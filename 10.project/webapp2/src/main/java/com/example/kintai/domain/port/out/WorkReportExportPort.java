@@ -45,4 +45,12 @@ public interface WorkReportExportPort {
                                 List<MonthData> months) {
         return generateYear(year, employeeName, workTypes, months);
     }
+
+    /**
+     * @param focusMonth 開いたときに表示する月（その月のシートの、今日を含む週を表示する）。null なら様式のまま
+     */
+    default byte[] generateYear(int year, String employeeName, String departmentName, List<WorkType> workTypes,
+                                List<MonthData> months, java.time.YearMonth focusMonth) {
+        return generateYear(year, employeeName, departmentName, workTypes, months);
+    }
 }

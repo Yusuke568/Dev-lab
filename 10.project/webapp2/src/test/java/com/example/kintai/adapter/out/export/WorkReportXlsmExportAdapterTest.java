@@ -269,4 +269,26 @@ class WorkReportXlsmExportAdapterTest {
         Cell cell = row == null ? null : row.getCell(39); // AN = 40列目
         return cell == null ? "" : cell.getStringCellValue();
     }
+
+    /** 開いたときは、出力した月のシートの今日を含む週（木曜〜水曜）を表示し、その日の出勤のセルを選ぶ */
+    @Test
+    void 開いたときは該当月の該当週を表示する() throws Exception {
+        try (java.io.InputStream in = getClass().getResourceAsStream("/templates/work_report_template.xlsm");
+             XSSFWorkbook book = new XSSFWorkbook(in)) {
+            // 2026/11/19(木) は 11/19〜11/25 の第4週。上は11/19の行（Excel 26行目）
+            WorkReportXlsmExportAdapter.focus(book, YearMonth.of(2026, 11), 2026, LocalDate.of(2026, 11, 19));
+            Sheet sheet = book.getSheet("11月");
+            assertEquals(book.getSheetIndex(sheet), book.getActiveSheetIndex());
+            assertEquals("E26", sheet.getActiveCell().formatAsString());
+            assertEquals(25, sheet.getTopRow());
+            assertEquals(false, book.getSheet("tool").isSelected());
+
+            // 今日がその月でなければ第1週（10/29〜11/4 の週。上は週次作業報告の第1週の欄 5行目）
+            WorkReportXlsmExportAdapter.focus(book, YearMonth.of(2026, 10), 2026, LocalDate.of(2026, 11, 19));
+            Sheet oct = book.getSheet("10月");
+            assertEquals(book.getSheetIndex(oct), book.getActiveSheetIndex());
+            assertEquals("E8", oct.getActiveCell().formatAsString());
+            assertEquals(4, oct.getTopRow());
+        }
+    }
 }

@@ -102,7 +102,9 @@ public class ExportWorkReportService implements ExportWorkReportUseCase {
                             getWeeklyWorkReportsUseCase.getWeeklyWorkReports(employeeId, ym)));
                 }
             }
-            content = workReportExportPort.generateYear(year, monthlyData.getEmployeeName(), departmentName, workTypes, months);
+            // 開いたときは、出力した月のシートの今日を含む週を表示する
+            content = workReportExportPort.generateYear(year, monthlyData.getEmployeeName(), departmentName, workTypes, months,
+                    yearMonth);
         }
 
         String fileName = fileName(employeeId, monthlyData.getEmployeeName(), yearMonth);

@@ -18,6 +18,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalTime;
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -83,8 +84,11 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
                 setStringValue(sheet, "AP2", employeeName);
                 setDepartment(sheet, departmentName);
                 writeMonth(sheet, monthlyData, weeklyWorkReports, workTypes);
+                focus(workbook, yearMonth, yearMonth.getYear(), LocalDate.now());
 
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
+                // 様式の数式（総勤務・残業・深夜など）を、Excel で開いたときに必ず計算し直させる
+                workbook.setForceFormulaRecalculation(true);
                 workbook.write(out);
                 return out.toByteArray();
             }
@@ -101,6 +105,12 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
     @Override
     public byte[] generateYear(int year, String employeeName, String departmentName, List<WorkType> workTypes,
                                List<MonthData> months) {
+        return generateYear(year, employeeName, departmentName, workTypes, months, null);
+    }
+
+    @Override
+    public byte[] generateYear(int year, String employeeName, String departmentName, List<WorkType> workTypes,
+                               List<MonthData> months, YearMonth focusMonth) {
         try (InputStream templateStream = getClass().getResourceAsStream(TEMPLATE_PATH)) {
             if (templateStream == null) {
                 throw new IllegalStateException("作業報告書テンプレートが見つかりません: " + TEMPLATE_PATH);
@@ -118,13 +128,56 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
                     YearMonth ym = month.monthlyData().getYearMonth();
                     writeMonth(sheetOf(workbook, ym, year), month.monthlyData(), month.weeklyWorkReports(), workTypes);
                 }
+                if (focusMonth != null) {
+                    focus(workbook, focusMonth, year, LocalDate.now());
+                }
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
+                // 様式の数式（総勤務・残業・深夜など）を、Excel で開いたときに必ず計算し直させる
+                workbook.setForceFormulaRecalculation(true);
                 workbook.write(out);
                 return out.toByteArray();
             }
         } catch (IOException e) {
             throw new RuntimeException("作業報告書の生成に失敗しました。", e);
         }
+    }
+
+    /**
+     * 開いたときに、その月のシートの「その週」を表示する。
+     *   その週：今日がその月なら今日を含む週（木曜〜水曜。週次作業報告の週と同じ）、そうでなければ第1週
+     *   画面の一番上はその週の最初の日の行（週次作業報告の欄が上にあればそこから）。選ぶセルはその日の「出勤」
+     * ほかのシート（tool など）の選択は外す。
+     */
+    static void focus(XSSFWorkbook workbook, YearMonth yearMonth, int year, LocalDate today) {
+        Sheet sheet = sheetOf(workbook, yearMonth, year);
+        if (sheet == null) {
+            return;
+        }
+        LocalDate first = yearMonth.atDay(1);
+        LocalDate target = YearMonth.from(today).equals(yearMonth) ? today : first;
+        List<LocalDate[]> weeks = WeeklyWorkReport.resolveWeekRanges(yearMonth);
+        int week = 0;
+        for (int i = 0; i < weeks.size(); i++) {
+            if (!target.isBefore(weeks.get(i)[0]) && !target.isAfter(weeks.get(i)[1])) {
+                week = i;
+                break;
+            }
+        }
+        LocalDate weekStart = weeks.get(week)[0].isBefore(first) ? first : weeks.get(week)[0];
+        int startRow = FIRST_DAY_ROW + weekStart.getDayOfMonth() - 1;           // 0始まり
+        int blockRow = WEEK_BLOCK_FIRST_ROWS[Math.min(week, WEEK_BLOCK_FIRST_ROWS.length - 1)] - 1;
+        int topRow = Math.min(startRow, blockRow);
+        int selectRow = FIRST_DAY_ROW + target.getDayOfMonth() - 1;
+
+        int index = workbook.getSheetIndex(sheet);
+        for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
+            workbook.getSheetAt(i).setSelected(i == index);
+        }
+        workbook.setActiveSheet(index);
+        sheet.setActiveCell(new org.apache.poi.ss.util.CellAddress(selectRow, 4)); // E列（出勤）
+        // 枠の固定がない様式なので、表示の左上のセルを直接決める（showInPane は枠の固定があるときだけ効く）
+        ((org.apache.poi.xssf.usermodel.XSSFSheet) sheet).getCTWorksheet().getSheetViews().getSheetViewArray(0)
+                .setTopLeftCell(new org.apache.poi.ss.util.CellReference(topRow, 0).formatAsString(false));
     }
 
     /** 月のシート。当年の月は「○月」、前年の12月は「前年12月」 */

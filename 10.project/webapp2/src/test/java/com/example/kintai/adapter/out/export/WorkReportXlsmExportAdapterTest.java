@@ -291,4 +291,30 @@ class WorkReportXlsmExportAdapterTest {
             assertEquals(4, oct.getTopRow());
         }
     }
+
+    /** 週次作業報告の行：幅（全角15文字＝半角30）に収まる行はそのまま、長い行は切らずに次の行へ送る */
+    @Test
+    void 週次作業報告の行は文字で切らずに次の行へ送る() {
+        // 全角16文字（幅32）は送る。全角15文字（幅30）はそのまま
+        assertEquals(List.of("問合せ、標準化（R4G）移行対応"),
+                WorkReportXlsmExportAdapter.layoutLines("問合せ、標準化（R4G）移行対応", "", 30, 10));
+        assertEquals(List.of("あいうえおかきくけこさしすせそ", "た"),
+                WorkReportXlsmExportAdapter.layoutLines("あいうえおかきくけこさしすせそた", "", 30, 10));
+        // 行数を超えるときだけ、最後の行の末尾を「…」にする
+        assertEquals(List.of("あいうえおかきくけこさしすせそ", "たちつてとなにぬねのはひふへ…"),
+                WorkReportXlsmExportAdapter.layoutLines("あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみ", "", 30, 2));
+        // 字下げ（全角の空白）は、空白で始まる行には付けない
+        assertEquals(List.of("　工程A", " '標準化"),
+                WorkReportXlsmExportAdapter.layoutLines("工程A\n '標準化", "　", 30, 5));
+        // 途中の空行は空のまま残し、末尾の空行は書かない
+        assertEquals(List.of("a", "", "b"), WorkReportXlsmExportAdapter.layoutLines("a\n\nb\n\n", "", 30, 10));
+    }
+
+    @Test
+    void 一行の欄は幅に収まらなければ末尾を省略記号にする() {
+        assertEquals("作業進捗：ｵﾝｽｹ", WorkReportXlsmExportAdapter.fit("作業進捗：ｵﾝｽｹ", 30));
+        assertEquals(30, WorkReportXlsmExportAdapter.width(WorkReportXlsmExportAdapter.fit("あいうえおかきくけこさしすせそたち", 30)));
+        assertEquals(2, WorkReportXlsmExportAdapter.width("ア"));
+        assertEquals(1, WorkReportXlsmExportAdapter.width("ｱ"));
+    }
 }

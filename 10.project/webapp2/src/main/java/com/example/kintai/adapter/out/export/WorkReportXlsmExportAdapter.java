@@ -52,16 +52,11 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
     // 週次作業報告ブロックの先頭行（Excel行番号、1始まり）。様式は月あたり5週固定で10行おきに配置されている。
     private static final int[] WEEK_BLOCK_FIRST_ROWS = {5, 15, 25, 35, 45};
 
-    // 各セルの列幅に収まるよう、週次作業報告の文字数上限を設ける（超過分は「…」で省略）。
-    private static final int MAX_LEN_CLIENT_NAME = 20;
-    private static final int MAX_LEN_PROJECT_NAME = 18;
-    private static final int MAX_LEN_PROCESS_NAME = 18;
+    // 週次作業報告の1行に入る幅（半角1・全角2で数える）。AR〜AU列はどれも全角15文字（半角30文字）分。
+    // 手作業で書いた作業報告書の行もこの幅に収まっている。長い行は文字で切らずに次の行へ送る
+    static final int LINE_WIDTH = 30;
     // 工程名・作業名等は、PJ名の下から「累計/残業時間」の上までの5行（週ブロックの3〜7行目）に書ける
     private static final int MAX_LINES_PROCESS_NAME = 5;
-    private static final int MAX_LEN_PROGRESS_STATUS = 10;
-    private static final int MAX_LEN_PROGRESS_DETAIL_LINE = 20;
-    private static final int MAX_LEN_PERSONAL_NOTE_LINE = 15; // 本人所感は1行15文字
-    private static final int MAX_LEN_PROBLEM_LINE = 20;
     private static final String PROBLEM_LABEL = "問題点・対処：";
 
     @Override
@@ -245,7 +240,7 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
             int row = FIRST_DAY_ROW + daily.getDate().getDayOfMonth() - 1;
             writeDay(sheet, row, daily, categoryByWorkTypeId);
         }
-        writeWeeklyWorkReports(sheet, weeklyWorkReports);
+        writeWeeklyWorkReports(sheet, monthlyData.getYearMonth(), weeklyWorkReports);
     }
 
     private void writeDay(Sheet sheet, int row, DailyAttendanceDto daily, Map<Integer, String> categoryByWorkTypeId) {
@@ -306,31 +301,43 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
      * 週次作業報告（客先名・PJ名・工程名・作業進捗・本人所感）を、月の週ブロック構成に従って
      * AR/AS/AT列の該当ブロックへ書き込む。リーダー所見（AU列）は、取り込んだ所見があればそのまま書き戻す。
      */
-    private void writeWeeklyWorkReports(Sheet sheet, List<WeeklyWorkReport> weeklyWorkReports) {
+    private void writeWeeklyWorkReports(Sheet sheet, YearMonth yearMonth, List<WeeklyWorkReport> weeklyWorkReports) {
         if (weeklyWorkReports == null) {
             return;
         }
-        for (int i = 0; i < weeklyWorkReports.size() && i < WEEK_BLOCK_FIRST_ROWS.length; i++) {
+        List<LocalDate[]> ranges = WeeklyWorkReport.resolveWeekRanges(yearMonth);
+        for (int i = 0; i < weeklyWorkReports.size(); i++) {
             WeeklyWorkReport report = weeklyWorkReports.get(i);
-            int baseRow = WEEK_BLOCK_FIRST_ROWS[i]; // Excel行番号（1始まり）
+            // 週の終わりの日で、その月の何週目の欄かを決める（空の週がとばされた並びでも、ずれないように）
+            int block = i;
+            for (int w = 0; w < ranges.size(); w++) {
+                if (ranges.get(w)[1].equals(report.getWeekEndDate())) {
+                    block = w;
+                    break;
+                }
+            }
+            if (block >= WEEK_BLOCK_FIRST_ROWS.length) {
+                continue;
+            }
+            int baseRow = WEEK_BLOCK_FIRST_ROWS[block]; // Excel行番号（1始まり）
 
             if (hasText(report.getClientName())) {
-                setStringValue(sheet, "AR" + baseRow, truncate(report.getClientName(), MAX_LEN_CLIENT_NAME));
+                setStringValue(sheet, "AR" + baseRow, fit(report.getClientName(), LINE_WIDTH));
             }
             if (hasText(report.getProjectName())) {
-                setStringValue(sheet, "AR" + (baseRow + 1), "・" + truncate(report.getProjectName(), MAX_LEN_PROJECT_NAME));
+                setStringValue(sheet, "AR" + (baseRow + 1), fit("・" + report.getProjectName(), LINE_WIDTH));
             }
-            writeLines(sheet, "AR", baseRow + 2, MAX_LINES_PROCESS_NAME, report.getProcessName(), MAX_LEN_PROCESS_NAME, "　");
+            writeLines(sheet, "AR", baseRow + 2, MAX_LINES_PROCESS_NAME, report.getProcessName(), "　");
 
             if (hasText(report.getProgressStatus())) {
-                setStringValue(sheet, "AS" + baseRow, "作業進捗：" + truncate(report.getProgressStatus(), MAX_LEN_PROGRESS_STATUS));
+                setStringValue(sheet, "AS" + baseRow, fit("作業進捗：" + report.getProgressStatus(), LINE_WIDTH));
             }
-            writeLines(sheet, "AS", baseRow + 1, 6, report.getProgressDetail(), MAX_LEN_PROGRESS_DETAIL_LINE);
+            writeLines(sheet, "AS", baseRow + 1, 6, report.getProgressDetail(), "");
             writeProblemCountermeasure(sheet, baseRow, report.getProblemCountermeasure());
 
-            writeLines(sheet, "AT", baseRow, 10, report.getPersonalNote(), MAX_LEN_PERSONAL_NOTE_LINE);
-            // リーダー所見は取り込んだ文をそのまま戻す（文字数で切らない）
-            writeLines(sheet, "AU", baseRow, 10, report.getLeaderComment(), Integer.MAX_VALUE);
+            writeLines(sheet, "AT", baseRow, 10, report.getPersonalNote(), "");
+            // リーダー所見は取り込んだ文をそのまま戻す（行を送らない。取り込みのときに行がそのまま入っているため）
+            writeLines(sheet, "AU", baseRow, 10, report.getLeaderComment(), "", Integer.MAX_VALUE);
         }
     }
 
@@ -349,43 +356,117 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
         }
         setStringValue(sheet, "AS" + (baseRow + 8), "");
         setStringValue(sheet, "AS" + (baseRow + 9), "");
-        if (lines.size() == 1 && PROBLEM_LABEL.length() + lines.get(0).trim().length() <= MAX_LEN_PROBLEM_LINE) {
+        if (lines.size() == 1 && width(PROBLEM_LABEL + lines.get(0).trim()) <= LINE_WIDTH) {
             setStringValue(sheet, "AS" + (baseRow + 7), PROBLEM_LABEL + lines.get(0).trim());
         } else {
-            writeLines(sheet, "AS", baseRow + 8, 2, String.join("\n", lines), MAX_LEN_PROBLEM_LINE);
+            writeLines(sheet, "AS", baseRow + 8, 2, String.join("\n", lines), "");
         }
     }
 
-    /** 改行区切りのテキストを、指定列の連続する行に1行ずつ書き込む（最大maxLines行、各行maxLenChars文字まで）。 */
-    private void writeLines(Sheet sheet, String column, int startRow, int maxLines, String text, int maxLenChars) {
-        writeLines(sheet, column, startRow, maxLines, text, maxLenChars, "");
+    /**
+     * 改行区切りのテキストを、指定列の連続する行に1行ずつ書き込む（最大 maxLines 行）。
+     * 各行の先頭に prefix（様式の字下げ）を付ける。ただし空白で始まる行には付けない（字下げが二重にならないように）。
+     */
+    private void writeLines(Sheet sheet, String column, int startRow, int maxLines, String text, String prefix) {
+        writeLines(sheet, column, startRow, maxLines, text, prefix, LINE_WIDTH);
     }
 
-    /** 各行の先頭に prefix（様式の字下げなど）を付けて書き込む。 */
-    private void writeLines(Sheet sheet, String column, int startRow, int maxLines, String text, int maxLenChars,
-                            String prefix) {
+    private void writeLines(Sheet sheet, String column, int startRow, int maxLines, String text, String prefix, int width) {
         if (!hasText(text)) {
             return;
         }
-        String[] lines = text.split("\\r?\\n");
-        for (int i = 0; i < lines.length && i < maxLines; i++) {
-            if (!lines[i].isBlank()) {
-                setStringValue(sheet, column + (startRow + i), prefix + truncate(lines[i], maxLenChars));
+        List<String> lines = layoutLines(text, prefix, width, maxLines);
+        for (int i = 0; i < lines.size(); i++) {
+            if (!lines.get(i).isBlank()) {
+                setStringValue(sheet, column + (startRow + i), lines.get(i));
             }
         }
+    }
+
+    /**
+     * 書く行を決める。セルの幅（width）に収まる行はそのまま、長い行は文字を切らずに次の行へ送る。
+     * maxLines 行を超えるときだけ、最後の行の末尾を「…」にする。
+     */
+    static List<String> layoutLines(String text, String prefix, int width, int maxLines) {
+        List<String> out = new ArrayList<>();
+        String[] source = text.split("\\r?\\n", -1);
+        int end = source.length;
+        while (end > 0 && source[end - 1].isBlank()) end--; // 末尾の空行は書かない
+        boolean overflow = false;
+        for (int i = 0; i < end && !overflow; i++) {
+            String line = source[i];
+            String head = line.isBlank() || line.isEmpty() || Character.isWhitespace(line.charAt(0)) || line.charAt(0) == '　'
+                    ? "" : prefix;
+            List<String> pieces = wrap(head + line, width);
+            for (String piece : pieces) {
+                if (out.size() == maxLines) {
+                    overflow = true;
+                    break;
+                }
+                out.add(piece);
+            }
+        }
+        if (overflow && !out.isEmpty()) {
+            int last = out.size() - 1;
+            out.set(last, fit(out.get(last) + "…", width));
+        }
+        return out;
+    }
+
+    /** 1行を幅 width ごとに分ける（空の行は空の1行） */
+    static List<String> wrap(String line, int width) {
+        List<String> pieces = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        int w = 0;
+        for (int i = 0; i < line.length(); ) {
+            int cp = line.codePointAt(i);
+            int cw = charWidth(cp);
+            if (w + cw > width && current.length() > 0) {
+                pieces.add(current.toString());
+                current.setLength(0);
+                w = 0;
+            }
+            current.appendCodePoint(cp);
+            w += cw;
+            i += Character.charCount(cp);
+        }
+        pieces.add(current.toString());
+        return pieces;
+    }
+
+    /** 幅 width に収まらなければ、末尾を「…」にして収める */
+    static String fit(String value, int width) {
+        if (value == null || width(value) <= width) {
+            return value;
+        }
+        String s = value;
+        while (!s.isEmpty() && width(s) + charWidth('…') > width) {
+            s = s.substring(0, s.length() - Character.charCount(s.codePointBefore(s.length())));
+        }
+        return s + "…";
+    }
+
+    /** 表示の幅（半角1・全角2） */
+    static int width(String s) {
+        int w = 0;
+        for (int i = 0; i < s.length(); ) {
+            int cp = s.codePointAt(i);
+            w += charWidth(cp);
+            i += Character.charCount(cp);
+        }
+        return w;
+    }
+
+    /** 半角（ASCII・ラテン文字・半角カナ）は1、それ以外（漢字・かな・全角記号など）は2 */
+    static int charWidth(int cp) {
+        if (cp < 0x0370 || (cp >= 0xFF61 && cp <= 0xFF9F)) return 1;
+        return 2;
     }
 
     private boolean hasText(String value) {
         return value != null && !value.isBlank();
     }
 
-    /** セルの列幅に収まるよう、maxLen文字を超える分は末尾を省略記号（…）に置き換える。 */
-    private String truncate(String value, int maxLen) {
-        if (value == null || value.length() <= maxLen) {
-            return value;
-        }
-        return value.substring(0, Math.max(0, maxLen - 1)) + "…";
-    }
 
     private void setTimeValue(Sheet sheet, int row, String column, String hhmm) {
         setTimeValue(sheet, row, column, hhmm, false);

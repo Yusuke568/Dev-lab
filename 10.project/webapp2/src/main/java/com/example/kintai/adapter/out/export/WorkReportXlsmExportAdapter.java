@@ -87,7 +87,10 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
                 focus(workbook, yearMonth, yearMonth.getYear(), LocalDate.now());
 
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
-                // 様式の数式（総勤務・残業・深夜など）を、Excel で開いたときに必ず計算し直させる
+                // 様式の数式（総勤務・残業・深夜など）の計算結果を、出力のときに入れておく。
+                // 保護ビュー・スマホ・プレビューなど、計算し直さずに開いても値が出るようにするため
+                evaluateFormulas(workbook);
+                // Excel で開いたときにも必ず計算し直させる（ここで計算できなかった式のため）
                 workbook.setForceFormulaRecalculation(true);
                 workbook.write(out);
                 return out.toByteArray();
@@ -132,7 +135,10 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
                     focus(workbook, focusMonth, year, LocalDate.now());
                 }
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
-                // 様式の数式（総勤務・残業・深夜など）を、Excel で開いたときに必ず計算し直させる
+                // 様式の数式（総勤務・残業・深夜など）の計算結果を、出力のときに入れておく。
+                // 保護ビュー・スマホ・プレビューなど、計算し直さずに開いても値が出るようにするため
+                evaluateFormulas(workbook);
+                // Excel で開いたときにも必ず計算し直させる（ここで計算できなかった式のため）
                 workbook.setForceFormulaRecalculation(true);
                 workbook.write(out);
                 return out.toByteArray();
@@ -178,6 +184,38 @@ public class WorkReportXlsmExportAdapter implements WorkReportExportPort {
         // 枠の固定がない様式なので、表示の左上のセルを直接決める（showInPane は枠の固定があるときだけ効く）
         ((org.apache.poi.xssf.usermodel.XSSFSheet) sheet).getCTWorksheet().getSheetViews().getSheetViewArray(0)
                 .setTopLeftCell(new org.apache.poi.ss.util.CellReference(topRow, 0).formatAsString(false));
+    }
+
+    /**
+     * すべての数式を計算して、計算結果をファイルに入れる。
+     * 1つの式が計算できなくても（POI が対応していない関数など）ほかの式は計算する。計算できなかった式は前の値のまま
+     * （Excel で開けば計算し直される）。
+     * @return 計算できなかった式の数
+     */
+    static int evaluateFormulas(XSSFWorkbook workbook) {
+        org.apache.poi.ss.usermodel.FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
+        int failed = 0;
+        RuntimeException firstError = null;
+        for (Sheet sheet : workbook) {
+            for (Row row : sheet) {
+                for (Cell cell : row) {
+                    if (cell.getCellType() != CellType.FORMULA) {
+                        continue;
+                    }
+                    try {
+                        evaluator.evaluateFormulaCell(cell);
+                    } catch (RuntimeException e) {
+                        failed++;
+                        if (firstError == null) firstError = e;
+                    }
+                }
+            }
+        }
+        if (failed > 0) {
+            java.util.logging.Logger.getLogger(WorkReportXlsmExportAdapter.class.getName()).log(java.util.logging.Level.WARNING,
+                    "作業報告書の式のうち " + failed + " 個を計算できませんでした（Excel で開いたときに計算します）", firstError);
+        }
+        return failed;
     }
 
     /** 月のシート。当年の月は「○月」、前年の12月は「前年12月」 */

@@ -2075,12 +2075,12 @@ body.kintai-calendar-view .table-responsive {
 	</select>
 
 	<script
-		src="${pageContext.request.contextPath}/resources/js/kintai/kintai.js?v=20261116csrf"
+		src="${pageContext.request.contextPath}/resources/js/kintai/kintai.js?v=20261126sun"
 		type="module">
 	</script>
 	<%-- カレンダー表示と入力ポップアップ。kintai.js の後に読み込む --%>
 	<script
-		src="${pageContext.request.contextPath}/resources/js/kintai/month-calendar.js?v=20261118b"
+		src="${pageContext.request.contextPath}/resources/js/kintai/month-calendar.js?v=20261126sun"
 		type="module">
 	</script>
 

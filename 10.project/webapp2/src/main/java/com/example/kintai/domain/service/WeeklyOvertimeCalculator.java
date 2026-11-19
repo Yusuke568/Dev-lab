@@ -20,6 +20,8 @@ import java.util.Map;
  *     月〜金のうち1日が6時間（38時間）の週の土曜の4時間 → 2時間は40時間に足し、時間外2時間
  *     祝日のある週（月〜金のうち4日を8時間ずつ＝32時間）の土曜の8時間 → 全部40時間に足し、時間外なし
  * 平日（休日でない月〜金）の時間外は今までどおり、その日の総勤務のうち8時間を超えた分（ここでは扱わない）。
+ *
+ * 日曜は法定休日。日曜の勤務は「法定休出」として別に扱い、時間外にもせず、40時間にも数えない（時間外は0）。
  */
 public final class WeeklyOvertimeCalculator {
 
@@ -41,6 +43,11 @@ public final class WeeklyOvertimeCalculator {
     /** その日を含む週の日曜日 */
     public static LocalDate weekStart(LocalDate date) {
         return date.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
+    }
+
+    /** 法定休日（日曜）か。法定休日の勤務は時間外にしない */
+    public static boolean isLegalHoliday(LocalDate date) {
+        return date != null && date.getDayOfWeek() == DayOfWeek.SUNDAY;
     }
 
     static boolean isWeekday(LocalDate date) {
@@ -65,6 +72,10 @@ public final class WeeklyOvertimeCalculator {
         int remaining = Math.max(0, WEEKLY_MINUTES - baseline);
         Map<LocalDate, Integer> result = new LinkedHashMap<>();
         for (Day day : week.stream().filter(Day::holiday).sorted(Comparator.comparing(Day::date)).toList()) {
+            if (isLegalHoliday(day.date())) {
+                result.put(day.date(), 0); // 法定休出：時間外にも40時間にも数えない
+                continue;
+            }
             int total = Math.max(0, day.totalMinutes());
             int regular = Math.min(total, Math.min(remaining, DAILY_MINUTES));
             remaining -= regular;

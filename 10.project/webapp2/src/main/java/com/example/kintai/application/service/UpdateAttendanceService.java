@@ -177,6 +177,10 @@ public class UpdateAttendanceService implements UpdateAttendanceUseCase {
                     correctedTotalDirectWorkTime = (int) record.calculateDirectWorkDuration().toMinutes();
                     overtimeMinutes = record.calculateOvertimeMinutes();
                 }
+                // 日曜（法定休日）の勤務は法定休出として別に扱い、時間外にしない
+                if (WeeklyOvertimeCalculator.isLegalHoliday(date)) {
+                    overtimeMinutes = 0;
+                }
                 record.setOvertimeMinutes(overtimeMinutes);
                 record.setTotalWorkTime(correctedTotalWorkTime);
                 record.setTotalDirectWorkTime(correctedTotalDirectWorkTime);

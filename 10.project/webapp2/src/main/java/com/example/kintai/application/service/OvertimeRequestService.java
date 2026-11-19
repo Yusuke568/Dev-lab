@@ -65,6 +65,10 @@ public class OvertimeRequestService implements SubmitOvertimeRequestUseCase, Get
                           Integer departmentId, String projectName, String category,
                           Integer correctionMinutes, Integer correctionMidMinutes) {
         EmployeeId id = new EmployeeId(employeeId);
+        if (com.example.kintai.domain.service.WeeklyOvertimeCalculator.isLegalHoliday(date)) {
+            throw new IllegalArgumentException(date + " は日曜（法定休日）です。法定休日の出勤は法定休出として別に扱い、時間外にならないため、"
+                    + "残業事前申請は要りません（振替休日を取って平日扱いにする場合を除く）。");
+        }
         // 補正（通常・深夜）。入力がなければ、その日の勤怠に入っている補正を使う（勤怠の実績からの申請）
         Optional<AttendanceRecord> record = loadAttendanceRecordPort == null ? Optional.empty()
                 : loadAttendanceRecordPort.loadByEmployeeAndDate(id, date);

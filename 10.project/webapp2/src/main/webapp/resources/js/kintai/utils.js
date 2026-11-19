@@ -164,6 +164,12 @@ function weekStartOf(dateText) {
   return localDateString(date);
 }
 
+/** 日曜（法定休日）か。日曜の勤務は時間外ではなく法定休出として別に数える */
+export function isSundayText(dateText) {
+  const [y, m, d] = dateText.split("-").map(Number);
+  return new Date(y, m - 1, d).getDay() === 0;
+}
+
 function isWeekdayText(dateText) {
   const [y, m, d] = dateText.split("-").map(Number);
   const dow = new Date(y, m - 1, d).getDay();
@@ -172,6 +178,7 @@ function isWeekdayText(dateText) {
 
 /**
  * 休日出勤の日（土日・祝日・会社休日）の時間外を、週40時間の決まりで計算する（サーバーの WeeklyOvertimeCalculator と同じ）。
+ *   日曜は法定休日。日曜の勤務は法定休出として別に扱い、時間外にも40時間にも数えない（時間外は0）。
  *   月〜金の「所定に数える時間」（その日の総勤務のうち8時間まで。休日の平日は0時間、有給は8時間、半休は4時間＋働いた分）を足し、
  *   休日出勤の勤務は日付順に40時間に足りない分を埋め（1日8時間まで）、残りを時間外にする。
  * 表にない前月・翌月の日は、サーバーが #kintai-app-root の data-outside-week-days に入れた分を使う。
@@ -212,6 +219,7 @@ export function holidayOvertimeByDate() {
     }, 0);
     let remaining = Math.max(0, WEEKLY_MINUTES - baseline);
     week.filter((d) => d.holiday).sort((a, b) => a.date.localeCompare(b.date)).forEach((d) => {
+      if (isSundayText(d.date)) { result.set(d.date, 0); return; } // 法定休出
       const regular = Math.min(d.total, remaining, STANDARD_WORK_MINUTES);
       remaining -= regular;
       result.set(d.date, d.total - regular);

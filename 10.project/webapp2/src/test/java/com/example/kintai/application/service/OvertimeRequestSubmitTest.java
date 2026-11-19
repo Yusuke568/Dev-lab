@@ -200,8 +200,16 @@ class OvertimeRequestSubmitTest {
     @Test
     void 休日の申請で予定時刻がなければ申請できない() {
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> service.submit("126", LocalDate.of(2026, 11, 8), "", "", "休日対応", null, "税保守", "⑤その他", null, null));
+                () -> service.submit("126", LocalDate.of(2026, 11, 14), "", "", "休日対応", null, "税保守", "⑤その他", null, null));
         assertTrue(e.getMessage().contains("休日出勤"));
+        assertTrue(inserted.isEmpty());
+    }
+
+    @Test
+    void 日曜は法定休日なので残業事前申請は要らない() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> service.submit("126", LocalDate.of(2026, 11, 8), "09:00", "18:00", "休日対応", null, "税保守", "⑤その他", null, null));
+        assertTrue(e.getMessage().contains("法定休日"));
         assertTrue(inserted.isEmpty());
     }
 

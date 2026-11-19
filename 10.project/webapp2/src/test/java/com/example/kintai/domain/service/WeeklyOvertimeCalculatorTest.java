@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** 週40時間の時間外（休日出勤の日の分） */
 class WeeklyOvertimeCalculatorTest {
@@ -41,6 +42,24 @@ class WeeklyOvertimeCalculatorTest {
 
         assertEquals(120, ot.get(SUN.plusDays(6)));
         assertEquals(0, ot.get(SUN));
+    }
+
+    @Test
+    void 日曜は法定休出なので時間外にせず_40時間にも数えない() {
+        // 日 8時間、月〜金 8時間ずつ、土 3時間 → 日曜の時間外 0、土曜の3時間は全部時間外
+        List<Day> week = List.of(holiday(0, 480), weekday(1, 8, 0), weekday(2, 8, 0), weekday(3, 8, 0),
+                weekday(4, 8, 0), weekday(5, 8, 0), holiday(6, 180));
+        Map<LocalDate, Integer> ot = WeeklyOvertimeCalculator.holidayOvertime(week);
+        assertEquals(0, ot.get(SUN));
+        assertEquals(180, ot.get(SUN.plusDays(6)));
+
+        // 代休で平日32時間の週：日曜の8時間では40時間を埋めず、土曜の3時間は40時間に足して時間外なし
+        List<Day> shortWeek = List.of(holiday(0, 480), weekday(1, 8, 0), weekday(2, 0, 0), weekday(3, 8, 0),
+                weekday(4, 8, 0), weekday(5, 8, 0), holiday(6, 180));
+        Map<LocalDate, Integer> ot2 = WeeklyOvertimeCalculator.holidayOvertime(shortWeek);
+        assertEquals(0, ot2.get(SUN));
+        assertEquals(0, ot2.get(SUN.plusDays(6)));
+        assertTrue(WeeklyOvertimeCalculator.isLegalHoliday(SUN));
     }
 
     @Test

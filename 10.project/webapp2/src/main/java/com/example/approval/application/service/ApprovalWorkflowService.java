@@ -216,6 +216,38 @@ public class ApprovalWorkflowService {
         return hasNext ? ApprovalOutcome.NEXT_LEVEL : ApprovalOutcome.APPROVED;
     }
 
+    /**
+     * 時間外申請書（Excel）で承認された段を、その承認日で記録する（取り込み用）。
+     * 承認者は、その段の最初の候補者（主承認者）として記録する。
+     * @throws IllegalStateException その段がない・すでに処理済みのとき
+     */
+    public ApprovalOutcome approveOn(RequestType requestType, int requestId, int level, java.time.LocalDate approvedOn,
+                                     String comment) {
+        List<ApprovalStep> steps = approvalStepPort.findSteps(requestType, requestId);
+        List<ApprovalStep> current = steps.stream().filter(s -> s.getLevel() == level).collect(Collectors.toList());
+        if (current.isEmpty()) {
+            throw new IllegalStateException("この申請には" + level + "段目の承認ルートがありません。");
+        }
+        if (current.stream().anyMatch(ApprovalStep::isDecided)) {
+            throw new IllegalStateException(level + "段目はすでに処理されています。");
+        }
+        approvalStepPort.recordDecision(requestType, requestId, level, current.get(0).getApproverStaffId(),
+                ApprovalStep.APPROVED, normalizeComment(comment), approvedOn);
+        boolean hasNext = steps.stream().anyMatch(s -> s.getLevel() == level + 1);
+        return hasNext ? ApprovalOutcome.NEXT_LEVEL : ApprovalOutcome.APPROVED;
+    }
+
+    /** 判定済みの段の判定日を直す（取り込み用。判定した人・判定はそのまま） */
+    public void updateDecidedOn(RequestType requestType, int requestId, int level, java.time.LocalDate decidedOn) {
+        approvalStepPort.updateDecidedOn(requestType, requestId, level, decidedOn);
+    }
+
+    /** 段の主承認者（最初の候補者）の社員ID。段がなければ null */
+    public Integer mainApprover(RequestType requestType, int requestId, int level) {
+        return approvalStepPort.findSteps(requestType, requestId).stream()
+                .filter(s -> s.getLevel() == level).map(ApprovalStep::getApproverStaffId).findFirst().orElse(null);
+    }
+
     /** 申請ごとの承認ルート（画面表示用。段ごとにまとめる）。 */
     public Map<Integer, List<ApprovalLevel>> getRoutes(RequestType requestType, Collection<Integer> requestIds) {
         Map<Integer, List<ApprovalLevel>> result = new LinkedHashMap<>();

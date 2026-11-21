@@ -21,6 +21,16 @@ public interface OvertimeRequestPort {
     /** 指定した承認者の、いまの段で処理待ちになっている申請。 */
     List<OvertimeRequest> findPendingForApprover(String approverId);
 
+    /** 承認済みの申請の承認日を直す（時間外申請書の承認日の取り込み用） */
+    default void updateDecidedOn(int requestId, java.time.LocalDate decidedOn) {
+        throw new UnsupportedOperationException("updateDecidedOn");
+    }
+
+    /** 承認・却下した日を指定して記録する（時間外申請書の承認日の取り込み用）。decidedOn が null なら今 */
+    default void decide(int requestId, boolean approve, String decidedBy, java.time.LocalDate decidedOn) {
+        decide(requestId, approve, decidedBy);
+    }
+
     /** 承認者が自分の段で承認したが、まだ申請中（後の段の承認待ち）の申請 */
     default List<OvertimeRequest> findApprovedInProgressBy(String approverId) {
         return List.of();

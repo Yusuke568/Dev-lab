@@ -107,6 +107,46 @@ public class ApprovalStepPersistenceAdapter implements ApprovalStepPort {
     }
 
     @Override
+    public void updateDecidedOn(RequestType requestType, int requestId, int level, java.time.LocalDate decidedOn) {
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "UPDATE approval_step SET decided_at = ? "
+                     + "WHERE request_type = ? AND request_id = ? AND level = ? AND decision IS NOT NULL")) {
+            ps.setTimestamp(1, Timestamp.valueOf(decidedOn.atStartOfDay()));
+            ps.setString(2, requestType.name());
+            ps.setInt(3, requestId);
+            ps.setInt(4, level);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to update approval date.", e);
+        }
+    }
+
+    @Override
+    public void recordDecision(RequestType requestType, int requestId, int level, int approverStaffId,
+                               String decision, String comment, java.time.LocalDate decidedOn) {
+        if (decidedOn == null) {
+            recordDecision(requestType, requestId, level, approverStaffId, decision, comment);
+            return;
+        }
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "UPDATE approval_step SET decision = ?, comment = ?, decided_at = ? "
+                     + "WHERE request_type = ? AND request_id = ? AND level = ? AND approver_staff_id = ?")) {
+            ps.setString(1, decision);
+            ps.setString(2, comment);
+            ps.setTimestamp(3, Timestamp.valueOf(decidedOn.atStartOfDay()));
+            ps.setString(4, requestType.name());
+            ps.setInt(5, requestId);
+            ps.setInt(6, level);
+            ps.setInt(7, approverStaffId);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to record approval decision.", e);
+        }
+    }
+
+    @Override
     public void recordDecision(RequestType requestType, int requestId, int level, int approverStaffId,
                                String decision, String comment) {
         try (Connection con = ConnectionBase.getConnection();

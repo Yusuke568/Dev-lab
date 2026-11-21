@@ -92,6 +92,7 @@
 	<div class="page-header-actions">
 		<a href="${pageContext.request.contextPath}/menu.do" class="btn btn-secondary">‹ メニューへ戻る</a>
 		<a href="${pageContext.request.contextPath}/approvalHistory.do" class="btn btn-secondary">📜 承認履歴を見る</a>
+		<a href="${pageContext.request.contextPath}/overtimeFormImport.do" class="btn btn-secondary" title="Excel の時間外申請書に書かれた承認日を取り込みます">📥 時間外申請書の承認日を取り込む</a>
 	</div>
 
 	<c:if test="${not empty errorMessage}">

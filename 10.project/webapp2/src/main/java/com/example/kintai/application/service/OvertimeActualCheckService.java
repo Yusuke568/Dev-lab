@@ -102,6 +102,44 @@ public class OvertimeActualCheckService {
         return errors;
     }
 
+    /**
+     * 時間外申請書（Excel）の実績報告の承認日で、今の段を確認済みにする（取り込み用）。
+     * 確認者は、その段の最初の候補者（主承認者）として記録する。
+     * @return 確認したら true（確認待ちでない・その段でない・すでに確認済みなら false）
+     */
+    public boolean confirmOn(int requestId, int level, java.time.LocalDate checkedOn, String comment) {
+        Optional<OvertimeRequest> found = requestPort.findById(requestId);
+        if (found.isEmpty()) return false;
+        State state = checkPort.findState(requestId);
+        if (!OvertimeActualCheckPort.PENDING.equals(state.status()) || state.level() == null || state.level() != level) {
+            return false;
+        }
+        List<List<Integer>> levels = checkLevels(requestId);
+        if (level > levels.size() || levels.get(level - 1).isEmpty()) return false;
+        if (!checkPort.check(requestId, level, levels.get(level - 1).get(0), comment, checkedOn)) return false;
+        advanceFrom(requestId, level + 1, levels, Integer.parseInt(found.get().getEmployeeId()));
+        return true;
+    }
+
+    /** 確認済みの段の確認日（段 → 日） */
+    public java.util.Map<Integer, java.time.LocalDate> checkedDates(int requestId) {
+        java.util.Map<Integer, java.time.LocalDate> result = new TreeMap<>();
+        for (Step s : checkPort.findSteps(List.of(requestId)).getOrDefault(requestId, List.of())) {
+            if (s.approved() && s.decidedOn() != null) result.put(s.level(), s.decidedOn());
+        }
+        return result;
+    }
+
+    /** 確認済みの段の確認日を直す（取り込み用） */
+    public void updateCheckedOn(int requestId, int level, java.time.LocalDate checkedOn) {
+        checkPort.updateCheckedOn(requestId, level, checkedOn);
+    }
+
+    /** 実績確認の状態（取り込みの照らし合わせ用） */
+    public State stateOf(int requestId) {
+        return checkPort.findState(requestId);
+    }
+
     /** 承認者の確認待ち（画面に出す行） */
     public List<PendingActualCheck> pendingFor(String approverId) {
         Map<Integer, String> pending = checkPort.findPendingForApprover(Integer.parseInt(approverId));

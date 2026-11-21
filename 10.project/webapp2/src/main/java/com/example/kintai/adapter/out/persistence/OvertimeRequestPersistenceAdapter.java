@@ -303,6 +303,38 @@ public class OvertimeRequestPersistenceAdapter implements OvertimeRequestPort {
     }
 
     @Override
+    public void updateDecidedOn(int requestId, java.time.LocalDate decidedOn) {
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "UPDATE overtime_request SET decided_at = ? WHERE id = ? AND status = 'APPROVED'")) {
+            ps.setTimestamp(1, Timestamp.valueOf(decidedOn.atStartOfDay()));
+            ps.setInt(2, requestId);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to update overtime request date.", e);
+        }
+    }
+
+    @Override
+    public void decide(int requestId, boolean approve, String decidedBy, java.time.LocalDate decidedOn) {
+        if (decidedOn == null) {
+            decide(requestId, approve, decidedBy);
+            return;
+        }
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "UPDATE overtime_request SET status = ?, decided_by = ?, decided_at = ? WHERE id = ?")) {
+            ps.setString(1, approve ? OvertimeRequest.STATUS_APPROVED : OvertimeRequest.STATUS_REJECTED);
+            ps.setInt(2, Integer.parseInt(decidedBy));
+            ps.setTimestamp(3, Timestamp.valueOf(decidedOn.atStartOfDay()));
+            ps.setInt(4, requestId);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to decide overtime request.", e);
+        }
+    }
+
+    @Override
     public void decide(int requestId, boolean approve, String decidedBy) {
         String sql = readSqlFile("decide_overtime_request.sql");
         try (Connection con = ConnectionBase.getConnection();

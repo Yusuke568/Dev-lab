@@ -81,6 +81,43 @@ public class OvertimeActualCheckPersistenceAdapter implements OvertimeActualChec
     }
 
     @Override
+    public void updateCheckedOn(int requestId, int level, java.time.LocalDate checkedOn) {
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "UPDATE overtime_actual_step SET checked_at = ? WHERE request_id = ? AND level = ? AND checked_at IS NOT NULL")) {
+            ps.setTimestamp(1, java.sql.Timestamp.valueOf(checkedOn.atStartOfDay()));
+            ps.setInt(2, requestId);
+            ps.setInt(3, level);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to update actual check date.", e);
+        }
+    }
+
+    @Override
+    public boolean check(int requestId, int level, int approverStaffId, String comment, java.time.LocalDate checkedOn) {
+        if (checkedOn == null) {
+            return check(requestId, level, approverStaffId, comment);
+        }
+        String sql = "UPDATE overtime_actual_step SET checked_at = ?, comment = ? "
+                + "WHERE request_id = ? AND level = ? AND approver_staff_id = ? AND checked_at IS NULL "
+                + "AND NOT EXISTS (SELECT 1 FROM overtime_actual_step x WHERE x.request_id = ? AND x.level = ? AND x.checked_at IS NOT NULL)";
+        try (Connection con = ConnectionBase.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setTimestamp(1, java.sql.Timestamp.valueOf(checkedOn.atStartOfDay()));
+            ps.setString(2, comment);
+            ps.setInt(3, requestId);
+            ps.setInt(4, level);
+            ps.setInt(5, approverStaffId);
+            ps.setInt(6, requestId);
+            ps.setInt(7, level);
+            return ps.executeUpdate() == 1;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to record actual check.", e);
+        }
+    }
+
+    @Override
     public boolean check(int requestId, int level, int approverStaffId, String comment) {
         String sql = "UPDATE overtime_actual_step SET checked_at = NOW(), comment = ? "
                 + "WHERE request_id = ? AND level = ? AND approver_staff_id = ? AND checked_at IS NULL "

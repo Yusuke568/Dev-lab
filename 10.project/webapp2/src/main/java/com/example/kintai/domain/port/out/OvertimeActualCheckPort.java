@@ -35,6 +35,16 @@ public interface OvertimeActualCheckPort {
         return check(requestId, level, approverStaffId);
     }
 
+    /** 確認済みの段の確認日を直す（時間外申請書の承認日の取り込み用） */
+    default void updateCheckedOn(int requestId, int level, java.time.LocalDate checkedOn) {
+        throw new UnsupportedOperationException("updateCheckedOn");
+    }
+
+    /** 確認した日を指定して確認する（時間外申請書の承認日の取り込み用）。checkedOn が null なら今 */
+    default boolean check(int requestId, int level, int approverStaffId, String comment, java.time.LocalDate checkedOn) {
+        return check(requestId, level, approverStaffId, comment);
+    }
+
     void updateState(int requestId, String status, Integer level);
 
     /** 承認者が今の段の候補者で、まだ誰も確認していない申請（申請ID → 申請者の氏名。社員・対象日の順） */

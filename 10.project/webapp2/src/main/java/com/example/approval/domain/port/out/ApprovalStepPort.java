@@ -30,4 +30,15 @@ public interface ApprovalStepPort {
                                 String decision, String comment) {
         recordDecision(requestType, requestId, level, approverStaffId, decision);
     }
+
+    /** 判定済みの段の判定日を直す（時間外申請書の承認日の取り込み用）。判定した人・判定はそのまま */
+    default void updateDecidedOn(RequestType requestType, int requestId, int level, java.time.LocalDate decidedOn) {
+        throw new UnsupportedOperationException("updateDecidedOn");
+    }
+
+    /** 判定した日を指定して記録する（時間外申請書の承認日の取り込み用）。decidedOn が null なら今 */
+    default void recordDecision(RequestType requestType, int requestId, int level, int approverStaffId,
+                                String decision, String comment, java.time.LocalDate decidedOn) {
+        recordDecision(requestType, requestId, level, approverStaffId, decision, comment);
+    }
 }

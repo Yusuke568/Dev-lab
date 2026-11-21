@@ -352,6 +352,10 @@ public class DependencyFactory {
                         this.overtimeRequestPersistenceAdapter, this.attendancePersistenceAdapter, this.attendancePersistenceAdapter,
                         new com.example.kintai.adapter.out.export.OvertimeFormXlsxExportAdapter())
                         .withActualCheck(this.overtimeActualCheckPort)));
+        actionMap.put("OvertimeFormImport", new com.example.kintai.adapter.in.web.OvertimeFormImportAction(
+                new com.example.kintai.application.service.OvertimeFormImportService(
+                        this.overtimeRequestPersistenceAdapter, this.approvalWorkflowService, this.overtimeActualCheckService),
+                this.attendanceAccessUseCase));
         actionMap.put("SubordinateWorkReportExport", new com.example.kintai.adapter.in.web.SubordinateWorkReportExportAction(
                 this.attendanceAccessUseCase, this.exportWorkReportUseCase));
         actionMap.put("NoticeManage", new com.example.notice.adapter.in.web.NoticeManageAction(this.noticeUseCase));
@@ -412,7 +416,7 @@ public class DependencyFactory {
                 "WeeklyWorkReportSave");
         requireFeature(Feature.OVERTIME_REQUEST, "OvertimeRequestMenu", "OvertimeRequestSubmit", "OvertimeRequestWithdraw");
         requireFeature(Feature.LEAVE_REQUEST, "LeaveRequestMenu", "LeaveRequestSubmit");
-        requireFeature(Feature.APPROVAL, "ApprovalList", "ApprovalExecute", "ApprovalHistory", "OvertimeRequestExecute", "OvertimeActualConfirm", "SubordinateAttendance", "SubordinateOvertimeForm", "SubordinateWorkReportExport", "NoticeManage",
+        requireFeature(Feature.APPROVAL, "ApprovalList", "ApprovalExecute", "ApprovalHistory", "OvertimeRequestExecute", "OvertimeActualConfirm", "SubordinateAttendance", "SubordinateOvertimeForm", "SubordinateWorkReportExport", "OvertimeFormImport", "NoticeManage",
                 "LeaveRequestExecute");
         requireFeature(Feature.SHAIN_ADMIN, "ShainList", "ShainUpdateForm", "ShainUpdateExecute", "ShainInsertForm",
                 "ShainInsertExecute", "ShainDeleteForm", "ShainDeleteExecute", "SearchShainApi", "ShainIdCheckApi",

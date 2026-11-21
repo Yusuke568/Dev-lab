@@ -50,6 +50,9 @@ public class OvertimeFormImportService {
             if (!notes.isEmpty()) return "warn";
             return actions.isEmpty() ? "none" : "ok";
         }
+        // JSP の EL（Tomcat 9）はレコードの actions() を読めないので、getter を用意する
+        public List<String> getActions() { return actions; }
+        public List<String> getNotes() { return notes; }
         public String getActionsText() { return String.join("、", actions); }
         public String getNotesText() { return String.join(" ", notes); }
         public String getDateLabel() { return date.getMonthValue() + "/" + date.getDayOfMonth(); }
